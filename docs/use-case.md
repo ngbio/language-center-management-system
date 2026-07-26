@@ -112,17 +112,8 @@ Người dùng
 
 ## 5. Use Case Diagram
 
-![Sơ đồ Use Case của hệ thống đăng ký khóa học](./images/UseCase.png)
+<img width="1240" height="1178" alt="UseCase" src="https://github.com/user-attachments/assets/62da368b-8e0a-4afd-9338-083c088c0f1e" />
 
-Khi đưa tài liệu vào repository, lưu ảnh sơ đồ tại:
-
-```text
-docs/images/UseCase.png
-```
-
-Nếu file `use-case.md` nằm trực tiếp trong thư mục `docs`, đường dẫn ảnh `./images/UseCase.png` sẽ hiển thị đúng trên GitHub.
-
----
 
 ## 6. Đặc tả các Use Case chính
 
