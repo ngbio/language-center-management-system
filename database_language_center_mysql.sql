@@ -26,7 +26,7 @@ CREATE TABLE Role (
 ) ENGINE=InnoDB;
 
 CREATE TABLE User (
-    Id              BIGINT NOT NULL AUTO_INCREMENT,
+    Id              INT NOT NULL AUTO_INCREMENT,
     RoleId        INT NOT NULL,
     Username     VARCHAR(100) NOT NULL,
     PasswordHash     VARCHAR(255) NOT NULL,
@@ -45,8 +45,8 @@ CREATE TABLE User (
 ) ENGINE=InnoDB;
 
 CREATE TABLE Notification (
-    Id              BIGINT NOT NULL AUTO_INCREMENT,
-    UserId      BIGINT NOT NULL,
+    Id              INT NOT NULL AUTO_INCREMENT,
+    UserId      INT NOT NULL,
     Title          VARCHAR(200) NOT NULL,
     Content         TEXT NOT NULL,
     NotificationType    VARCHAR(30) NOT NULL DEFAULT 'SYSTEM',
@@ -59,8 +59,8 @@ CREATE TABLE Notification (
 ) ENGINE=InnoDB;
 
 CREATE TABLE Student (
-    Id              BIGINT NOT NULL AUTO_INCREMENT,
-    UserId      BIGINT NOT NULL,
+    Id              INT NOT NULL AUTO_INCREMENT,
+    UserId      INT NOT NULL,
     StudentCode       VARCHAR(20) NOT NULL,
     DateOfBirth        DATE NULL,
     Gender        VARCHAR(10) NULL,
@@ -73,8 +73,8 @@ CREATE TABLE Student (
 ) ENGINE=InnoDB;
 
 CREATE TABLE Teacher (
-    Id                  BIGINT NOT NULL AUTO_INCREMENT,
-    UserId          BIGINT NOT NULL,
+    Id                  INT NOT NULL AUTO_INCREMENT,
+    UserId          INT NOT NULL,
     TeacherCode         VARCHAR(20) NOT NULL,
     Specialization           VARCHAR(150) NULL,
     Degree             VARCHAR(200) NULL,
@@ -115,7 +115,7 @@ CREATE TABLE Level (
 ) ENGINE=InnoDB;
 
 CREATE TABLE Course (
-    Id              BIGINT NOT NULL AUTO_INCREMENT,
+    Id              INT NOT NULL AUTO_INCREMENT,
     LevelId       INT NOT NULL,
     CourseCode       VARCHAR(30) NOT NULL,
     CourseName      VARCHAR(200) NOT NULL,
@@ -136,7 +136,7 @@ CREATE TABLE Course (
 ) ENGINE=InnoDB;
 
 CREATE TABLE Room (
-    Id              BIGINT NOT NULL AUTO_INCREMENT,
+    Id              INT NOT NULL AUTO_INCREMENT,
     RoomCode         VARCHAR(30) NOT NULL,
     RoomName        VARCHAR(100) NOT NULL,
     Capacity         INT NOT NULL,
@@ -149,9 +149,9 @@ CREATE TABLE Room (
 ) ENGINE=InnoDB;
 
 CREATE TABLE CourseClass (
-    Id              BIGINT NOT NULL AUTO_INCREMENT,
-    CourseId       BIGINT NOT NULL,
-    TeacherId     BIGINT NULL,
+    Id              INT NOT NULL AUTO_INCREMENT,
+    CourseId       INT NOT NULL,
+    TeacherId     INT NULL,
     ClassCode           VARCHAR(30) NOT NULL,
     ClassName          VARCHAR(200) NOT NULL,
     StartDate      DATE NOT NULL,
@@ -172,9 +172,9 @@ CREATE TABLE CourseClass (
 ) ENGINE=InnoDB;
 
 CREATE TABLE ClassSchedule (
-    Id              BIGINT NOT NULL AUTO_INCREMENT,
-    CourseClassId        BIGINT NOT NULL,
-    RoomId      BIGINT NULL,
+    Id              INT NOT NULL AUTO_INCREMENT,
+    CourseClassId        INT NOT NULL,
+    RoomId      INT NULL,
     DayOfWeek    TINYINT NOT NULL,
     StartTime       TIME NOT NULL,
     EndTime      TIME NOT NULL,
@@ -194,8 +194,8 @@ CREATE TABLE ClassSchedule (
 ) ENGINE=InnoDB;
 
 CREATE TABLE Lesson (
-    Id              BIGINT NOT NULL AUTO_INCREMENT,
-    ClassScheduleId       BIGINT NOT NULL,
+    Id              INT NOT NULL AUTO_INCREMENT,
+    ClassScheduleId       INT NOT NULL,
     Topic           VARCHAR(255) NULL,
     LessonDate         DATE NOT NULL,
     MeetingUrl     VARCHAR(500) NULL,
@@ -207,9 +207,9 @@ CREATE TABLE Lesson (
 ) ENGINE=InnoDB;
 
 CREATE TABLE Enrollment (
-    Id                      BIGINT NOT NULL AUTO_INCREMENT,
-    StudentId               BIGINT NOT NULL,
-    CourseClassId                BIGINT NOT NULL,
+    Id                      INT NOT NULL AUTO_INCREMENT,
+    StudentId               INT NOT NULL,
+    CourseClassId                INT NOT NULL,
     EnrollmentDate              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     AmountDue           DECIMAL(18,2) NOT NULL,
     EnrollmentStatus         VARCHAR(30) NOT NULL DEFAULT 'PENDING_PAYMENT',
@@ -228,8 +228,8 @@ CREATE TABLE Enrollment (
 ) ENGINE=InnoDB;
 
 CREATE TABLE Payment (
-    Id                      BIGINT NOT NULL AUTO_INCREMENT,
-    EnrollmentId          BIGINT NOT NULL,
+    Id                      INT NOT NULL AUTO_INCREMENT,
+    EnrollmentId          INT NOT NULL,
     TransactionCode              VARCHAR(100) NOT NULL,
     Method              VARCHAR(30) NOT NULL,
     Amount                  DECIMAL(18,2) NOT NULL,
@@ -238,7 +238,7 @@ CREATE TABLE Payment (
     CompletedAt         DATETIME NULL,
     ReferenceCode             VARCHAR(150) NULL,
     ErrorMessage              VARCHAR(500) NULL,
-    SuccessfulEnrollmentId       BIGINT GENERATED ALWAYS AS
+    SuccessfulEnrollmentId       INT GENERATED ALWAYS AS
                             (CASE WHEN Status = 'SUCCESS' THEN EnrollmentId ELSE NULL END) STORED,
     PRIMARY KEY (Id),
     CONSTRAINT UQ_Payment_TransactionCode UNIQUE (TransactionCode),
@@ -250,9 +250,9 @@ CREATE TABLE Payment (
 ) ENGINE=InnoDB;
 
 CREATE TABLE Attendance (
-    Id                  BIGINT NOT NULL AUTO_INCREMENT,
-    LessonId           BIGINT NOT NULL,
-    EnrollmentId      BIGINT NOT NULL,
+    Id                  INT NOT NULL AUTO_INCREMENT,
+    LessonId           INT NOT NULL,
+    EnrollmentId      INT NOT NULL,
     Status           VARCHAR(20) NOT NULL,
     Note              VARCHAR(500) NULL,
     AttendanceTime    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

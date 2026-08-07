@@ -34,7 +34,7 @@ public class Room implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
     @Column(name = "Id")
-    private Long id;
+    private Integer id;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 30)
@@ -63,11 +63,11 @@ public class Room implements Serializable {
     public Room() {
     }
 
-    public Room(Long id) {
+    public Room(Integer id) {
         this.id = id;
     }
 
-    public Room(Long id, String roomCode, String roomName, int capacity, String status) {
+    public Room(Integer id, String roomCode, String roomName, int capacity, String status) {
         this.id = id;
         this.roomCode = roomCode;
         this.roomName = roomName;
@@ -75,11 +75,11 @@ public class Room implements Serializable {
         this.status = status;
     }
 
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 

@@ -40,7 +40,7 @@ public class Classschedule implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
     @Column(name = "Id")
-    private Long id;
+    private Integer id;
     @Basic(optional = false)
     @NotNull
     @Column(name = "DayOfWeek")
@@ -75,11 +75,11 @@ public class Classschedule implements Serializable {
     public Classschedule() {
     }
 
-    public Classschedule(Long id) {
+    public Classschedule(Integer id) {
         this.id = id;
     }
 
-    public Classschedule(Long id, short dayOfWeek, Date startTime, Date endTime, String deliveryMode) {
+    public Classschedule(Integer id, short dayOfWeek, Date startTime, Date endTime, String deliveryMode) {
         this.id = id;
         this.dayOfWeek = dayOfWeek;
         this.startTime = startTime;
@@ -87,11 +87,11 @@ public class Classschedule implements Serializable {
         this.deliveryMode = deliveryMode;
     }
 
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 

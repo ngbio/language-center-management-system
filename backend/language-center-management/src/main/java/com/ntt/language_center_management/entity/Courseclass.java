@@ -41,7 +41,7 @@ public class Courseclass implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
     @Column(name = "Id")
-    private Long id;
+    private Integer id;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 30)
@@ -98,11 +98,11 @@ public class Courseclass implements Serializable {
     public Courseclass() {
     }
 
-    public Courseclass(Long id) {
+    public Courseclass(Integer id) {
         this.id = id;
     }
 
-    public Courseclass(Long id, String classCode, String className, Date startDate, Date endDate, int maxStudents, BigDecimal appliedTuitionFee, String status, Date createdAt) {
+    public Courseclass(Integer id, String classCode, String className, Date startDate, Date endDate, int maxStudents, BigDecimal appliedTuitionFee, String status, Date createdAt) {
         this.id = id;
         this.classCode = classCode;
         this.className = className;
@@ -114,11 +114,11 @@ public class Courseclass implements Serializable {
         this.createdAt = createdAt;
     }
 
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 

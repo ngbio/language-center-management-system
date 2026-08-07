@@ -40,7 +40,7 @@ public class Lesson implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
     @Column(name = "Id")
-    private Long id;
+    private Integer id;
     @Size(max = 255)
     @Column(name = "Topic")
     private String topic;
@@ -66,21 +66,21 @@ public class Lesson implements Serializable {
     public Lesson() {
     }
 
-    public Lesson(Long id) {
+    public Lesson(Integer id) {
         this.id = id;
     }
 
-    public Lesson(Long id, Date lessonDate, String status) {
+    public Lesson(Integer id, Date lessonDate, String status) {
         this.id = id;
         this.lessonDate = lessonDate;
         this.status = status;
     }
 
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 

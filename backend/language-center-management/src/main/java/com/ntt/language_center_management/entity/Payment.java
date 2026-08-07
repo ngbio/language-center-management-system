@@ -21,7 +21,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.Date;
 
 /**
@@ -39,7 +38,7 @@ public class Payment implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
     @Column(name = "Id")
-    private Long id;
+    private Integer id;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 100)
@@ -75,7 +74,7 @@ public class Payment implements Serializable {
     @Column(name = "ErrorMessage")
     private String errorMessage;
     @Column(name = "SuccessfulEnrollmentId")
-    private BigInteger successfulEnrollmentId;
+    private Integer successfulEnrollmentId;
     @JoinColumn(name = "EnrollmentId", referencedColumnName = "Id")
     @ManyToOne(optional = false)
     private Enrollment enrollmentId;
@@ -83,11 +82,11 @@ public class Payment implements Serializable {
     public Payment() {
     }
 
-    public Payment(Long id) {
+    public Payment(Integer id) {
         this.id = id;
     }
 
-    public Payment(Long id, String transactionCode, String method, BigDecimal amount, String status, Date createdAt) {
+    public Payment(Integer id, String transactionCode, String method, BigDecimal amount, String status, Date createdAt) {
         this.id = id;
         this.transactionCode = transactionCode;
         this.method = method;
@@ -96,11 +95,11 @@ public class Payment implements Serializable {
         this.createdAt = createdAt;
     }
 
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
@@ -168,11 +167,11 @@ public class Payment implements Serializable {
         this.errorMessage = errorMessage;
     }
 
-    public BigInteger getSuccessfulEnrollmentId() {
+    public Integer getSuccessfulEnrollmentId() {
         return successfulEnrollmentId;
     }
 
-    public void setSuccessfulEnrollmentId(BigInteger successfulEnrollmentId) {
+    public void setSuccessfulEnrollmentId(Integer successfulEnrollmentId) {
         this.successfulEnrollmentId = successfulEnrollmentId;
     }
 
