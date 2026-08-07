@@ -37,7 +37,7 @@ public class Attendance implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
     @Column(name = "Id")
-    private Long id;
+    private Integer id;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 20)
@@ -61,21 +61,21 @@ public class Attendance implements Serializable {
     public Attendance() {
     }
 
-    public Attendance(Long id) {
+    public Attendance(Integer id) {
         this.id = id;
     }
 
-    public Attendance(Long id, String status, Date attendanceTime) {
+    public Attendance(Integer id, String status, Date attendanceTime) {
         this.id = id;
         this.status = status;
         this.attendanceTime = attendanceTime;
     }
 
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 

@@ -41,7 +41,7 @@ public class Enrollment implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
     @Column(name = "Id")
-    private Long id;
+    private Integer id;
     @Basic(optional = false)
     @NotNull
     @Column(name = "EnrollmentDate")
@@ -85,11 +85,11 @@ public class Enrollment implements Serializable {
     public Enrollment() {
     }
 
-    public Enrollment(Long id) {
+    public Enrollment(Integer id) {
         this.id = id;
     }
 
-    public Enrollment(Long id, Date enrollmentDate, BigDecimal amountDue, String enrollmentStatus, String paymentStatus) {
+    public Enrollment(Integer id, Date enrollmentDate, BigDecimal amountDue, String enrollmentStatus, String paymentStatus) {
         this.id = id;
         this.enrollmentDate = enrollmentDate;
         this.amountDue = amountDue;
@@ -97,11 +97,11 @@ public class Enrollment implements Serializable {
         this.paymentStatus = paymentStatus;
     }
 
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 

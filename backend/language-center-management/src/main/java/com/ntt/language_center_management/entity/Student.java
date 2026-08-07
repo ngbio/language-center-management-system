@@ -40,7 +40,7 @@ public class Student implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
     @Column(name = "Id")
-    private Long id;
+    private Integer id;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 20)
@@ -64,20 +64,20 @@ public class Student implements Serializable {
     public Student() {
     }
 
-    public Student(Long id) {
+    public Student(Integer id) {
         this.id = id;
     }
 
-    public Student(Long id, String studentCode) {
+    public Student(Integer id, String studentCode) {
         this.id = id;
         this.studentCode = studentCode;
     }
 
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 

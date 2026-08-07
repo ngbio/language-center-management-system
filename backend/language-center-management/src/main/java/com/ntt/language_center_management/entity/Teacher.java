@@ -36,7 +36,7 @@ public class Teacher implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
     @Column(name = "Id")
-    private Long id;
+    private Integer id;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 20)
@@ -61,21 +61,21 @@ public class Teacher implements Serializable {
     public Teacher() {
     }
 
-    public Teacher(Long id) {
+    public Teacher(Integer id) {
         this.id = id;
     }
 
-    public Teacher(Long id, String teacherCode, int experienceYears) {
+    public Teacher(Integer id, String teacherCode, int experienceYears) {
         this.id = id;
         this.teacherCode = teacherCode;
         this.experienceYears = experienceYears;
     }
 
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 

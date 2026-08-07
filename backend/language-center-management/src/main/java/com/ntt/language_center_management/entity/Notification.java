@@ -38,7 +38,7 @@ public class Notification implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
     @Column(name = "Id")
-    private Long id;
+    private Integer id;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 200)
@@ -74,11 +74,11 @@ public class Notification implements Serializable {
     public Notification() {
     }
 
-    public Notification(Long id) {
+    public Notification(Integer id) {
         this.id = id;
     }
 
-    public Notification(Long id, String title, String content, String notificationType, boolean isRead, Date createdAt) {
+    public Notification(Integer id, String title, String content, String notificationType, boolean isRead, Date createdAt) {
         this.id = id;
         this.title = title;
         this.content = content;
@@ -87,11 +87,11 @@ public class Notification implements Serializable {
         this.createdAt = createdAt;
     }
 
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
