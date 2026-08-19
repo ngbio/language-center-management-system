@@ -4,10 +4,14 @@
  */
 package com.ntt.language_center_management.entity;
 
+import com.ntt.language_center_management.enums.PaymentStatus;
+import com.ntt.language_center_management.enums.RegistrationStatus;
 import jakarta.persistence.Basic;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -54,14 +58,14 @@ public class Enrollment implements Serializable {
     private BigDecimal amountDue;
     @Basic(optional = false)
     @NotNull
-    @Size(min = 1, max = 30)
-    @Column(name = "EnrollmentStatus")
-    private String enrollmentStatus;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "EnrollmentStatus", nullable = false, length = 30)
+    private RegistrationStatus enrollmentStatus = RegistrationStatus.PENDING;
     @Basic(optional = false)
     @NotNull
-    @Size(min = 1, max = 30)
-    @Column(name = "PaymentStatus")
-    private String paymentStatus;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "PaymentStatus", nullable = false, length = 30)
+    private PaymentStatus paymentStatus = PaymentStatus.PENDING;
     @Column(name = "ConfirmedAt")
     @Temporal(TemporalType.TIMESTAMP)
     private Date confirmedAt;
@@ -89,7 +93,7 @@ public class Enrollment implements Serializable {
         this.id = id;
     }
 
-    public Enrollment(Integer id, Date enrollmentDate, BigDecimal amountDue, String enrollmentStatus, String paymentStatus) {
+    public Enrollment(Integer id, Date enrollmentDate, BigDecimal amountDue, RegistrationStatus enrollmentStatus, PaymentStatus paymentStatus) {
         this.id = id;
         this.enrollmentDate = enrollmentDate;
         this.amountDue = amountDue;
@@ -121,19 +125,19 @@ public class Enrollment implements Serializable {
         this.amountDue = amountDue;
     }
 
-    public String getEnrollmentStatus() {
+    public RegistrationStatus getEnrollmentStatus() {
         return enrollmentStatus;
     }
 
-    public void setEnrollmentStatus(String enrollmentStatus) {
+    public void setEnrollmentStatus(RegistrationStatus enrollmentStatus) {
         this.enrollmentStatus = enrollmentStatus;
     }
 
-    public String getPaymentStatus() {
+    public PaymentStatus getPaymentStatus() {
         return paymentStatus;
     }
 
-    public void setPaymentStatus(String paymentStatus) {
+    public void setPaymentStatus(PaymentStatus paymentStatus) {
         this.paymentStatus = paymentStatus;
     }
 

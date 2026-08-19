@@ -4,9 +4,12 @@
  */
 package com.ntt.language_center_management.entity;
 
+import com.ntt.language_center_management.enums.PaymentStatus;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -56,9 +59,9 @@ public class Payment implements Serializable {
     private BigDecimal amount;
     @Basic(optional = false)
     @NotNull
-    @Size(min = 1, max = 20)
-    @Column(name = "Status")
-    private String status;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "Status", nullable = false, length = 20)
+    private PaymentStatus status = PaymentStatus.PENDING;
     @Basic(optional = false)
     @NotNull
     @Column(name = "CreatedAt")
@@ -86,7 +89,7 @@ public class Payment implements Serializable {
         this.id = id;
     }
 
-    public Payment(Integer id, String transactionCode, String method, BigDecimal amount, String status, Date createdAt) {
+    public Payment(Integer id, String transactionCode, String method, BigDecimal amount, PaymentStatus status, Date createdAt) {
         this.id = id;
         this.transactionCode = transactionCode;
         this.method = method;
@@ -127,11 +130,11 @@ public class Payment implements Serializable {
         this.amount = amount;
     }
 
-    public String getStatus() {
+    public PaymentStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(PaymentStatus status) {
         this.status = status;
     }
 
