@@ -4,10 +4,13 @@
  */
 package com.ntt.language_center_management.entity;
 
+import com.ntt.language_center_management.enums.AccountStatus;
 import jakarta.persistence.Basic;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -71,9 +74,9 @@ public class User implements Serializable {
     private String address;
     @Basic(optional = false)
     @NotNull
-    @Size(min = 1, max = 20)
-    @Column(name = "Status")
-    private String status;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "Status", nullable = false, length = 20)
+    private AccountStatus status = AccountStatus.ACTIVE;
     @Basic(optional = false)
     @NotNull
     @Column(name = "CreatedAt")
@@ -99,7 +102,7 @@ public class User implements Serializable {
         this.id = id;
     }
 
-    public User(Integer id, String username, String passwordHash, String fullName, String email, String status, Date createdAt) {
+    public User(Integer id, String username, String passwordHash, String fullName, String email, AccountStatus status, Date createdAt) {
         this.id = id;
         this.username = username;
         this.passwordHash = passwordHash;
@@ -165,11 +168,11 @@ public class User implements Serializable {
         this.address = address;
     }
 
-    public String getStatus() {
+    public AccountStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(AccountStatus status) {
         this.status = status;
     }
 

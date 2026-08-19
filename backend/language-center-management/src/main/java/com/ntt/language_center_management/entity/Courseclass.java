@@ -4,10 +4,13 @@
  */
 package com.ntt.language_center_management.entity;
 
+import com.ntt.language_center_management.enums.ClassStatus;
 import jakarta.persistence.Basic;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -73,9 +76,9 @@ public class Courseclass implements Serializable {
     private BigDecimal appliedTuitionFee;
     @Basic(optional = false)
     @NotNull
-    @Size(min = 1, max = 30)
-    @Column(name = "Status")
-    private String status;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "Status", nullable = false, length = 30)
+    private ClassStatus status = ClassStatus.DRAFT;
     @Basic(optional = false)
     @NotNull
     @Column(name = "CreatedAt")
@@ -102,7 +105,7 @@ public class Courseclass implements Serializable {
         this.id = id;
     }
 
-    public Courseclass(Integer id, String classCode, String className, Date startDate, Date endDate, int maxStudents, BigDecimal appliedTuitionFee, String status, Date createdAt) {
+    public Courseclass(Integer id, String classCode, String className, Date startDate, Date endDate, int maxStudents, BigDecimal appliedTuitionFee, ClassStatus status, Date createdAt) {
         this.id = id;
         this.classCode = classCode;
         this.className = className;
@@ -170,11 +173,11 @@ public class Courseclass implements Serializable {
         this.appliedTuitionFee = appliedTuitionFee;
     }
 
-    public String getStatus() {
+    public ClassStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(ClassStatus status) {
         this.status = status;
     }
 
