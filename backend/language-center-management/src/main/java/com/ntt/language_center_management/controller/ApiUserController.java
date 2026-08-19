@@ -1,0 +1,58 @@
+package com.ntt.language_center_management.controller;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+
+import com.ntt.language_center_management.dto.request.LoginRequest;
+import com.ntt.language_center_management.dto.response.ApiResponse;
+import com.ntt.language_center_management.dto.response.LoginResponse;
+import com.ntt.language_center_management.dto.response.UserResponse;
+import com.ntt.language_center_management.service.UserService;
+import com.ntt.language_center_management.util.JwtUtils;
+
+import jakarta.validation.Valid;
+
+@RestController
+@RequestMapping("/api/auth")
+public class ApiUserController {
+
+    private final UserService userService;
+    private final JwtUtils jwtUtils;
+
+    public ApiUserController(UserService userService, JwtUtils jwtUtils) {
+        this.userService = userService;
+        this.jwtUtils = jwtUtils;
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<LoginResponse>> login(
+            @Valid @RequestBody LoginRequest request) {
+        final UserResponse user;
+
+        try {
+            user = userService.login(request);
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "Sai email hoặc mật khẩu");
+        }
+
+        String token = jwtUtils.generateToken(user.email());
+        LoginResponse loginResponse = new LoginResponse(
+                token,
+                user.id(),
+                user.email(),
+                user.roleName());
+        ApiResponse<LoginResponse> response = new ApiResponse<>(
+                HttpStatus.OK.value(),
+                "Đăng nhập thành công",
+                loginResponse);
+
+        return ResponseEntity.ok(response);
+    }
+}

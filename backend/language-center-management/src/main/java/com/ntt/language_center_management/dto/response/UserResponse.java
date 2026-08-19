@@ -11,6 +11,7 @@ public record UserResponse(
         String email,
         String phoneNumber,
         String address,
+        String roleName,
         AccountStatus status,
         Date createdAt,
         Date updatedAt) {

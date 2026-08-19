@@ -7,6 +7,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ntt.language_center_management.dto.request.LoginRequest;
 import com.ntt.language_center_management.dto.request.UserRegisterRequest;
 import com.ntt.language_center_management.dto.response.UserResponse;
 import com.ntt.language_center_management.entity.Role;
@@ -72,6 +73,26 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public Long countUsers() {
         return userRepository.count();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserResponse login(LoginRequest request) {
+        User user = userRepository.findByEmailIgnoreCase(request.email()).orElseThrow(() -> new IllegalArgumentException(
+                        "Email hoặc mật khẩu không chính xác"));
+
+        if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+            throw new IllegalArgumentException("Email hoặc mật khẩu không chính xác");
+        }
+
+        validateUserCanLogin(user);
+        return userMapper.toResponse(user);
+    }
+
+    private void validateUserCanLogin(User user) {
+        if (user.getStatus() != AccountStatus.ACTIVE) {
+            throw new IllegalStateException("Tài khoản không ở trạng thái hoạt động");
+        }
     }
 
     @Override
