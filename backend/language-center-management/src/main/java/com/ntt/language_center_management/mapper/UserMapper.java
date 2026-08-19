@@ -27,6 +27,7 @@ public class UserMapper {
                 user.getEmail(),
                 user.getPhoneNumber(),
                 user.getAddress(),
+                user.getRoleId() != null ? user.getRoleId().getRoleName() : null,
                 user.getStatus(),
                 user.getCreatedAt(),
                 user.getUpdatedAt());
