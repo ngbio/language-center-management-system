@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.ntt.language_center_management.dto.request.LoginRequest;
+import com.ntt.language_center_management.dto.request.TeacherRegisterRequest;
+import com.ntt.language_center_management.dto.request.UserRegisterRequest;
 import com.ntt.language_center_management.dto.response.ApiResponse;
 import com.ntt.language_center_management.dto.response.LoginResponse;
 import com.ntt.language_center_management.dto.response.UserResponse;
@@ -55,4 +57,23 @@ public class ApiUserController {
 
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/register")
+    public ResponseEntity<ApiResponse<UserResponse>> register(
+            @Valid @RequestBody UserRegisterRequest request) {
+        UserResponse user = userService.addUser(request);
+        return new ResponseEntity<>(
+            new ApiResponse<>(HttpStatus.CREATED.value(), "Đăng ký thành công", user),
+            HttpStatus.CREATED);
+    }
+
+    @PostMapping("/admin/teachers")
+    public ResponseEntity<ApiResponse<UserResponse>> registerTeacher(
+            @Valid @RequestBody TeacherRegisterRequest request) {
+        UserResponse user = userService.addTeacher(request);
+        return new ResponseEntity<>(
+            new ApiResponse<>(HttpStatus.CREATED.value(), "Tạo tài khoản giáo viên thành công", user),
+            HttpStatus.CREATED);
+    }
+
 }

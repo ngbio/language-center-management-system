@@ -1,8 +1,10 @@
 package com.ntt.language_center_management.service;
 
+import java.security.Principal;
 import java.util.List;
 
 import com.ntt.language_center_management.dto.request.LoginRequest;
+import com.ntt.language_center_management.dto.request.TeacherRegisterRequest;
 import com.ntt.language_center_management.dto.request.UserRegisterRequest;
 import com.ntt.language_center_management.dto.response.UserResponse;
 import com.ntt.language_center_management.entity.User;
@@ -20,4 +22,8 @@ public interface UserService {
     UserResponse login(LoginRequest request);
 
     UserResponse addUser(UserRegisterRequest request);
+
+    UserResponse addTeacher(TeacherRegisterRequest request);
+
+    UserResponse getCurrentUserProfile(Principal principal);
 }
