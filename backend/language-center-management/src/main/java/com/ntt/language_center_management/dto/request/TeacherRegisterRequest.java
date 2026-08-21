@@ -1,20 +1,18 @@
 package com.ntt.language_center_management.dto.request;
 
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Past;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import java.util.Date;
 
-public record UserRegisterRequest(
+public record TeacherRegisterRequest(
         @NotBlank @Size(max = 100) String username,
         @NotBlank @Size(min = 6, max = 100) String password,
         @NotBlank @Size(max = 150) String fullName,
         @NotBlank @Email @Size(max = 150) String email,
         @Size(max = 20) String phoneNumber,
         @Size(max = 255) String address,
-        @Past Date dateOfBirth,
-        @Pattern(regexp = "MALE|FEMALE|OTHER", message = "gender phải là MALE, FEMALE hoặc OTHER") String gender,
-        @Size(max = 500) String avatar) {
+        @Size(max = 150) String specialization,
+        @Size(max = 200) String degree,
+        @Min(0) int experienceYears) {
 }
