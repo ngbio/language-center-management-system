@@ -2,11 +2,14 @@ package com.ntt.language_center_management.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.security.Principal;
 
 import com.ntt.language_center_management.dto.request.LoginRequest;
 import com.ntt.language_center_management.dto.request.TeacherRegisterRequest;
@@ -74,6 +77,21 @@ public class ApiUserController {
         return new ResponseEntity<>(
             new ApiResponse<>(HttpStatus.CREATED.value(), "Tạo tài khoản giáo viên thành công", user),
             HttpStatus.CREATED);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserResponse>> getProfile(Principal principal) {
+        try {
+            UserResponse user = this.userService.getCurrentUserProfile(principal);
+            return ResponseEntity.ok(new ApiResponse<>(
+                    HttpStatus.OK.value(),
+                    "Lấy thông tin người dùng thành công",
+                    user));
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "Chưa xác thực hoặc không thể xác định người dùng hiện tại");
+        }
     }
 
 }

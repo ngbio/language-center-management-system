@@ -81,6 +81,7 @@ public class SecurityConfig {
                         .requestMatchers("/", "/error", "/css/**", "/js/**", "/images/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
                         .requestMatchers("/api/auth/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(
                                 "/api/secure", "/api/secure/**",
