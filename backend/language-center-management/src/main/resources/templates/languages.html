@@ -1,0 +1,65 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Quản lý ngôn ngữ</title>
+    <th:block th:replace="base :: css"></th:block>
+</head>
+<body class="bg-light">
+<div th:replace="base :: header"></div>
+
+<section class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="fw-bold mb-0">Quản lý ngôn ngữ</h2>
+        <a class="btn btn-primary" th:href="@{/admin/languages/add}">+ Thêm ngôn ngữ</a>
+    </div>
+
+    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-striped mb-0 align-middle">
+                <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Mã</th>
+                    <th>Tên ngôn ngữ</th>
+                    <th>Mô tả</th>
+                    <th>Trạng thái</th>
+                    <th class="text-end">Hành động</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(languages)}">
+                    <td colspan="6" class="text-center text-muted py-4">Chưa có dữ liệu ngôn ngữ</td>
+                </tr>
+                <tr th:each="language : ${languages}">
+                    <td th:text="${language.id}"></td>
+                    <td th:text="${language.languageCode}"></td>
+                    <td th:text="${language.languageName}"></td>
+                    <td th:text="${language.description}"></td>
+                    <td>
+                        <span class="badge"
+                              th:classappend="${language.status == 'ACTIVE' ? ' bg-success' : ' bg-secondary'}"
+                              th:text="${language.status}"></span>
+                    </td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-warning" th:href="@{/admin/languages/update/{id}(id=${language.id})}">Sửa</a>
+                        <form th:action="@{/admin/languages/delete}" method="post" class="d-inline">
+                            <input type="hidden" name="languageId" th:value="${language.id}" />
+                            <button type="submit" class="btn btn-sm btn-danger"
+                                    onclick="return confirm('Bạn có chắc muốn xóa ngôn ngữ này không?');">
+                                Xóa
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<div th:replace="base :: footer"></div>
+</body>
+</html>
