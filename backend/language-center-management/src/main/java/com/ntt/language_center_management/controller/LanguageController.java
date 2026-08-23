@@ -1,8 +1,8 @@
 package com.ntt.language_center_management.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,12 +14,17 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.ntt.language_center_management.dto.request.LanguageRequest;
 import com.ntt.language_center_management.service.LanguageService;
 
+import jakarta.validation.Valid;
+
 @Controller
 @RequestMapping("/admin/languages")
 public class LanguageController {
 
-	@Autowired
-	private LanguageService languageService;
+	private final LanguageService languageService;
+
+	public LanguageController(LanguageService languageService) {
+		this.languageService = languageService;
+	}
 
 	@GetMapping
 	public String listLanguage(Model model) {
@@ -37,7 +42,7 @@ public class LanguageController {
 			} else {
 				redirectAttributes.addFlashAttribute("error", "Không thể xóa! Ngôn ngữ này đang có cấp độ liên kết.");
 			}
-		} catch (Exception exception) {
+		} catch (IllegalArgumentException exception) {
 			redirectAttributes.addFlashAttribute("error", "Xóa thất bại! Không tìm thấy ngôn ngữ.");
 		}
 
@@ -47,18 +52,36 @@ public class LanguageController {
 	@GetMapping("/update/{id}")
 	public String editView(Model model, @PathVariable("id") int id) {
 		model.addAttribute("language", this.languageService.getLanguageById(id));
+		model.addAttribute("activePage", "languages");
 		return "language-form";
 	}
 
 	@PostMapping("/save")
-	public String save(@ModelAttribute("language") LanguageRequest languageRequest) {
-		this.languageService.addOrUpdateLanguage(languageRequest);
+	public String save(
+			@Valid @ModelAttribute("language") LanguageRequest languageRequest,
+			BindingResult bindingResult,
+			Model model,
+			RedirectAttributes redirectAttributes) {
+		if (bindingResult.hasErrors()) {
+			model.addAttribute("activePage", "languages");
+			return "language-form";
+		}
+
+		try {
+			this.languageService.addOrUpdateLanguage(languageRequest);
+			redirectAttributes.addFlashAttribute("success", "Lưu ngôn ngữ thành công!");
+		} catch (IllegalArgumentException exception) {
+			bindingResult.reject("language.invalid", exception.getMessage());
+			model.addAttribute("activePage", "languages");
+			return "language-form";
+		}
 		return "redirect:/admin/languages";
 	}
 
 	@GetMapping("/add")
 	public String addLanguage(Model model) {
 		model.addAttribute("language", new LanguageRequest());
+		model.addAttribute("activePage", "languages");
 		return "language-form";
 	}
 }
