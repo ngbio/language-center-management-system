@@ -20,6 +20,7 @@ import com.ntt.language_center_management.entity.User;
 import com.ntt.language_center_management.enums.AccountStatus;
 import com.ntt.language_center_management.exception.DuplicateResourceException;
 import com.ntt.language_center_management.exception.ResourceNotFoundException;
+import com.ntt.language_center_management.exception.UnauthorizedException;
 import com.ntt.language_center_management.mapper.UserMapper;
 import com.ntt.language_center_management.repository.RoleRepository;
 import com.ntt.language_center_management.repository.StudentRepository;
@@ -92,11 +93,11 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public UserResponse login(LoginRequest request) {
-        User user = userRepository.findByEmailIgnoreCase(request.email()).orElseThrow(() -> new IllegalArgumentException(
+        User user = userRepository.findByEmailIgnoreCase(request.email()).orElseThrow(() -> new UnauthorizedException(
                         "Email hoặc mật khẩu không chính xác"));
 
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
-            throw new IllegalArgumentException("Email hoặc mật khẩu không chính xác");
+            throw new UnauthorizedException("Email hoặc mật khẩu không chính xác");
         }
 
         validateUserCanLogin(user);
@@ -105,7 +106,7 @@ public class UserServiceImpl implements UserService {
 
     private void validateUserCanLogin(User user) {
         if (user.getStatus() != AccountStatus.ACTIVE) {
-            throw new IllegalStateException("Tài khoản không ở trạng thái hoạt động");
+            throw new UnauthorizedException("Tài khoản không ở trạng thái hoạt động");
         }
     }
 
@@ -206,7 +207,7 @@ public class UserServiceImpl implements UserService {
 
     private User validateAndGetCurrentUser(Principal principal) {
         if (principal == null || !StringUtils.hasText(principal.getName())) {
-            throw new IllegalArgumentException("Không thể xác định người dùng hiện tại");
+            throw new UnauthorizedException("Không thể xác định người dùng hiện tại");
         }
 
         return getUserEntityByEmail(principal.getName());
