@@ -1,17 +1,18 @@
 package com.ntt.language_center_management.service;
 
-import java.util.List;
-
 import com.ntt.language_center_management.dto.request.LanguageRequest;
-import com.ntt.language_center_management.entity.Language;
+import com.ntt.language_center_management.dto.response.LanguageResponse;
+import java.util.List;
 
 public interface LanguageService {
 
-    List<Language> getLanguages();
+  List<LanguageResponse> getLanguages();
 
-    LanguageRequest getLanguageById(int id);
+  LanguageResponse getById(int id);
 
-    Language addOrUpdateLanguage(LanguageRequest request);
+  LanguageRequest getLanguageById(int id);
 
-    boolean deleteLanguage(int id);
+  LanguageResponse addOrUpdateLanguage(LanguageRequest request);
+
+  boolean deleteLanguage(int id);
 }
