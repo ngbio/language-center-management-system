@@ -89,12 +89,20 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**")
                     .permitAll()
+                    .requestMatchers(HttpMethod.PATCH, "/api/admin/classes/*/status")
+                    .hasRole("ADMIN")
+                    .requestMatchers("/api/admin/classes/**")
+                    .hasAnyRole("ADMIN", "CONSULTANT")
                     .requestMatchers("/api/admin/**")
                     .hasRole("ADMIN")
                     .requestMatchers(HttpMethod.GET, "/api/auth/me")
                     .authenticated()
                     .requestMatchers("/api/auth/**")
                     .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/classes/**")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/teachers/me/classes")
+                    .hasRole("TEACHER")
                     .requestMatchers(
                         HttpMethod.GET,
                         "/api/courses/**",
