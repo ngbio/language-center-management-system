@@ -39,34 +39,34 @@ public class Classschedule implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
-    @Column(name = "Id")
+    @Column(name = "id")
     private Integer id;
     @Basic(optional = false)
     @NotNull
-    @Column(name = "DayOfWeek")
+    @Column(name = "day_of_week")
     private short dayOfWeek;
     @Basic(optional = false)
     @NotNull
-    @Column(name = "StartTime")
+    @Column(name = "start_time")
     @Temporal(TemporalType.TIME)
     private Date startTime;
     @Basic(optional = false)
     @NotNull
-    @Column(name = "EndTime")
+    @Column(name = "end_time")
     @Temporal(TemporalType.TIME)
     private Date endTime;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 20)
-    @Column(name = "DeliveryMode")
+    @Column(name = "delivery_mode")
     private String deliveryMode;
     @Size(max = 500)
-    @Column(name = "MeetingUrl")
+    @Column(name = "meeting_url")
     private String meetingUrl;
-    @JoinColumn(name = "CourseClassId", referencedColumnName = "Id")
+    @JoinColumn(name = "course_class_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private Courseclass courseClassId;
-    @JoinColumn(name = "RoomId", referencedColumnName = "Id")
+    @JoinColumn(name = "room_id", referencedColumnName = "id")
     @ManyToOne
     private Room roomId;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "classScheduleId")

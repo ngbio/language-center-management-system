@@ -39,23 +39,23 @@ public class Student implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
-    @Column(name = "Id")
+    @Column(name = "id")
     private Integer id;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 20)
-    @Column(name = "StudentCode")
+    @Column(name = "student_code")
     private String studentCode;
-    @Column(name = "DateOfBirth")
+    @Column(name = "date_of_birth")
     @Temporal(TemporalType.DATE)
     private Date dateOfBirth;
     @Size(max = 10)
-    @Column(name = "Gender")
+    @Column(name = "gender")
     private String gender;
     @Size(max = 500)
-    @Column(name = "Avatar")
+    @Column(name = "avatar")
     private String avatar;
-    @JoinColumn(name = "UserId", referencedColumnName = "Id")
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
     @OneToOne(optional = false)
     private User userId;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "studentId")

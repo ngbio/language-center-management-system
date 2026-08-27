@@ -36,31 +36,31 @@ public class Level implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
-    @Column(name = "Id")
+    @Column(name = "id")
     private Integer id;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 20)
-    @Column(name = "LevelCode")
+    @Column(name = "level_code")
     private String levelCode;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 100)
-    @Column(name = "LevelName")
+    @Column(name = "level_name")
     private String levelName;
     @Size(max = 500)
-    @Column(name = "Description")
+    @Column(name = "description")
     private String description;
     @Basic(optional = false)
     @NotNull
-    @Column(name = "DisplayOrder")
+    @Column(name = "display_order")
     private int displayOrder;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 20)
-    @Column(name = "Status")
+    @Column(name = "status")
     private String status;
-    @JoinColumn(name = "LanguageId", referencedColumnName = "Id")
+    @JoinColumn(name = "language_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private Language languageId;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "levelId")

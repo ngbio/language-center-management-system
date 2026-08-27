@@ -35,24 +35,24 @@ public class Teacher implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
-    @Column(name = "Id")
+    @Column(name = "id")
     private Integer id;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 20)
-    @Column(name = "TeacherCode")
+    @Column(name = "teacher_code")
     private String teacherCode;
     @Size(max = 150)
-    @Column(name = "Specialization")
+    @Column(name = "specialization")
     private String specialization;
     @Size(max = 200)
-    @Column(name = "Degree")
+    @Column(name = "degree")
     private String degree;
     @Basic(optional = false)
     @NotNull
-    @Column(name = "ExperienceYears")
+    @Column(name = "experience_years")
     private int experienceYears;
-    @JoinColumn(name = "UserId", referencedColumnName = "Id")
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
     @OneToOne(optional = false)
     private User userId;
     @OneToMany(mappedBy = "teacherId")

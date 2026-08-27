@@ -4,12 +4,9 @@
  */
 package com.ntt.language_center_management.entity;
 
-import com.ntt.language_center_management.enums.PaymentStatus;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -40,45 +37,45 @@ public class Payment implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
-    @Column(name = "Id")
+    @Column(name = "id")
     private Integer id;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 100)
-    @Column(name = "TransactionCode")
+    @Column(name = "transaction_code")
     private String transactionCode;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 30)
-    @Column(name = "Method")
+    @Column(name = "method")
     private String method;
     // @Max(value=?)  @Min(value=?)//if you know range of your decimal fields consider using these annotations to enforce field validation
     @Basic(optional = false)
     @NotNull
-    @Column(name = "Amount")
+    @Column(name = "amount")
     private BigDecimal amount;
     @Basic(optional = false)
     @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "Status", nullable = false, length = 20)
-    private PaymentStatus status = PaymentStatus.PENDING;
+    @Size(min = 1, max = 20)
+    @Column(name = "status")
+    private String status;
     @Basic(optional = false)
     @NotNull
-    @Column(name = "CreatedAt")
+    @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
-    @Column(name = "CompletedAt")
+    @Column(name = "completed_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date completedAt;
     @Size(max = 150)
-    @Column(name = "ReferenceCode")
+    @Column(name = "reference_code")
     private String referenceCode;
     @Size(max = 500)
-    @Column(name = "ErrorMessage")
+    @Column(name = "error_message")
     private String errorMessage;
-    @Column(name = "SuccessfulEnrollmentId")
+    @Column(name = "successful_enrollment_id")
     private Integer successfulEnrollmentId;
-    @JoinColumn(name = "EnrollmentId", referencedColumnName = "Id")
+    @JoinColumn(name = "enrollment_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private Enrollment enrollmentId;
 
@@ -89,7 +86,7 @@ public class Payment implements Serializable {
         this.id = id;
     }
 
-    public Payment(Integer id, String transactionCode, String method, BigDecimal amount, PaymentStatus status, Date createdAt) {
+    public Payment(Integer id, String transactionCode, String method, BigDecimal amount, String status, Date createdAt) {
         this.id = id;
         this.transactionCode = transactionCode;
         this.method = method;
@@ -130,11 +127,11 @@ public class Payment implements Serializable {
         this.amount = amount;
     }
 
-    public PaymentStatus getStatus() {
+    public String getStatus() {
         return status;
     }
 
-    public void setStatus(PaymentStatus status) {
+    public void setStatus(String status) {
         this.status = status;
     }
 

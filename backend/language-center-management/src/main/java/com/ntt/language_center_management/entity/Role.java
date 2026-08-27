@@ -34,17 +34,17 @@ public class Role implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
-    @Column(name = "Id")
+    @Column(name = "id")
     private Integer id;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 20)
-    @Column(name = "RoleCode")
+    @Column(name = "role_code")
     private String roleCode;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 50)
-    @Column(name = "RoleName")
+    @Column(name = "role_name")
     private String roleName;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "roleId")
     private List<User> userList;

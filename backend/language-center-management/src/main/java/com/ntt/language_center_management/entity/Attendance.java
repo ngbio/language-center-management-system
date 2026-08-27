@@ -4,12 +4,9 @@
  */
 package com.ntt.language_center_management.entity;
 
-import com.ntt.language_center_management.enums.AttendanceStatus;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -39,25 +36,25 @@ public class Attendance implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
-    @Column(name = "Id")
+    @Column(name = "id")
     private Integer id;
     @Basic(optional = false)
     @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "Status", nullable = false, length = 20)
-    private AttendanceStatus status = AttendanceStatus.PRESENT;
+    @Size(min = 1, max = 20)
+    @Column(name = "status")
+    private String status;
     @Size(max = 500)
-    @Column(name = "Note")
+    @Column(name = "note")
     private String note;
     @Basic(optional = false)
     @NotNull
-    @Column(name = "AttendanceTime")
+    @Column(name = "attendance_time")
     @Temporal(TemporalType.TIMESTAMP)
     private Date attendanceTime;
-    @JoinColumn(name = "EnrollmentId", referencedColumnName = "Id")
+    @JoinColumn(name = "enrollment_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private Enrollment enrollmentId;
-    @JoinColumn(name = "LessonId", referencedColumnName = "Id")
+    @JoinColumn(name = "lesson_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private Lesson lessonId;
 
@@ -68,7 +65,7 @@ public class Attendance implements Serializable {
         this.id = id;
     }
 
-    public Attendance(Integer id, AttendanceStatus status, Date attendanceTime) {
+    public Attendance(Integer id, String status, Date attendanceTime) {
         this.id = id;
         this.status = status;
         this.attendanceTime = attendanceTime;
@@ -82,11 +79,11 @@ public class Attendance implements Serializable {
         this.id = id;
     }
 
-    public AttendanceStatus getStatus() {
+    public String getStatus() {
         return status;
     }
 
-    public void setStatus(AttendanceStatus status) {
+    public void setStatus(String status) {
         this.status = status;
     }
 

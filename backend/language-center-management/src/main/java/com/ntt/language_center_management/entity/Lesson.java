@@ -39,25 +39,25 @@ public class Lesson implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
-    @Column(name = "Id")
+    @Column(name = "id")
     private Integer id;
     @Size(max = 255)
-    @Column(name = "Topic")
+    @Column(name = "topic")
     private String topic;
     @Basic(optional = false)
     @NotNull
-    @Column(name = "LessonDate")
+    @Column(name = "lesson_date")
     @Temporal(TemporalType.DATE)
     private Date lessonDate;
     @Size(max = 500)
-    @Column(name = "MeetingUrl")
+    @Column(name = "meeting_url")
     private String meetingUrl;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 20)
-    @Column(name = "Status")
+    @Column(name = "status")
     private String status;
-    @JoinColumn(name = "ClassScheduleId", referencedColumnName = "Id")
+    @JoinColumn(name = "class_schedule_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private Classschedule classScheduleId;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "lessonId")

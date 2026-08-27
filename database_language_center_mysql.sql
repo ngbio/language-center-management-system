@@ -1,11 +1,14 @@
 /*
   Database: LanguageCenterDB
   Database engine: MySQL 8.0.16+
-  Target: Entity Framework Core Database First
-  Model: synchronized with the class diagram and four main use cases
 
-  WARNING: DROP DATABASE removes the existing schema so this script can be
-  rerun cleanly. Back up any data that must be preserved before execution.
+  Naming convention:
+  - Table names stay compatible with the current project.
+  - Every column uses snake_case.
+  - Each relationship has exactly one foreign-key column.
+
+  WARNING: This script drops the existing database and all of its data.
+  Back up any data that must be preserved before running it.
 */
 
 DROP DATABASE IF EXISTS LanguageCenterDB;
@@ -16,303 +19,336 @@ CREATE DATABASE LanguageCenterDB
 
 USE LanguageCenterDB;
 
-CREATE TABLE Role (
-    Id          INT NOT NULL AUTO_INCREMENT,
-    RoleCode    VARCHAR(20) NOT NULL,
-    RoleName    VARCHAR(50) NOT NULL,
-    PRIMARY KEY (Id),
-    CONSTRAINT UQ_Role_Code UNIQUE (RoleCode),
-    CONSTRAINT UQ_Role_Name UNIQUE (RoleName)
+CREATE TABLE role (
+    id          INT NOT NULL AUTO_INCREMENT,
+    role_code   VARCHAR(20) NOT NULL,
+    role_name   VARCHAR(50) NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT uq_role_code UNIQUE (role_code),
+    CONSTRAINT uq_role_name UNIQUE (role_name)
 ) ENGINE=InnoDB;
 
-CREATE TABLE User (
-    Id              INT NOT NULL AUTO_INCREMENT,
-    RoleId        INT NOT NULL,
-    Username     VARCHAR(100) NOT NULL,
-    PasswordHash     VARCHAR(255) NOT NULL,
-    FullName           VARCHAR(150) NOT NULL,
-    Email           VARCHAR(150) NOT NULL,
-    PhoneNumber     VARCHAR(20) NULL,
-    Address          VARCHAR(255) NULL,
-    Status       VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-    CreatedAt         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UpdatedAt     DATETIME NULL,
-    PRIMARY KEY (Id),
-    CONSTRAINT UQ_User_Username UNIQUE (Username),
-    CONSTRAINT UQ_User_Email UNIQUE (Email),
-    CONSTRAINT FK_User_Role FOREIGN KEY (RoleId) REFERENCES Role(Id),
-    CONSTRAINT CK_User_Status CHECK (Status IN ('ACTIVE', 'LOCKED'))
+CREATE TABLE `user` (
+    id              INT NOT NULL AUTO_INCREMENT,
+    role_id         INT NOT NULL,
+    username        VARCHAR(100) NOT NULL,
+    password_hash   VARCHAR(255) NOT NULL,
+    full_name       VARCHAR(150) NOT NULL,
+    email           VARCHAR(150) NOT NULL,
+    phone_number    VARCHAR(20) NULL,
+    address         VARCHAR(255) NULL,
+    status          VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT uq_user_username UNIQUE (username),
+    CONSTRAINT uq_user_email UNIQUE (email),
+    CONSTRAINT fk_user_role FOREIGN KEY (role_id) REFERENCES role(id),
+    CONSTRAINT ck_user_status
+        CHECK (status IN ('ACTIVE', 'INACTIVE', 'LOCKED'))
 ) ENGINE=InnoDB;
 
-CREATE TABLE Notification (
-    Id              INT NOT NULL AUTO_INCREMENT,
-    UserId      INT NOT NULL,
-    Title          VARCHAR(200) NOT NULL,
-    Content         TEXT NOT NULL,
-    NotificationType    VARCHAR(30) NOT NULL DEFAULT 'SYSTEM',
-    IsRead           BOOLEAN NOT NULL DEFAULT FALSE,
-    CreatedAt         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    ReadAt         DATETIME NULL,
-    PRIMARY KEY (Id),
-    CONSTRAINT FK_Notification_User FOREIGN KEY (UserId) REFERENCES User(Id),
-    CONSTRAINT CK_Notification_Type CHECK (NotificationType IN ('SYSTEM', 'ENROLLMENT', 'PAYMENT', 'SCHEDULE'))
+CREATE TABLE notification (
+    id                  INT NOT NULL AUTO_INCREMENT,
+    user_id             INT NOT NULL,
+    title               VARCHAR(200) NOT NULL,
+    content             TEXT NOT NULL,
+    notification_type   VARCHAR(30) NOT NULL DEFAULT 'SYSTEM',
+    is_read             BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    read_at             DATETIME NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_notification_user
+        FOREIGN KEY (user_id) REFERENCES `user`(id),
+    CONSTRAINT ck_notification_type
+        CHECK (notification_type IN ('SYSTEM', 'ENROLLMENT', 'PAYMENT', 'SCHEDULE'))
 ) ENGINE=InnoDB;
 
-CREATE TABLE Student (
-    Id              INT NOT NULL AUTO_INCREMENT,
-    UserId      INT NOT NULL,
-    StudentCode       VARCHAR(20) NOT NULL,
-    DateOfBirth        DATE NULL,
-    Gender        VARCHAR(10) NULL,
-    Avatar          VARCHAR(500) NULL,
-    PRIMARY KEY (Id),
-    CONSTRAINT UQ_Student_User UNIQUE (UserId),
-    CONSTRAINT UQ_Student_Code UNIQUE (StudentCode),
-    CONSTRAINT FK_Student_User FOREIGN KEY (UserId) REFERENCES User(Id),
-    CONSTRAINT CK_Student_Gender CHECK (Gender IS NULL OR Gender IN ('MALE', 'FEMALE', 'OTHER'))
+CREATE TABLE student (
+    id              INT NOT NULL AUTO_INCREMENT,
+    user_id         INT NOT NULL,
+    student_code    VARCHAR(20) NOT NULL,
+    date_of_birth   DATE NULL,
+    gender          VARCHAR(10) NULL,
+    avatar          VARCHAR(500) NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT uq_student_user UNIQUE (user_id),
+    CONSTRAINT uq_student_code UNIQUE (student_code),
+    CONSTRAINT fk_student_user FOREIGN KEY (user_id) REFERENCES `user`(id),
+    CONSTRAINT ck_student_gender
+        CHECK (gender IS NULL OR gender IN ('MALE', 'FEMALE', 'OTHER'))
 ) ENGINE=InnoDB;
 
-CREATE TABLE Teacher (
-    Id                  INT NOT NULL AUTO_INCREMENT,
-    UserId          INT NOT NULL,
-    TeacherCode         VARCHAR(20) NOT NULL,
-    Specialization           VARCHAR(150) NULL,
-    Degree             VARCHAR(200) NULL,
-    ExperienceYears     INT NOT NULL DEFAULT 0,
-    PRIMARY KEY (Id),
-    CONSTRAINT UQ_Teacher_User UNIQUE (UserId),
-    CONSTRAINT UQ_Teacher_Code UNIQUE (TeacherCode),
-    CONSTRAINT FK_Teacher_User FOREIGN KEY (UserId) REFERENCES User(Id),
-    CONSTRAINT CK_Teacher_ExperienceYears CHECK (ExperienceYears >= 0)
+CREATE TABLE teacher (
+    id                  INT NOT NULL AUTO_INCREMENT,
+    user_id             INT NOT NULL,
+    teacher_code        VARCHAR(20) NOT NULL,
+    specialization      VARCHAR(150) NULL,
+    degree              VARCHAR(200) NULL,
+    experience_years    INT NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
+    CONSTRAINT uq_teacher_user UNIQUE (user_id),
+    CONSTRAINT uq_teacher_code UNIQUE (teacher_code),
+    CONSTRAINT fk_teacher_user FOREIGN KEY (user_id) REFERENCES `user`(id),
+    CONSTRAINT ck_teacher_experience_years CHECK (experience_years >= 0)
 ) ENGINE=InnoDB;
 
-CREATE TABLE Language (
-    Id              INT NOT NULL AUTO_INCREMENT,
-    LanguageCode       VARCHAR(20) NOT NULL,
-    LanguageName      VARCHAR(100) NOT NULL,
-    Description            VARCHAR(500) NULL,
-    Status       VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-    PRIMARY KEY (Id),
-    CONSTRAINT UQ_Language_Code UNIQUE (LanguageCode),
-    CONSTRAINT UQ_Language_Name UNIQUE (LanguageName),
-    CONSTRAINT CK_Language_Status CHECK (Status IN ('ACTIVE', 'INACTIVE'))
+CREATE TABLE language (
+    id              INT NOT NULL AUTO_INCREMENT,
+    language_code   VARCHAR(20) NOT NULL,
+    language_name   VARCHAR(100) NOT NULL,
+    description     VARCHAR(500) NULL,
+    status          VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    PRIMARY KEY (id),
+    CONSTRAINT uq_language_code UNIQUE (language_code),
+    CONSTRAINT uq_language_name UNIQUE (language_name),
+    CONSTRAINT ck_language_status CHECK (status IN ('ACTIVE', 'INACTIVE'))
 ) ENGINE=InnoDB;
 
-CREATE TABLE Level (
-    Id              INT NOT NULL AUTO_INCREMENT,
-    LanguageId       INT NOT NULL,
-    LevelCode       VARCHAR(20) NOT NULL,
-    LevelName      VARCHAR(100) NOT NULL,
-    Description            VARCHAR(500) NULL,
-    DisplayOrder           INT NOT NULL DEFAULT 1,
-    Status       VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-    PRIMARY KEY (Id),
-    CONSTRAINT FK_Level_Language FOREIGN KEY (LanguageId) REFERENCES Language(Id),
-    CONSTRAINT UQ_Level_Language_Code UNIQUE (LanguageId, LevelCode),
-    CONSTRAINT UQ_Level_Language_Name UNIQUE (LanguageId, LevelName),
-    CONSTRAINT CK_Level_DisplayOrder CHECK (DisplayOrder > 0),
-    CONSTRAINT CK_Level_Status CHECK (Status IN ('ACTIVE', 'INACTIVE'))
+CREATE TABLE level (
+    id              INT NOT NULL AUTO_INCREMENT,
+    language_id     INT NOT NULL,
+    level_code      VARCHAR(20) NOT NULL,
+    level_name      VARCHAR(100) NOT NULL,
+    description     VARCHAR(500) NULL,
+    display_order   INT NOT NULL DEFAULT 1,
+    status          VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    PRIMARY KEY (id),
+    CONSTRAINT fk_level_language
+        FOREIGN KEY (language_id) REFERENCES language(id),
+    CONSTRAINT uq_level_language_code UNIQUE (language_id, level_code),
+    CONSTRAINT uq_level_language_name UNIQUE (language_id, level_name),
+    CONSTRAINT ck_level_display_order CHECK (display_order > 0),
+    CONSTRAINT ck_level_status CHECK (status IN ('ACTIVE', 'INACTIVE'))
 ) ENGINE=InnoDB;
 
-CREATE TABLE Course (
-    Id              INT NOT NULL AUTO_INCREMENT,
-    LevelId       INT NOT NULL,
-    CourseCode       VARCHAR(30) NOT NULL,
-    CourseName      VARCHAR(200) NOT NULL,
-    Description            VARCHAR(1000) NULL,
-    TuitionFee          DECIMAL(18,2) NOT NULL,
-    TotalSessions      INT NOT NULL,
-    DurationHours    INT NULL,
-    Status       VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-    CreatedAt         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UpdatedAt     DATETIME NULL,
-    PRIMARY KEY (Id),
-    CONSTRAINT UQ_Course_Code UNIQUE (CourseCode),
-    CONSTRAINT FK_Course_Level FOREIGN KEY (LevelId) REFERENCES Level(Id),
-    CONSTRAINT CK_Course_TuitionFee CHECK (TuitionFee >= 0),
-    CONSTRAINT CK_Course_TotalSessions CHECK (TotalSessions > 0),
-    CONSTRAINT CK_Course_DurationHours CHECK (DurationHours IS NULL OR DurationHours > 0),
-    CONSTRAINT CK_Course_Status CHECK (Status IN ('ACTIVE', 'INACTIVE'))
+CREATE TABLE course (
+    id                  INT NOT NULL AUTO_INCREMENT,
+    level_id            INT NOT NULL,
+    course_code         VARCHAR(30) NOT NULL,
+    course_name         VARCHAR(200) NOT NULL,
+    description         VARCHAR(1000) NULL,
+    tuition_fee         DECIMAL(18,2) NOT NULL,
+    total_sessions      INT NOT NULL,
+    duration_hours      INT NULL,
+    status              VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          DATETIME NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT uq_course_code UNIQUE (course_code),
+    CONSTRAINT fk_course_level FOREIGN KEY (level_id) REFERENCES level(id),
+    CONSTRAINT ck_course_tuition_fee CHECK (tuition_fee >= 0),
+    CONSTRAINT ck_course_total_sessions CHECK (total_sessions > 0),
+    CONSTRAINT ck_course_duration_hours
+        CHECK (duration_hours IS NULL OR duration_hours > 0),
+    CONSTRAINT ck_course_status CHECK (status IN ('ACTIVE', 'INACTIVE'))
 ) ENGINE=InnoDB;
 
-CREATE TABLE Room (
-    Id              INT NOT NULL AUTO_INCREMENT,
-    RoomCode         VARCHAR(30) NOT NULL,
-    RoomName        VARCHAR(100) NOT NULL,
-    Capacity         INT NOT NULL,
-    Location         VARCHAR(255) NULL,
-    Status       VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-    PRIMARY KEY (Id),
-    CONSTRAINT UQ_Room_Code UNIQUE (RoomCode),
-    CONSTRAINT CK_Room_Capacity CHECK (Capacity > 0),
-    CONSTRAINT CK_Room_Status CHECK (Status IN ('ACTIVE', 'MAINTENANCE', 'INACTIVE'))
+CREATE TABLE room (
+    id          INT NOT NULL AUTO_INCREMENT,
+    room_code   VARCHAR(30) NOT NULL,
+    room_name   VARCHAR(100) NOT NULL,
+    capacity    INT NOT NULL,
+    location    VARCHAR(255) NULL,
+    status      VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    PRIMARY KEY (id),
+    CONSTRAINT uq_room_code UNIQUE (room_code),
+    CONSTRAINT ck_room_capacity CHECK (capacity > 0),
+    CONSTRAINT ck_room_status
+        CHECK (status IN ('ACTIVE', 'MAINTENANCE', 'INACTIVE'))
 ) ENGINE=InnoDB;
 
-CREATE TABLE CourseClass (
-    Id              INT NOT NULL AUTO_INCREMENT,
-    CourseId       INT NOT NULL,
-    TeacherId     INT NULL,
-    ClassCode           VARCHAR(30) NOT NULL,
-    ClassName          VARCHAR(200) NOT NULL,
-    StartDate      DATE NOT NULL,
-    EndDate     DATE NOT NULL,
-    MaxStudents       INT NOT NULL,
-    AppliedTuitionFee    DECIMAL(18,2) NOT NULL,
-    Status       VARCHAR(30) NOT NULL DEFAULT 'UPCOMING',
-    CreatedAt         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UpdatedAt     DATETIME NULL,
-    PRIMARY KEY (Id),
-    CONSTRAINT UQ_CourseClass_Code UNIQUE (ClassCode),
-    CONSTRAINT FK_CourseClass_Course FOREIGN KEY (CourseId) REFERENCES Course(Id),
-    CONSTRAINT FK_CourseClass_Teacher FOREIGN KEY (TeacherId) REFERENCES Teacher(Id),
-    CONSTRAINT CK_CourseClass_DateRange CHECK (EndDate >= StartDate),
-    CONSTRAINT CK_CourseClass_MaxStudents CHECK (MaxStudents > 0),
-    CONSTRAINT CK_CourseClass_TuitionFee CHECK (AppliedTuitionFee >= 0),
-    CONSTRAINT CK_CourseClass_Status CHECK (Status IN ('UPCOMING', 'OPEN_FOR_ENROLLMENT', 'FULL', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'))
+CREATE TABLE courseclass (
+    id                      INT NOT NULL AUTO_INCREMENT,
+    course_id               INT NOT NULL,
+    teacher_id              INT NULL,
+    class_code              VARCHAR(30) NOT NULL,
+    class_name              VARCHAR(200) NOT NULL,
+    start_date              DATE NOT NULL,
+    end_date                DATE NOT NULL,
+    max_students            INT NOT NULL,
+    applied_tuition_fee     DECIMAL(18,2) NOT NULL,
+    status                  VARCHAR(30) NOT NULL DEFAULT 'DRAFT',
+    created_at              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at              DATETIME NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT uq_courseclass_code UNIQUE (class_code),
+    CONSTRAINT fk_courseclass_course
+        FOREIGN KEY (course_id) REFERENCES course(id),
+    CONSTRAINT fk_courseclass_teacher
+        FOREIGN KEY (teacher_id) REFERENCES teacher(id),
+    CONSTRAINT ck_courseclass_date_range CHECK (end_date > start_date),
+    CONSTRAINT ck_courseclass_max_students CHECK (max_students > 0),
+    CONSTRAINT ck_courseclass_tuition_fee CHECK (applied_tuition_fee >= 0),
+    CONSTRAINT ck_courseclass_status
+        CHECK (status IN ('DRAFT', 'OPEN', 'FULL', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'))
 ) ENGINE=InnoDB;
 
-CREATE TABLE ClassSchedule (
-    Id              INT NOT NULL AUTO_INCREMENT,
-    CourseClassId        INT NOT NULL,
-    RoomId      INT NULL,
-    DayOfWeek    TINYINT NOT NULL,
-    StartTime       TIME NOT NULL,
-    EndTime      TIME NOT NULL,
-    DeliveryMode        VARCHAR(20) NOT NULL DEFAULT 'IN_PERSON',
-    MeetingUrl     VARCHAR(500) NULL,
-    PRIMARY KEY (Id),
-    CONSTRAINT FK_ClassSchedule_CourseClass FOREIGN KEY (CourseClassId) REFERENCES CourseClass(Id),
-    CONSTRAINT FK_ClassSchedule_Room FOREIGN KEY (RoomId) REFERENCES Room(Id),
-    CONSTRAINT UQ_ClassSchedule_Class_Time UNIQUE (CourseClassId, DayOfWeek, StartTime),
-    CONSTRAINT CK_ClassSchedule_DayOfWeek CHECK (DayOfWeek BETWEEN 2 AND 8),
-    CONSTRAINT CK_ClassSchedule_TimeRange CHECK (EndTime > StartTime),
-    CONSTRAINT CK_ClassSchedule_DeliveryMode CHECK (DeliveryMode IN ('IN_PERSON', 'ONLINE')),
-    CONSTRAINT CK_ClassSchedule_Location CHECK (
-        (DeliveryMode = 'IN_PERSON' AND RoomId IS NOT NULL)
-        OR (DeliveryMode = 'ONLINE' AND MeetingUrl IS NOT NULL)
+CREATE TABLE classschedule (
+    id                  INT NOT NULL AUTO_INCREMENT,
+    course_class_id     INT NOT NULL,
+    room_id             INT NULL,
+    day_of_week         TINYINT NOT NULL,
+    start_time          TIME NOT NULL,
+    end_time            TIME NOT NULL,
+    delivery_mode       VARCHAR(20) NOT NULL DEFAULT 'IN_PERSON',
+    meeting_url         VARCHAR(500) NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_classschedule_courseclass
+        FOREIGN KEY (course_class_id) REFERENCES courseclass(id),
+    CONSTRAINT fk_classschedule_room FOREIGN KEY (room_id) REFERENCES room(id),
+    CONSTRAINT uq_classschedule_class_time
+        UNIQUE (course_class_id, day_of_week, start_time),
+    CONSTRAINT ck_classschedule_day_of_week CHECK (day_of_week BETWEEN 1 AND 7),
+    CONSTRAINT ck_classschedule_time_range CHECK (end_time > start_time),
+    CONSTRAINT ck_classschedule_delivery_mode
+        CHECK (delivery_mode IN ('IN_PERSON', 'ONLINE')),
+    CONSTRAINT ck_classschedule_location CHECK (
+        (delivery_mode = 'IN_PERSON' AND room_id IS NOT NULL AND meeting_url IS NULL)
+        OR (delivery_mode = 'ONLINE' AND room_id IS NULL AND meeting_url IS NOT NULL)
     )
 ) ENGINE=InnoDB;
 
-CREATE TABLE Lesson (
-    Id              INT NOT NULL AUTO_INCREMENT,
-    ClassScheduleId       INT NOT NULL,
-    Topic           VARCHAR(255) NULL,
-    LessonDate         DATE NOT NULL,
-    MeetingUrl     VARCHAR(500) NULL,
-    Status       VARCHAR(20) NOT NULL DEFAULT 'SCHEDULED',
-    PRIMARY KEY (Id),
-    CONSTRAINT FK_Lesson_ClassSchedule FOREIGN KEY (ClassScheduleId) REFERENCES ClassSchedule(Id),
-    CONSTRAINT UQ_Lesson_Schedule_Date UNIQUE (ClassScheduleId, LessonDate),
-    CONSTRAINT CK_Lesson_Status CHECK (Status IN ('SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'))
+CREATE TABLE lesson (
+    id                  INT NOT NULL AUTO_INCREMENT,
+    class_schedule_id   INT NOT NULL,
+    topic               VARCHAR(255) NULL,
+    lesson_date         DATE NOT NULL,
+    meeting_url         VARCHAR(500) NULL,
+    status              VARCHAR(20) NOT NULL DEFAULT 'SCHEDULED',
+    PRIMARY KEY (id),
+    CONSTRAINT fk_lesson_classschedule
+        FOREIGN KEY (class_schedule_id) REFERENCES classschedule(id),
+    CONSTRAINT uq_lesson_schedule_date
+        UNIQUE (class_schedule_id, lesson_date),
+    CONSTRAINT ck_lesson_status
+        CHECK (status IN ('SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'))
 ) ENGINE=InnoDB;
 
-CREATE TABLE Enrollment (
-    Id                      INT NOT NULL AUTO_INCREMENT,
-    StudentId               INT NOT NULL,
-    CourseClassId                INT NOT NULL,
-    EnrollmentDate              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    AmountDue           DECIMAL(18,2) NOT NULL,
-    EnrollmentStatus         VARCHAR(30) NOT NULL DEFAULT 'PENDING_PAYMENT',
-    PaymentStatus      VARCHAR(30) NOT NULL DEFAULT 'UNPAID',
-    ConfirmedAt             DATETIME NULL,
-    CancelledAt                 DATETIME NULL,
-    CancellationReason                 VARCHAR(500) NULL,
-    PRIMARY KEY (Id),
-    CONSTRAINT FK_Enrollment_Student FOREIGN KEY (StudentId) REFERENCES Student(Id),
-    CONSTRAINT FK_Enrollment_CourseClass FOREIGN KEY (CourseClassId) REFERENCES CourseClass(Id),
-    CONSTRAINT UQ_Enrollment_Student_Class UNIQUE (StudentId, CourseClassId),
-    CONSTRAINT UQ_Enrollment_Id_Class UNIQUE (Id, CourseClassId),
-    CONSTRAINT CK_Enrollment_AmountDue CHECK (AmountDue >= 0),
-    CONSTRAINT CK_Enrollment_Status CHECK (EnrollmentStatus IN ('PENDING_PAYMENT', 'CONFIRMED', 'CANCELLED')),
-    CONSTRAINT CK_Enrollment_PaymentStatus CHECK (PaymentStatus IN ('UNPAID', 'PAID', 'PAYMENT_FAILED', 'REFUNDED'))
+CREATE TABLE enrollment (
+    id                      INT NOT NULL AUTO_INCREMENT,
+    student_id              INT NOT NULL,
+    course_class_id         INT NOT NULL,
+    enrollment_date         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    amount_due              DECIMAL(18,2) NOT NULL,
+    enrollment_status       VARCHAR(30) NOT NULL DEFAULT 'PENDING',
+    payment_status          VARCHAR(30) NOT NULL DEFAULT 'PENDING',
+    confirmed_at            DATETIME NULL,
+    cancelled_at            DATETIME NULL,
+    cancellation_reason     VARCHAR(500) NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_enrollment_student
+        FOREIGN KEY (student_id) REFERENCES student(id),
+    CONSTRAINT fk_enrollment_courseclass
+        FOREIGN KEY (course_class_id) REFERENCES courseclass(id),
+    CONSTRAINT uq_enrollment_student_class
+        UNIQUE (student_id, course_class_id),
+    CONSTRAINT ck_enrollment_amount_due CHECK (amount_due >= 0),
+    CONSTRAINT ck_enrollment_status
+        CHECK (enrollment_status IN ('PENDING', 'CONFIRMED', 'CANCELLED')),
+    CONSTRAINT ck_enrollment_payment_status
+        CHECK (payment_status IN ('PENDING', 'PAID', 'FAILED', 'CANCELLED'))
 ) ENGINE=InnoDB;
 
-CREATE TABLE Payment (
-    Id                      INT NOT NULL AUTO_INCREMENT,
-    EnrollmentId          INT NOT NULL,
-    TransactionCode              VARCHAR(100) NOT NULL,
-    Method              VARCHAR(30) NOT NULL,
-    Amount                  DECIMAL(18,2) NOT NULL,
-    Status               VARCHAR(20) NOT NULL DEFAULT 'PENDING',
-    CreatedAt             DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CompletedAt         DATETIME NULL,
-    ReferenceCode             VARCHAR(150) NULL,
-    ErrorMessage              VARCHAR(500) NULL,
-    SuccessfulEnrollmentId       INT GENERATED ALWAYS AS
-                            (CASE WHEN Status = 'SUCCESS' THEN EnrollmentId ELSE NULL END) STORED,
-    PRIMARY KEY (Id),
-    CONSTRAINT UQ_Payment_TransactionCode UNIQUE (TransactionCode),
-    CONSTRAINT UQ_Payment_OneSuccessPerEnrollment UNIQUE (SuccessfulEnrollmentId),
-    CONSTRAINT FK_Payment_Enrollment FOREIGN KEY (EnrollmentId) REFERENCES Enrollment(Id),
-    CONSTRAINT CK_Payment_Amount CHECK (Amount > 0),
-    CONSTRAINT CK_Payment_Method CHECK (Method IN ('CASH', 'BANK_TRANSFER', 'E_WALLET', 'CARD')),
-    CONSTRAINT CK_Payment_Status CHECK (Status IN ('PENDING', 'SUCCESS', 'FAILED', 'REFUNDED'))
+CREATE TABLE payment (
+    id                          INT NOT NULL AUTO_INCREMENT,
+    enrollment_id               INT NOT NULL,
+    transaction_code            VARCHAR(100) NOT NULL,
+    method                      VARCHAR(30) NOT NULL,
+    amount                      DECIMAL(18,2) NOT NULL,
+    status                      VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    created_at                  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    completed_at                DATETIME NULL,
+    reference_code              VARCHAR(150) NULL,
+    error_message               VARCHAR(500) NULL,
+    successful_enrollment_id    INT GENERATED ALWAYS AS
+        (CASE WHEN status = 'PAID' THEN enrollment_id ELSE NULL END) STORED,
+    PRIMARY KEY (id),
+    CONSTRAINT uq_payment_transaction_code UNIQUE (transaction_code),
+    CONSTRAINT uq_payment_one_success_per_enrollment
+        UNIQUE (successful_enrollment_id),
+    CONSTRAINT fk_payment_enrollment
+        FOREIGN KEY (enrollment_id) REFERENCES enrollment(id),
+    CONSTRAINT ck_payment_amount CHECK (amount > 0),
+    CONSTRAINT ck_payment_method
+        CHECK (method IN ('CASH', 'BANK_TRANSFER', 'E_WALLET', 'CARD')),
+    CONSTRAINT ck_payment_status
+        CHECK (status IN ('PENDING', 'PAID', 'FAILED', 'CANCELLED'))
 ) ENGINE=InnoDB;
 
-CREATE TABLE Attendance (
-    Id                  INT NOT NULL AUTO_INCREMENT,
-    LessonId           INT NOT NULL,
-    EnrollmentId      INT NOT NULL,
-    Status           VARCHAR(20) NOT NULL,
-    Note              VARCHAR(500) NULL,
-    AttendanceTime    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (Id),
-    CONSTRAINT FK_Attendance_Lesson FOREIGN KEY (LessonId) REFERENCES Lesson(Id),
-    CONSTRAINT FK_Attendance_Enrollment FOREIGN KEY (EnrollmentId) REFERENCES Enrollment(Id),
-    CONSTRAINT UQ_Attendance_Lesson_Enrollment UNIQUE (LessonId, EnrollmentId),
-    CONSTRAINT CK_Attendance_Status CHECK (Status IN ('PRESENT', 'ABSENT', 'LATE'))
+CREATE TABLE attendance (
+    id                  INT NOT NULL AUTO_INCREMENT,
+    lesson_id           INT NOT NULL,
+    enrollment_id       INT NOT NULL,
+    status              VARCHAR(20) NOT NULL,
+    note                VARCHAR(500) NULL,
+    attendance_time     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_attendance_lesson FOREIGN KEY (lesson_id) REFERENCES lesson(id),
+    CONSTRAINT fk_attendance_enrollment
+        FOREIGN KEY (enrollment_id) REFERENCES enrollment(id),
+    CONSTRAINT uq_attendance_lesson_enrollment
+        UNIQUE (lesson_id, enrollment_id),
+    CONSTRAINT ck_attendance_status
+        CHECK (status IN ('PRESENT', 'ABSENT', 'LATE', 'EXCUSED'))
 ) ENGINE=InnoDB;
 
-CREATE INDEX IX_Notification_User_IsRead ON Notification(UserId, IsRead, CreatedAt);
-CREATE INDEX IX_Level_Language_DisplayOrder ON Level(LanguageId, DisplayOrder);
-CREATE INDEX IX_Course_Level_Status ON Course(LevelId, Status);
-CREATE INDEX IX_CourseClass_Course_Status ON CourseClass(CourseId, Status);
-CREATE INDEX IX_CourseClass_Teacher ON CourseClass(TeacherId);
-CREATE INDEX IX_ClassSchedule_Room ON ClassSchedule(RoomId);
-CREATE INDEX IX_Lesson_Date_Status ON Lesson(LessonDate, Status);
-CREATE INDEX IX_Enrollment_CourseClass_Status ON Enrollment(CourseClassId, EnrollmentStatus);
-CREATE INDEX IX_Enrollment_Student_Date ON Enrollment(StudentId, EnrollmentDate DESC);
-CREATE INDEX IX_Attendance_Lesson ON Attendance(LessonId);
+CREATE INDEX ix_notification_user_read
+    ON notification(user_id, is_read, created_at);
+CREATE INDEX ix_level_language_order
+    ON level(language_id, display_order);
+CREATE INDEX ix_course_level_status
+    ON course(level_id, status);
+CREATE INDEX ix_courseclass_course_status
+    ON courseclass(course_id, status);
+CREATE INDEX ix_courseclass_teacher
+    ON courseclass(teacher_id);
+CREATE INDEX ix_classschedule_room_time
+    ON classschedule(room_id, day_of_week, start_time, end_time);
+CREATE INDEX ix_lesson_date_status
+    ON lesson(lesson_date, status);
+CREATE INDEX ix_enrollment_class_status
+    ON enrollment(course_class_id, enrollment_status);
+CREATE INDEX ix_enrollment_student_date
+    ON enrollment(student_id, enrollment_date DESC);
+CREATE INDEX ix_attendance_lesson
+    ON attendance(lesson_id);
 
-INSERT INTO Role (RoleCode, RoleName) VALUES
+INSERT INTO role (role_code, role_name) VALUES
 ('STUDENT', 'Student'),
 ('TEACHER', 'Teacher'),
+('CONSULTANT', 'Consultant'),
 ('ADMIN', 'Administrator');
 
-INSERT INTO Language (LanguageCode, LanguageName) VALUES
+INSERT INTO language (language_code, language_name) VALUES
 ('EN', 'English'),
 ('JA', 'Japanese'),
 ('ZH', 'Chinese');
 
-INSERT INTO Level (LanguageId, LevelCode, LevelName, DisplayOrder)
-SELECT Id, 'A1', 'English A1', 1 FROM Language WHERE LanguageCode = 'EN'
-UNION ALL SELECT Id, 'A2', 'English A2', 2 FROM Language WHERE LanguageCode = 'EN'
-UNION ALL SELECT Id, 'B1', 'English B1', 3 FROM Language WHERE LanguageCode = 'EN'
-UNION ALL SELECT Id, 'B2', 'English B2', 4 FROM Language WHERE LanguageCode = 'EN'
-UNION ALL SELECT Id, 'C1', 'English C1', 5 FROM Language WHERE LanguageCode = 'EN'
-UNION ALL SELECT Id, 'C2', 'English C2', 6 FROM Language WHERE LanguageCode = 'EN'
-UNION ALL SELECT Id, 'N5', 'Japanese N5', 1 FROM Language WHERE LanguageCode = 'JA'
-UNION ALL SELECT Id, 'N4', 'Japanese N4', 2 FROM Language WHERE LanguageCode = 'JA'
-UNION ALL SELECT Id, 'N3', 'Japanese N3', 3 FROM Language WHERE LanguageCode = 'JA'
-UNION ALL SELECT Id, 'N2', 'Japanese N2', 4 FROM Language WHERE LanguageCode = 'JA'
-UNION ALL SELECT Id, 'N1', 'Japanese N1', 5 FROM Language WHERE LanguageCode = 'JA'
-UNION ALL SELECT Id, 'HSK1', 'Chinese HSK1', 1 FROM Language WHERE LanguageCode = 'ZH'
-UNION ALL SELECT Id, 'HSK2', 'Chinese HSK2', 2 FROM Language WHERE LanguageCode = 'ZH'
-UNION ALL SELECT Id, 'HSK3', 'Chinese HSK3', 3 FROM Language WHERE LanguageCode = 'ZH'
-UNION ALL SELECT Id, 'HSK4', 'Chinese HSK4', 4 FROM Language WHERE LanguageCode = 'ZH'
-UNION ALL SELECT Id, 'HSK5', 'Chinese HSK5', 5 FROM Language WHERE LanguageCode = 'ZH'
-UNION ALL SELECT Id, 'HSK6', 'Chinese HSK6', 6 FROM Language WHERE LanguageCode = 'ZH';
+INSERT INTO level (language_id, level_code, level_name, display_order)
+SELECT id, 'A1', 'English A1', 1 FROM language WHERE language_code = 'EN'
+UNION ALL SELECT id, 'A2', 'English A2', 2 FROM language WHERE language_code = 'EN'
+UNION ALL SELECT id, 'B1', 'English B1', 3 FROM language WHERE language_code = 'EN'
+UNION ALL SELECT id, 'B2', 'English B2', 4 FROM language WHERE language_code = 'EN'
+UNION ALL SELECT id, 'C1', 'English C1', 5 FROM language WHERE language_code = 'EN'
+UNION ALL SELECT id, 'C2', 'English C2', 6 FROM language WHERE language_code = 'EN'
+UNION ALL SELECT id, 'N5', 'Japanese N5', 1 FROM language WHERE language_code = 'JA'
+UNION ALL SELECT id, 'N4', 'Japanese N4', 2 FROM language WHERE language_code = 'JA'
+UNION ALL SELECT id, 'N3', 'Japanese N3', 3 FROM language WHERE language_code = 'JA'
+UNION ALL SELECT id, 'N2', 'Japanese N2', 4 FROM language WHERE language_code = 'JA'
+UNION ALL SELECT id, 'N1', 'Japanese N1', 5 FROM language WHERE language_code = 'JA'
+UNION ALL SELECT id, 'HSK1', 'Chinese HSK1', 1 FROM language WHERE language_code = 'ZH'
+UNION ALL SELECT id, 'HSK2', 'Chinese HSK2', 2 FROM language WHERE language_code = 'ZH'
+UNION ALL SELECT id, 'HSK3', 'Chinese HSK3', 3 FROM language WHERE language_code = 'ZH'
+UNION ALL SELECT id, 'HSK4', 'Chinese HSK4', 4 FROM language WHERE language_code = 'ZH'
+UNION ALL SELECT id, 'HSK5', 'Chinese HSK5', 5 FROM language WHERE language_code = 'ZH'
+UNION ALL SELECT id, 'HSK6', 'Chinese HSK6', 6 FROM language WHERE language_code = 'ZH';
 
 /*
-  Service transaction rules:
-  1. Enrollment: lock CourseClass with SELECT ... FOR UPDATE, then check that
-     enrollment is open, the student is not already enrolled, and capacity remains.
-  2. Successful payment: insert Payment and update both Enrollment status fields
-     in the same transaction.
-  3. Attendance: Lesson -> ClassSchedule -> CourseClass -> TeacherId must match
-     the current teacher. Enrollment must be CONFIRMED and belong to the same
-     CourseClass reached through the Lesson's ClassSchedule.
-  4. Resolve a course language through Course -> Level -> Language. Course does not
-     store LanguageId directly, preventing inconsistent language-level pairs.
-  5. Do not cascade-delete business records; mark them inactive with Status.
+  Transaction rules to enforce in Spring services:
+  1. Lock courseclass before checking capacity and creating enrollment.
+  2. Store payment and update enrollment statuses in one transaction.
+  3. Validate room and teacher schedule conflicts before opening a class.
+  4. Resolve language through course -> level -> language.
+  5. Do not cascade-delete business history; change status instead.
 */
