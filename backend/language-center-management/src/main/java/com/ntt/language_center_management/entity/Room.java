@@ -33,29 +33,29 @@ public class Room implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
-    @Column(name = "Id")
+    @Column(name = "id")
     private Integer id;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 30)
-    @Column(name = "RoomCode")
+    @Column(name = "room_code")
     private String roomCode;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 100)
-    @Column(name = "RoomName")
+    @Column(name = "room_name")
     private String roomName;
     @Basic(optional = false)
     @NotNull
-    @Column(name = "Capacity")
+    @Column(name = "capacity")
     private int capacity;
     @Size(max = 255)
-    @Column(name = "Location")
+    @Column(name = "location")
     private String location;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 20)
-    @Column(name = "Status")
+    @Column(name = "status")
     private String status;
     @OneToMany(mappedBy = "roomId")
     private List<Classschedule> classscheduleList;

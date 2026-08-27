@@ -34,25 +34,25 @@ public class Language implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
-    @Column(name = "Id")
+    @Column(name = "id")
     private Integer id;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 20)
-    @Column(name = "LanguageCode")
+    @Column(name = "language_code")
     private String languageCode;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 100)
-    @Column(name = "LanguageName")
+    @Column(name = "language_name")
     private String languageName;
     @Size(max = 500)
-    @Column(name = "Description")
+    @Column(name = "description")
     private String description;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 20)
-    @Column(name = "Status")
+    @Column(name = "status")
     private String status;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "languageId")
     private List<Level> levelList;

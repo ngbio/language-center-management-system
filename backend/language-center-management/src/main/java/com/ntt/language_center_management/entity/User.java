@@ -4,13 +4,10 @@
  */
 package com.ntt.language_center_management.entity;
 
-import com.ntt.language_center_management.enums.AccountStatus;
 import jakarta.persistence.Basic;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -43,46 +40,46 @@ public class User implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
-    @Column(name = "Id")
+    @Column(name = "id")
     private Integer id;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 100)
-    @Column(name = "Username")
+    @Column(name = "username")
     private String username;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 255)
-    @Column(name = "PasswordHash")
+    @Column(name = "password_hash")
     private String passwordHash;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 150)
-    @Column(name = "FullName")
+    @Column(name = "full_name")
     private String fullName;
     // @Pattern(regexp="[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?", message="Invalid email")//if the field contains email address consider using this annotation to enforce field validation
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 150)
-    @Column(name = "Email")
+    @Column(name = "email")
     private String email;
     @Size(max = 20)
-    @Column(name = "PhoneNumber")
+    @Column(name = "phone_number")
     private String phoneNumber;
     @Size(max = 255)
-    @Column(name = "Address")
+    @Column(name = "address")
     private String address;
     @Basic(optional = false)
     @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "Status", nullable = false, length = 20)
-    private AccountStatus status = AccountStatus.ACTIVE;
+    @Size(min = 1, max = 20)
+    @Column(name = "status")
+    private String status;
     @Basic(optional = false)
     @NotNull
-    @Column(name = "CreatedAt")
+    @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
-    @Column(name = "UpdatedAt")
+    @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedAt;
     @OneToOne(cascade = CascadeType.ALL, mappedBy = "userId")
@@ -91,7 +88,7 @@ public class User implements Serializable {
     private List<Notification> notificationList;
     @OneToOne(cascade = CascadeType.ALL, mappedBy = "userId")
     private Teacher teacher;
-    @JoinColumn(name = "RoleId", referencedColumnName = "Id")
+    @JoinColumn(name = "role_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private Role roleId;
 
@@ -102,7 +99,7 @@ public class User implements Serializable {
         this.id = id;
     }
 
-    public User(Integer id, String username, String passwordHash, String fullName, String email, AccountStatus status, Date createdAt) {
+    public User(Integer id, String username, String passwordHash, String fullName, String email, String status, Date createdAt) {
         this.id = id;
         this.username = username;
         this.passwordHash = passwordHash;
@@ -168,11 +165,11 @@ public class User implements Serializable {
         this.address = address;
     }
 
-    public AccountStatus getStatus() {
+    public String getStatus() {
         return status;
     }
 
-    public void setStatus(AccountStatus status) {
+    public void setStatus(String status) {
         this.status = status;
     }
 

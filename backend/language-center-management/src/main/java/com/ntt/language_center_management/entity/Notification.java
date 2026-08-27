@@ -37,37 +37,37 @@ public class Notification implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
-    @Column(name = "Id")
+    @Column(name = "id")
     private Integer id;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 200)
-    @Column(name = "Title")
+    @Column(name = "title")
     private String title;
     @Basic(optional = false)
     @NotNull
     @Lob
     @Size(min = 1, max = 65535)
-    @Column(name = "Content")
+    @Column(name = "content")
     private String content;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 30)
-    @Column(name = "NotificationType")
+    @Column(name = "notification_type")
     private String notificationType;
     @Basic(optional = false)
     @NotNull
-    @Column(name = "IsRead")
+    @Column(name = "is_read")
     private boolean isRead;
     @Basic(optional = false)
     @NotNull
-    @Column(name = "CreatedAt")
+    @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
-    @Column(name = "ReadAt")
+    @Column(name = "read_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date readAt;
-    @JoinColumn(name = "UserId", referencedColumnName = "Id")
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private User userId;
 

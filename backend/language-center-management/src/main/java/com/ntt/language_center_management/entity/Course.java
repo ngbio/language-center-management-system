@@ -40,46 +40,46 @@ public class Course implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
-    @Column(name = "Id")
+    @Column(name = "id")
     private Integer id;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 30)
-    @Column(name = "CourseCode")
+    @Column(name = "course_code")
     private String courseCode;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 200)
-    @Column(name = "CourseName")
+    @Column(name = "course_name")
     private String courseName;
     @Size(max = 1000)
-    @Column(name = "Description")
+    @Column(name = "description")
     private String description;
     // @Max(value=?)  @Min(value=?)//if you know range of your decimal fields consider using these annotations to enforce field validation
     @Basic(optional = false)
     @NotNull
-    @Column(name = "TuitionFee")
+    @Column(name = "tuition_fee")
     private BigDecimal tuitionFee;
     @Basic(optional = false)
     @NotNull
-    @Column(name = "TotalSessions")
+    @Column(name = "total_sessions")
     private int totalSessions;
-    @Column(name = "DurationHours")
+    @Column(name = "duration_hours")
     private Integer durationHours;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 20)
-    @Column(name = "Status")
+    @Column(name = "status")
     private String status;
     @Basic(optional = false)
     @NotNull
-    @Column(name = "CreatedAt")
+    @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
-    @Column(name = "UpdatedAt")
+    @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedAt;
-    @JoinColumn(name = "LevelId", referencedColumnName = "Id")
+    @JoinColumn(name = "level_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private Level levelId;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "courseId")

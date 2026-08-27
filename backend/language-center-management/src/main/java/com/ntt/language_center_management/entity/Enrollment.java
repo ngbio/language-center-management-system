@@ -4,14 +4,10 @@
  */
 package com.ntt.language_center_management.entity;
 
-import com.ntt.language_center_management.enums.PaymentStatus;
-import com.ntt.language_center_management.enums.RegistrationStatus;
 import jakarta.persistence.Basic;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -44,41 +40,41 @@ public class Enrollment implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
-    @Column(name = "Id")
+    @Column(name = "id")
     private Integer id;
     @Basic(optional = false)
     @NotNull
-    @Column(name = "EnrollmentDate")
+    @Column(name = "enrollment_date")
     @Temporal(TemporalType.TIMESTAMP)
     private Date enrollmentDate;
     // @Max(value=?)  @Min(value=?)//if you know range of your decimal fields consider using these annotations to enforce field validation
     @Basic(optional = false)
     @NotNull
-    @Column(name = "AmountDue")
+    @Column(name = "amount_due")
     private BigDecimal amountDue;
     @Basic(optional = false)
     @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "EnrollmentStatus", nullable = false, length = 30)
-    private RegistrationStatus enrollmentStatus = RegistrationStatus.PENDING;
+    @Size(min = 1, max = 30)
+    @Column(name = "enrollment_status")
+    private String enrollmentStatus;
     @Basic(optional = false)
     @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "PaymentStatus", nullable = false, length = 30)
-    private PaymentStatus paymentStatus = PaymentStatus.PENDING;
-    @Column(name = "ConfirmedAt")
+    @Size(min = 1, max = 30)
+    @Column(name = "payment_status")
+    private String paymentStatus;
+    @Column(name = "confirmed_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date confirmedAt;
-    @Column(name = "CancelledAt")
+    @Column(name = "cancelled_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date cancelledAt;
     @Size(max = 500)
-    @Column(name = "CancellationReason")
+    @Column(name = "cancellation_reason")
     private String cancellationReason;
-    @JoinColumn(name = "CourseClassId", referencedColumnName = "Id")
+    @JoinColumn(name = "course_class_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private Courseclass courseClassId;
-    @JoinColumn(name = "StudentId", referencedColumnName = "Id")
+    @JoinColumn(name = "student_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private Student studentId;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "enrollmentId")
@@ -93,7 +89,7 @@ public class Enrollment implements Serializable {
         this.id = id;
     }
 
-    public Enrollment(Integer id, Date enrollmentDate, BigDecimal amountDue, RegistrationStatus enrollmentStatus, PaymentStatus paymentStatus) {
+    public Enrollment(Integer id, Date enrollmentDate, BigDecimal amountDue, String enrollmentStatus, String paymentStatus) {
         this.id = id;
         this.enrollmentDate = enrollmentDate;
         this.amountDue = amountDue;
@@ -125,19 +121,19 @@ public class Enrollment implements Serializable {
         this.amountDue = amountDue;
     }
 
-    public RegistrationStatus getEnrollmentStatus() {
+    public String getEnrollmentStatus() {
         return enrollmentStatus;
     }
 
-    public void setEnrollmentStatus(RegistrationStatus enrollmentStatus) {
+    public void setEnrollmentStatus(String enrollmentStatus) {
         this.enrollmentStatus = enrollmentStatus;
     }
 
-    public PaymentStatus getPaymentStatus() {
+    public String getPaymentStatus() {
         return paymentStatus;
     }
 
-    public void setPaymentStatus(PaymentStatus paymentStatus) {
+    public void setPaymentStatus(String paymentStatus) {
         this.paymentStatus = paymentStatus;
     }
 
