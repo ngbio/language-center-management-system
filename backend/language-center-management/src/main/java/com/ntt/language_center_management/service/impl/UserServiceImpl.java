@@ -4,6 +4,7 @@ import com.ntt.language_center_management.dto.request.LoginRequest;
 import com.ntt.language_center_management.dto.request.TeacherRegisterRequest;
 import com.ntt.language_center_management.dto.request.UserRegisterRequest;
 import com.ntt.language_center_management.dto.response.UserResponse;
+import com.ntt.language_center_management.dto.response.PageResponse;
 import com.ntt.language_center_management.entity.Role;
 import com.ntt.language_center_management.entity.Student;
 import com.ntt.language_center_management.entity.Teacher;
@@ -20,6 +21,11 @@ import com.ntt.language_center_management.service.UserService;
 import java.security.Principal;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +37,9 @@ public class UserServiceImpl implements UserService {
 
   private static final String DEFAULT_ROLE_CODE = "STUDENT";
   private static final String TEACHER_ROLE_CODE = "TEACHER";
+  private static final Set<String> USER_STATUSES = Set.of("ACTIVE", "INACTIVE", "LOCKED");
+  private static final Set<String> USER_SORT_FIELDS =
+      Set.of("id", "username", "fullName", "email", "status", "createdAt");
 
   private final UserRepository userRepository;
   private final StudentRepository studentRepository;
@@ -90,6 +99,20 @@ public class UserServiceImpl implements UserService {
   @Override
   @Transactional(readOnly = true)
   public UserResponse login(LoginRequest request) {
+    return userMapper.toResponse(authenticate(request));
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public UserResponse loginAdmin(LoginRequest request) {
+    User user = authenticate(request);
+    if (user.getRoleId() == null || !"ADMIN".equals(user.getRoleId().getRoleCode())) {
+      throw new UnauthorizedException("Tài khoản không có quyền quản trị");
+    }
+    return userMapper.toResponse(user);
+  }
+
+  private User authenticate(LoginRequest request) {
     User user =
         userRepository
             .findByEmailIgnoreCase(request.email())
@@ -100,7 +123,7 @@ public class UserServiceImpl implements UserService {
     }
 
     validateUserCanLogin(user);
-    return userMapper.toResponse(user);
+    return user;
   }
 
   private void validateUserCanLogin(User user) {
@@ -214,5 +237,76 @@ public class UserServiceImpl implements UserService {
     }
 
     return getUserEntityByEmail(principal.getName());
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public PageResponse<UserResponse> searchUsers(
+      String keyword,
+      String roleCode,
+      String status,
+      int page,
+      int size,
+      String sort,
+      String direction) {
+    if (page < 0) {
+      throw new IllegalArgumentException("Số trang không được nhỏ hơn 0");
+    }
+    if (size < 1 || size > 100) {
+      throw new IllegalArgumentException("Kích thước trang phải từ 1 đến 100");
+    }
+
+    String sortField = USER_SORT_FIELDS.contains(sort) ? sort : "createdAt";
+    Sort.Direction sortDirection =
+        "asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
+
+    Page<UserResponse> result =
+        userRepository
+            .searchAdminUsers(
+                normalizeFilter(keyword, false),
+                normalizeFilter(roleCode, true),
+                normalizeStatusFilter(status),
+                PageRequest.of(page, size, Sort.by(sortDirection, sortField)))
+            .map(userMapper::toResponse);
+
+    return PageResponse.from(result);
+  }
+
+  @Override
+  public UserResponse changeStatus(Integer id, String status) {
+    User user =
+        userRepository
+            .findById(id)
+            .orElseThrow(
+                () -> new ResourceNotFoundException(
+                    "Không tìm thấy người dùng có ID: " + id));
+
+    if (status == null || status.isBlank()) {
+      throw new IllegalArgumentException("Trạng thái không được để trống");
+    }
+    if (!USER_STATUSES.contains(status)) {
+      throw new IllegalArgumentException(
+          "Trạng thái phải là ACTIVE, INACTIVE hoặc LOCKED");
+    }
+
+    user.setStatus(status);
+    user.setUpdatedAt(new Date());
+    return userMapper.toResponse(userRepository.save(user));
+  }
+
+  private String normalizeFilter(String value, boolean uppercase) {
+    if (!StringUtils.hasText(value)) {
+      return null;
+    }
+    String normalized = value.trim();
+    return uppercase ? normalized.toUpperCase(Locale.ROOT) : normalized;
+  }
+
+  private String normalizeStatusFilter(String status) {
+    if (status != null && !USER_STATUSES.contains(status)) {
+      throw new IllegalArgumentException(
+          "Trạng thái phải là ACTIVE, INACTIVE hoặc LOCKED");
+    }
+    return status;
   }
 }

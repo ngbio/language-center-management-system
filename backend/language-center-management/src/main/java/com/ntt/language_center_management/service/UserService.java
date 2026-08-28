@@ -7,6 +7,7 @@ import com.ntt.language_center_management.dto.request.LoginRequest;
 import com.ntt.language_center_management.dto.request.TeacherRegisterRequest;
 import com.ntt.language_center_management.dto.request.UserRegisterRequest;
 import com.ntt.language_center_management.dto.response.UserResponse;
+import com.ntt.language_center_management.dto.response.PageResponse;
 import com.ntt.language_center_management.entity.User;
 
 public interface UserService {
@@ -21,9 +22,22 @@ public interface UserService {
 
     UserResponse login(LoginRequest request);
 
+    UserResponse loginAdmin(LoginRequest request);
+
     UserResponse addUser(UserRegisterRequest request);
 
     UserResponse addTeacher(TeacherRegisterRequest request);
 
     UserResponse getCurrentUserProfile(Principal principal);
+
+    PageResponse<UserResponse> searchUsers(
+        String keyword,
+        String roleCode,
+        String status,
+        int page,
+        int size,
+        String sort,
+        String direction);
+
+    UserResponse changeStatus(Integer id, String status);
 }
