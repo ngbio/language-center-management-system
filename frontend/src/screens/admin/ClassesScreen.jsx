@@ -1,0 +1,381 @@
+import { useCallback, useEffect, useState } from "react";
+import { authApis, endpoints } from "../../configs/Apis";
+import {
+  EmptyState,
+  ErrorAlert,
+  LoadingRows,
+  Modal,
+  PageTitle,
+  StatusBadge,
+} from "../../components/AdminUi";
+import { apiData, apiError, formatDate, formatMoney } from "../../utils/api";
+
+const initialForm = {
+  classCode: "",
+  className: "",
+  startDate: "",
+  endDate: "",
+  maxStudents: 20,
+  appliedTuitionFee: "",
+  courseId: "",
+  teacherId: "",
+};
+
+export default function ClassesScreen() {
+  const [result, setResult] = useState({ content: [], page: 0, totalPages: 0 });
+  const [courses, setCourses] = useState([]);
+  const [keyword, setKeyword] = useState("");
+  const [form, setForm] = useState(null);
+  const [selected, setSelected] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const load = useCallback(
+    async (page = 0) => {
+      setLoading(true);
+      setError("");
+      try {
+        const api = authApis();
+        const [classesResponse, coursesResponse] = await Promise.all([
+          api.get(endpoints.classes, { params: { keyword, page, size: 10 } }),
+          api.get(endpoints.courses, {
+            params: { page: 0, size: 100, status: "ACTIVE" },
+          }),
+        ]);
+        setResult(apiData(classesResponse));
+        setCourses(apiData(coursesResponse).content);
+      } catch (requestError) {
+        setError(apiError(requestError));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [keyword],
+  );
+
+  useEffect(() => {
+    // Fetch lại danh sách khi bộ lọc thay đổi.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load();
+  }, [load]);
+
+  const save = async (event) => {
+    event.preventDefault();
+    setError("");
+    try {
+      const payload = {
+        ...form,
+        courseId: Number(form.courseId),
+        maxStudents: Number(form.maxStudents),
+        appliedTuitionFee: Number(form.appliedTuitionFee),
+        teacherId: form.teacherId ? Number(form.teacherId) : null,
+      };
+      await authApis().post(endpoints["admin-classes"], payload);
+      setForm(null);
+      load();
+    } catch (requestError) {
+      setError(apiError(requestError));
+    }
+  };
+
+  const updateStatus = async (status) => {
+    try {
+      await authApis().patch(endpoints["change-class-status"](selected.id), {
+        status,
+      });
+      setSelected(null);
+      load();
+    } catch (requestError) {
+      setError(apiError(requestError));
+    }
+  };
+
+  const assignTeacher = async () => {
+    try {
+      await authApis().patch(endpoints["assign-class-teacher"](selected.id), {
+        teacherId: Number(selected.teacherId),
+      });
+      setSelected(null);
+      load();
+    } catch (requestError) {
+      setError(apiError(requestError));
+    }
+  };
+
+  return (
+    <>
+      <PageTitle
+        eyebrow="VẬN HÀNH ĐÀO TẠO"
+        title="Lớp học"
+        description="Theo dõi các lớp đang mở đăng ký"
+        action={
+          <button
+            className="primary-button"
+            onClick={() => setForm({ ...initialForm })}
+          >
+            ＋ Tạo lớp học
+          </button>
+        }
+      />
+      <div className="alert info">
+        API danh sách hiện chỉ trả về lớp có trạng thái OPEN. Cần API admin
+        riêng để xem toàn bộ lớp DRAFT, FULL hoặc đã kết thúc.
+      </div>
+      <ErrorAlert message={error} />
+      <section className="panel table-panel">
+        <div className="toolbar">
+          <div className="search-box">
+            ⌕
+            <input
+              placeholder="Tìm mã hoặc tên lớp..."
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Lớp học</th>
+                <th>Khóa học</th>
+                <th>Thời gian</th>
+                <th>Sĩ số</th>
+                <th>Học phí</th>
+                <th>Trạng thái</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <LoadingRows columns={7} />
+              ) : (
+                result.content.map((item) => (
+                  <tr key={item.id}>
+                    <td>
+                      <strong>{item.className}</strong>
+                      <small>{item.classCode}</small>
+                    </td>
+                    <td>
+                      <strong className="regular">{item.courseName}</strong>
+                      <small>
+                        {item.courseCode} · {item.levelCode}
+                      </small>
+                    </td>
+                    <td>
+                      <strong className="regular">
+                        {formatDate(item.startDate)}
+                      </strong>
+                      <small>đến {formatDate(item.endDate)}</small>
+                    </td>
+                    <td>
+                      {item.enrolledStudents}/{item.maxStudents}
+                      <small>{item.availableSeats} chỗ trống</small>
+                    </td>
+                    <td>{formatMoney(item.appliedTuitionFee)}</td>
+                    <td>
+                      <StatusBadge value={item.status} />
+                    </td>
+                    <td>
+                      <button
+                        className="link-button"
+                        onClick={() => setSelected({ ...item })}
+                      >
+                        Quản lý →
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+          {!loading && !result.content.length && (
+            <EmptyState message="Chưa có lớp đang mở" />
+          )}
+        </div>
+        <div className="pagination">
+          <span>
+            Trang {result.page + 1} / {Math.max(result.totalPages, 1)}
+          </span>
+          <div>
+            <button
+              disabled={result.page === 0}
+              onClick={() => load(result.page - 1)}
+            >
+              ←
+            </button>
+            <button
+              disabled={result.page + 1 >= result.totalPages}
+              onClick={() => load(result.page + 1)}
+            >
+              →
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {form && (
+        <Modal title="Tạo lớp học" onClose={() => setForm(null)}>
+          <form onSubmit={save}>
+            <div className="form-grid">
+              <label>
+                Khóa học
+                <select
+                  required
+                  value={form.courseId}
+                  onChange={(e) =>
+                    setForm({ ...form, courseId: e.target.value })
+                  }
+                >
+                  <option value="">Chọn khóa học</option>
+                  {courses.map((course) => (
+                    <option value={course.id} key={course.id}>
+                      {course.courseCode} — {course.courseName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                ID giảng viên
+                <input
+                  type="number"
+                  min="1"
+                  value={form.teacherId}
+                  onChange={(e) =>
+                    setForm({ ...form, teacherId: e.target.value })
+                  }
+                  placeholder="Có thể để trống"
+                />
+              </label>
+              <label>
+                Mã lớp
+                <input
+                  required
+                  value={form.classCode}
+                  onChange={(e) =>
+                    setForm({ ...form, classCode: e.target.value })
+                  }
+                />
+              </label>
+              <label>
+                Tên lớp
+                <input
+                  required
+                  value={form.className}
+                  onChange={(e) =>
+                    setForm({ ...form, className: e.target.value })
+                  }
+                />
+              </label>
+              <label>
+                Ngày bắt đầu
+                <input
+                  required
+                  type="date"
+                  value={form.startDate}
+                  onChange={(e) =>
+                    setForm({ ...form, startDate: e.target.value })
+                  }
+                />
+              </label>
+              <label>
+                Ngày kết thúc
+                <input
+                  required
+                  type="date"
+                  value={form.endDate}
+                  onChange={(e) =>
+                    setForm({ ...form, endDate: e.target.value })
+                  }
+                />
+              </label>
+              <label>
+                Sĩ số tối đa
+                <input
+                  required
+                  type="number"
+                  min="1"
+                  value={form.maxStudents}
+                  onChange={(e) =>
+                    setForm({ ...form, maxStudents: e.target.value })
+                  }
+                />
+              </label>
+              <label>
+                Học phí áp dụng
+                <input
+                  required
+                  type="number"
+                  min="0"
+                  value={form.appliedTuitionFee}
+                  onChange={(e) =>
+                    setForm({ ...form, appliedTuitionFee: e.target.value })
+                  }
+                />
+              </label>
+            </div>
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setForm(null)}
+              >
+                Hủy
+              </button>
+              <button className="primary-button">Tạo lớp</button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {selected && (
+        <Modal
+          title={`Quản lý ${selected.classCode}`}
+          onClose={() => setSelected(null)}
+        >
+          <div className="detail-grid">
+            <span>
+              Tên lớp<strong>{selected.className}</strong>
+            </span>
+            <span>
+              Khóa học<strong>{selected.courseName}</strong>
+            </span>
+            <span>
+              Giảng viên
+              <strong>{selected.teacherName || "Chưa phân công"}</strong>
+            </span>
+            <span>
+              Sĩ số
+              <strong>
+                {selected.enrolledStudents}/{selected.maxStudents}
+              </strong>
+            </span>
+          </div>
+          <div className="section-label">Phân công giảng viên</div>
+          <div className="inline-action">
+            <input
+              type="number"
+              min="1"
+              placeholder="Nhập ID giảng viên"
+              value={selected.teacherId || ""}
+              onChange={(e) =>
+                setSelected({ ...selected, teacherId: e.target.value })
+              }
+            />
+            <button className="secondary-button" onClick={assignTeacher}>
+              Gán giảng viên
+            </button>
+          </div>
+          <div className="section-label">Chuyển trạng thái</div>
+          <div className="status-actions">
+            {["FULL", "IN_PROGRESS", "COMPLETED", "CANCELLED"].map((status) => (
+              <button key={status} onClick={() => updateStatus(status)}>
+                {status}
+              </button>
+            ))}
+          </div>
+        </Modal>
+      )}
+    </>
+  );
+}
