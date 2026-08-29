@@ -122,6 +122,57 @@ public class CourseClassServiceImpl implements CourseClassService {
 
   @Override
   @Transactional(readOnly = true)
+  public PageResponse<CourseClassResponse> searchAdminClasses(
+      String keyword,
+      Integer courseId,
+      Integer levelId,
+      String status,
+      int page,
+      int size,
+      String sort,
+      String direction) {
+    Specification<Courseclass> spec = (root, query, cb) -> cb.conjunction();
+
+    if (StringUtils.hasText(keyword)) {
+      String value = "%" + keyword.trim().toLowerCase() + "%";
+      spec =
+          spec.and(
+              (root, query, cb) ->
+                  cb.or(
+                      cb.like(cb.lower(root.get("classCode")), value),
+                      cb.like(cb.lower(root.get("className")), value)));
+    }
+    if (courseId != null) {
+      spec = spec.and((root, query, cb) -> cb.equal(root.get("courseId").get("id"), courseId));
+    }
+    if (levelId != null) {
+      spec =
+          spec.and(
+              (root, query, cb) ->
+                  cb.equal(root.get("courseId").get("levelId").get("id"), levelId));
+    }
+    if (StringUtils.hasText(status)) {
+      if (!TRANSITIONS.containsKey(status)) {
+        throw new IllegalArgumentException("Trạng thái lớp không hợp lệ");
+      }
+      spec = spec.and((root, query, cb) -> cb.equal(root.get("status"), status));
+    }
+
+    int safePage = Math.max(page, 0);
+    int safeSize = Math.min(Math.max(size, 1), 100);
+    String sortField = SORT_FIELDS.contains(sort) ? sort : "startDate";
+    Sort.Direction sortDirection =
+        "desc".equalsIgnoreCase(direction) ? Sort.Direction.DESC : Sort.Direction.ASC;
+
+    var result =
+        courseClassRepository
+            .findAll(spec, PageRequest.of(safePage, safeSize, Sort.by(sortDirection, sortField)))
+            .map(this::toResponse);
+    return PageResponse.from(result);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
   public CourseClassResponse getById(Integer id) {
     Courseclass value = find(id);
     if (!"OPEN".equals(value.getStatus())) {
