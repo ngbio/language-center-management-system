@@ -7,7 +7,7 @@ import {
   Modal,
   PageTitle,
   StatusBadge,
-} from "../../components/AdminUi";
+} from "../AdminUi";
 import { apiData, apiError, formatMoney } from "../../utils/api";
 
 const definitions = {
@@ -103,13 +103,34 @@ const definitions = {
   },
 };
 
-export default function CatalogScreen({ type }) {
+const adminCatalogs = new Set(["languages", "levels", "courses", "rooms"]);
+
+const statusOptions = {
+  languages: ["ACTIVE", "INACTIVE"],
+  levels: ["ACTIVE", "INACTIVE"],
+  courses: ["ACTIVE", "INACTIVE"],
+  rooms: ["ACTIVE", "MAINTENANCE", "INACTIVE"],
+};
+
+const listEndpoint = (type) =>
+  adminCatalogs.has(type) ? endpoints[`admin-${type}`] : endpoints[type];
+
+const detailEndpoint = (type, id) => {
+  const singular = type.slice(0, -1);
+  const key = adminCatalogs.has(type)
+    ? `admin-${singular}-details`
+    : `${singular}-details`;
+  return endpoints[key](id);
+};
+
+export default function AdminCatalogScreen({ type }) {
   const config = definitions[type];
   const [items, setItems] = useState([]);
   const [languages, setLanguages] = useState([]);
   const [levels, setLevels] = useState([]);
   const [form, setForm] = useState(null);
   const [keyword, setKeyword] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -119,12 +140,15 @@ export default function CatalogScreen({ type }) {
     try {
       const api = authApis();
       const calls = [
-        api.get(endpoints[type], {
-          params: type === "courses" ? { page: 0, size: 100 } : {},
+        api.get(listEndpoint(type), {
+          params: {
+            ...(type === "courses" ? { page: 0, size: 100 } : {}),
+            status: statusFilter || undefined,
+          },
         }),
       ];
-      if (["levels", "courses"].includes(type))
-        calls.push(api.get(endpoints.languages));
+      if (type === "levels") calls.push(api.get(endpoints["admin-languages"]));
+      if (type === "courses") calls.push(api.get(endpoints.languages));
       if (type === "courses") calls.push(api.get(endpoints.levels));
       const responses = await Promise.all(calls);
       const primary = apiData(responses[0]);
@@ -136,7 +160,7 @@ export default function CatalogScreen({ type }) {
     } finally {
       setLoading(false);
     }
-  }, [type]);
+  }, [type, statusFilter]);
 
   useEffect(() => {
     // Fetch lại danh mục khi loại màn hình thay đổi.
@@ -173,11 +197,8 @@ export default function CatalogScreen({ type }) {
         payload.tuitionFee = Number(payload.tuitionFee);
       const api = authApis();
       if (form.id)
-        await api.put(
-          endpoints[`${type.slice(0, -1)}-details`](form.id),
-          payload,
-        );
-      else await api.post(endpoints[type], payload);
+        await api.put(detailEndpoint(type, form.id), payload);
+      else await api.post(listEndpoint(type), payload);
       setForm(null);
       load();
     } catch (requestError) {
@@ -188,9 +209,7 @@ export default function CatalogScreen({ type }) {
   const remove = async (item) => {
     if (!window.confirm(`Xóa ${item[config.name]}?`)) return;
     try {
-      await authApis().delete(
-        endpoints[`${type.slice(0, -1)}-details`](item.id),
-      );
+      await authApis().delete(detailEndpoint(type, item.id));
       load();
     } catch (requestError) {
       setError(apiError(requestError));
@@ -297,6 +316,17 @@ export default function CatalogScreen({ type }) {
               onChange={(e) => setKeyword(e.target.value)}
             />
           </div>
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+          >
+            <option value="">Tất cả trạng thái</option>
+            {statusOptions[type].map((status) => (
+              <option value={status} key={status}>
+                {status}
+              </option>
+            ))}
+          </select>
           <span className="record-count">{visible.length} kết quả</span>
         </div>
         <div className="table-wrap">
