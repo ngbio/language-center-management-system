@@ -31,6 +31,18 @@ public class RoomServiceImpl implements RoomService {
 
   @Override
   @Transactional(readOnly = true)
+  public List<RoomResponse> getAll(String status) {
+    if (!StringUtils.hasText(status)) {
+      return getAll();
+    }
+    String validStatus = status(status);
+    return roomRepository.findByStatusOrderByRoomCodeAsc(validStatus).stream()
+        .map(this::toResponse)
+        .toList();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
   public RoomResponse getById(Integer id) {
     return toResponse(find(id));
   }
