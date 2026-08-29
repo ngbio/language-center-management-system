@@ -11,10 +11,23 @@ public interface LevelRepository extends JpaRepository<Level, Integer> {
 
   List<Level> findByLanguageId_IdOrderByDisplayOrderAsc(Integer languageId);
 
+  List<Level> findByStatusOrderByDisplayOrderAsc(String status);
+
+  List<Level> findByStatusAndLanguageId_StatusOrderByDisplayOrderAsc(
+      String status, String languageStatus);
+
+  List<Level> findByLanguageId_IdAndStatusOrderByDisplayOrderAsc(
+      Integer languageId, String status);
+
+  Optional<Level> findByIdAndStatus(Integer id, String status);
+
   Optional<Level> findByLanguageId_IdAndLevelCodeIgnoreCase(Integer languageId, String levelCode);
 
   boolean existsByLanguageId_IdAndLevelCodeIgnoreCase(Integer languageId, String levelCode);
 
   boolean existsByLanguageId_IdAndLevelCodeIgnoreCaseAndIdNot(
       Integer languageId, String levelCode, Integer id);
+
+  boolean existsByLanguageId_IdAndDisplayOrderAndIdNot(
+      Integer languageId, int displayOrder, Integer id);
 }

@@ -19,6 +19,16 @@ public interface CourseClassService {
       String sort,
       String direction);
 
+  PageResponse<CourseClassResponse> searchAdminClasses(
+      String keyword,
+      Integer courseId,
+      Integer levelId,
+      String status,
+      int page,
+      int size,
+      String sort,
+      String direction);
+
   CourseClassResponse getById(Integer id);
 
   CourseClassResponse create(CourseClassRequest request);

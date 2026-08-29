@@ -26,3 +26,6 @@ replay_pid*
 # Local VS Code settings
 /.vscode/launch.json
 /.vscode/settings.json
+
+# Local database seed data
+/seed_language_center_mysql.sql

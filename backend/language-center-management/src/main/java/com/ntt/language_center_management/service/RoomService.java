@@ -7,6 +7,8 @@ import java.util.List;
 public interface RoomService {
   List<RoomResponse> getAll();
 
+  List<RoomResponse> getAll(String status);
+
   RoomResponse getById(Integer id);
 
   RoomRequest getRequestById(Integer id);

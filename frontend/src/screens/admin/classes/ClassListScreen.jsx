@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { authApis, endpoints } from "../../configs/Apis";
+import { authApis, endpoints } from "../../../configs/Apis";
 import {
   EmptyState,
   ErrorAlert,
@@ -7,8 +7,13 @@ import {
   Modal,
   PageTitle,
   StatusBadge,
-} from "../../components/AdminUi";
-import { apiData, apiError, formatDate, formatMoney } from "../../utils/api";
+} from "../../../components/AdminUi";
+import {
+  apiData,
+  apiError,
+  formatDate,
+  formatMoney,
+} from "../../../utils/api";
 
 const initialForm = {
   classCode: "",
@@ -21,10 +26,21 @@ const initialForm = {
   teacherId: "",
 };
 
-export default function ClassesScreen() {
+const classStatusTransitions = {
+  DRAFT: ["OPEN", "CANCELLED"],
+  OPEN: ["FULL", "IN_PROGRESS", "CANCELLED"],
+  FULL: ["OPEN", "IN_PROGRESS", "COMPLETED", "CANCELLED"],
+  IN_PROGRESS: ["COMPLETED", "CANCELLED"],
+  COMPLETED: [],
+  CANCELLED: [],
+};
+
+export default function ClassListScreen() {
   const [result, setResult] = useState({ content: [], page: 0, totalPages: 0 });
   const [courses, setCourses] = useState([]);
+  const [teachers, setTeachers] = useState([]);
   const [keyword, setKeyword] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [form, setForm] = useState(null);
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -36,21 +52,31 @@ export default function ClassesScreen() {
       setError("");
       try {
         const api = authApis();
-        const [classesResponse, coursesResponse] = await Promise.all([
-          api.get(endpoints.classes, { params: { keyword, page, size: 10 } }),
-          api.get(endpoints.courses, {
-            params: { page: 0, size: 100, status: "ACTIVE" },
-          }),
-        ]);
+        const [classesResponse, coursesResponse, teachersResponse] =
+          await Promise.all([
+            api.get(endpoints["admin-classes"], {
+              params: {
+                keyword,
+                status: statusFilter || undefined,
+                page,
+                size: 10,
+              },
+            }),
+            api.get(endpoints.courses, {
+              params: { page: 0, size: 100, status: "ACTIVE" },
+            }),
+            api.get(endpoints["admin-teachers"]),
+          ]);
         setResult(apiData(classesResponse));
         setCourses(apiData(coursesResponse).content);
+        setTeachers(apiData(teachersResponse));
       } catch (requestError) {
         setError(apiError(requestError));
       } finally {
         setLoading(false);
       }
     },
-    [keyword],
+    [keyword, statusFilter],
   );
 
   useEffect(() => {
@@ -117,10 +143,6 @@ export default function ClassesScreen() {
           </button>
         }
       />
-      <div className="alert info">
-        API danh sách hiện chỉ trả về lớp có trạng thái OPEN. Cần API admin
-        riêng để xem toàn bộ lớp DRAFT, FULL hoặc đã kết thúc.
-      </div>
       <ErrorAlert message={error} />
       <section className="panel table-panel">
         <div className="toolbar">
@@ -132,6 +154,19 @@ export default function ClassesScreen() {
               onChange={(e) => setKeyword(e.target.value)}
             />
           </div>
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+          >
+            <option value="">Tất cả trạng thái</option>
+            {["DRAFT", "OPEN", "FULL", "IN_PROGRESS", "COMPLETED", "CANCELLED"].map(
+              (status) => (
+                <option value={status} key={status}>
+                  {status}
+                </option>
+              ),
+            )}
+          </select>
         </div>
         <div className="table-wrap">
           <table>
@@ -236,16 +271,20 @@ export default function ClassesScreen() {
                 </select>
               </label>
               <label>
-                ID giảng viên
-                <input
-                  type="number"
-                  min="1"
+                Giảng viên
+                <select
                   value={form.teacherId}
                   onChange={(e) =>
                     setForm({ ...form, teacherId: e.target.value })
                   }
-                  placeholder="Có thể để trống"
-                />
+                >
+                  <option value="">Chưa phân công</option>
+                  {teachers.map((teacher) => (
+                    <option value={teacher.id} key={teacher.id}>
+                      {teacher.teacherCode} — {teacher.fullName}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label>
                 Mã lớp
@@ -353,26 +392,37 @@ export default function ClassesScreen() {
           </div>
           <div className="section-label">Phân công giảng viên</div>
           <div className="inline-action">
-            <input
-              type="number"
-              min="1"
-              placeholder="Nhập ID giảng viên"
+            <select
               value={selected.teacherId || ""}
               onChange={(e) =>
                 setSelected({ ...selected, teacherId: e.target.value })
               }
-            />
-            <button className="secondary-button" onClick={assignTeacher}>
+            >
+              <option value="">Chọn giảng viên</option>
+              {teachers.map((teacher) => (
+                <option value={teacher.id} key={teacher.id}>
+                  {teacher.teacherCode} — {teacher.fullName}
+                </option>
+              ))}
+            </select>
+            <button
+              className="secondary-button"
+              onClick={assignTeacher}
+              disabled={!selected.teacherId}
+            >
               Gán giảng viên
             </button>
           </div>
           <div className="section-label">Chuyển trạng thái</div>
           <div className="status-actions">
-            {["FULL", "IN_PROGRESS", "COMPLETED", "CANCELLED"].map((status) => (
+            {(classStatusTransitions[selected.status] || []).map((status) => (
               <button key={status} onClick={() => updateStatus(status)}>
                 {status}
               </button>
             ))}
+            {!classStatusTransitions[selected.status]?.length && (
+              <span>Trạng thái này không thể chuyển tiếp.</span>
+            )}
           </div>
         </Modal>
       )}

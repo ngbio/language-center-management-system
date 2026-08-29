@@ -50,9 +50,6 @@ export default function AdminLayout() {
             <strong>Administrator</strong>
             <small>{localStorage.getItem("adminEmail")}</small>
           </div>
-          <button className="icon-button" onClick={logout} title="Đăng xuất">
-            ↗
-          </button>
         </div>
       </aside>
       {open && (
@@ -64,7 +61,12 @@ export default function AdminLayout() {
             ☰
           </button>
           <span>Hệ thống quản lý trung tâm ngoại ngữ</span>
-          <span className="online-dot">Đang hoạt động</span>
+          <div className="topbar-actions">
+            <span className="online-dot">Đang hoạt động</span>
+            <button className="logout-button" onClick={logout} type="button">
+              Đăng xuất
+            </button>
+          </div>
         </header>
         <div className="page-container">
           <Outlet />
