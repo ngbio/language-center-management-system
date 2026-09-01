@@ -91,6 +91,24 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/admin/auth/login")
                     .permitAll()
+                    .requestMatchers(
+                        HttpMethod.POST,
+                        "/api/classes/*/schedules",
+                        "/api/classes/*/lessons/generate")
+                    .hasAnyRole("ADMIN", "CONSULTANT")
+                    .requestMatchers(HttpMethod.PUT, "/api/schedules/**")
+                    .hasAnyRole("ADMIN", "CONSULTANT")
+                    .requestMatchers(HttpMethod.DELETE, "/api/schedules/**")
+                    .hasAnyRole("ADMIN", "CONSULTANT")
+                    .requestMatchers(HttpMethod.GET, "/api/classes/*/lessons")
+                    .authenticated()
+                    .requestMatchers(HttpMethod.PUT, "/api/lessons/*")
+                    .hasAnyRole("ADMIN", "CONSULTANT", "TEACHER")
+                    .requestMatchers(
+                        HttpMethod.PATCH,
+                        "/api/lessons/*/reschedule",
+                        "/api/lessons/*/cancel")
+                    .hasAnyRole("ADMIN", "CONSULTANT")
                     .requestMatchers(HttpMethod.PATCH, "/api/admin/classes/*/status")
                     .hasRole("ADMIN")
                     .requestMatchers("/api/admin/classes/**")
