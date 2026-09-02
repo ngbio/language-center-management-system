@@ -91,6 +91,16 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/admin/auth/login")
                     .permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/enrollments")
+                    .hasRole("STUDENT")
+                    .requestMatchers(HttpMethod.GET, "/api/students/me/enrollments")
+                    .hasRole("STUDENT")
+                    .requestMatchers(HttpMethod.POST, "/api/enrollments/*/cancel-request")
+                    .hasRole("STUDENT")
+                    .requestMatchers("/api/staff/enrollments/**")
+                    .hasAnyRole("ADMIN", "CONSULTANT")
+                    .requestMatchers(HttpMethod.GET, "/api/classes/*/enrollments")
+                    .hasAnyRole("ADMIN", "CONSULTANT", "TEACHER")
                     .requestMatchers(
                         HttpMethod.POST,
                         "/api/classes/*/schedules",
