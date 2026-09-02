@@ -1,4 +1,4 @@
-package com.ntt.language_center_management.controller;
+package com.ntt.language_center_management.controller.management;
 
 import com.ntt.language_center_management.dto.request.ClassScheduleRequest;
 import com.ntt.language_center_management.dto.request.LessonRescheduleRequest;

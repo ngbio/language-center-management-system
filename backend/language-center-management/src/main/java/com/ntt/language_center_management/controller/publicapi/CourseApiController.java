@@ -1,4 +1,4 @@
-package com.ntt.language_center_management.controller;
+package com.ntt.language_center_management.controller.publicapi;
 
 import com.ntt.language_center_management.dto.request.CourseRequest;
 import com.ntt.language_center_management.dto.response.*;
