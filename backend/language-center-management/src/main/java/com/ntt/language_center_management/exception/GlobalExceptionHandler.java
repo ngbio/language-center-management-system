@@ -28,6 +28,11 @@ public class GlobalExceptionHandler {
     return error(HttpStatus.UNAUTHORIZED, exception.getMessage());
   }
 
+  @ExceptionHandler(ForbiddenException.class)
+  public ResponseEntity<ApiResponse<Void>> handleForbidden(ForbiddenException exception) {
+    return error(HttpStatus.FORBIDDEN, exception.getMessage());
+  }
+
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ApiResponse<Void>> handleValidation(
       MethodArgumentNotValidException exception) {

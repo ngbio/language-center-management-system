@@ -9,6 +9,8 @@ public interface RoomRepository extends JpaRepository<Room, Integer> {
 
   List<Room> findByStatusOrderByRoomCodeAsc(String status);
 
+  Optional<Room> findByIdAndStatus(Integer id, String status);
+
   Optional<Room> findByRoomCodeIgnoreCase(String roomCode);
 
   boolean existsByRoomCodeIgnoreCase(String roomCode);

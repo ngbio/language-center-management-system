@@ -1,4 +1,4 @@
-package com.ntt.language_center_management.controller;
+package com.ntt.language_center_management.controller.admin;
 
 import com.ntt.language_center_management.dto.request.RoomRequest;
 import com.ntt.language_center_management.dto.response.ApiResponse;

@@ -1,4 +1,4 @@
-package com.ntt.language_center_management.controller;
+package com.ntt.language_center_management.controller.admin;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
