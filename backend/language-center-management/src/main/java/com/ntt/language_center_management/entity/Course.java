@@ -12,6 +12,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
@@ -52,9 +53,42 @@ public class Course implements Serializable {
     @Size(min = 1, max = 200)
     @Column(name = "course_name")
     private String courseName;
+    @Basic(optional = false)
+    @NotNull
+    @Size(min = 1, max = 220)
+    @Column(name = "slug")
+    private String slug;
+    @Size(max = 500)
+    @Column(name = "short_description")
+    private String shortDescription;
     @Size(max = 1000)
     @Column(name = "description")
     private String description;
+    @Size(max = 500)
+    @Column(name = "thumbnail_url")
+    private String thumbnailUrl;
+    @Size(max = 500)
+    @Column(name = "banner_url")
+    private String bannerUrl;
+    @Lob
+    @Size(max = 65535)
+    @Column(name = "target_audience")
+    private String targetAudience;
+    @Lob
+    @Size(max = 65535)
+    @Column(name = "prerequisites")
+    private String prerequisites;
+    @Lob
+    @Size(max = 65535)
+    @Column(name = "learning_outcomes")
+    private String learningOutcomes;
+    @Lob
+    @Size(max = 65535)
+    @Column(name = "syllabus_summary")
+    private String syllabusSummary;
+    @Size(max = 500)
+    @Column(name = "certificate_info")
+    private String certificateInfo;
     // @Max(value=?)  @Min(value=?)//if you know range of your decimal fields consider using these annotations to enforce field validation
     @Basic(optional = false)
     @NotNull
@@ -73,12 +107,26 @@ public class Course implements Serializable {
     private String status;
     @Basic(optional = false)
     @NotNull
+    @Size(min = 1, max = 20)
+    @Column(name = "publication_status")
+    private String publicationStatus;
+    @Column(name = "published_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date publishedAt;
+    @Basic(optional = false)
+    @NotNull
+    @Column(name = "is_featured")
+    private boolean isFeatured;
+    @Basic(optional = false)
+    @NotNull
     @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
     @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedAt;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "courseId")
+    private List<CourseSection> courseSectionList;
     @JoinColumn(name = "level_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private Level levelId;
@@ -92,13 +140,16 @@ public class Course implements Serializable {
         this.id = id;
     }
 
-    public Course(Integer id, String courseCode, String courseName, BigDecimal tuitionFee, int totalSessions, String status, Date createdAt) {
+    public Course(Integer id, String courseCode, String courseName, String slug, BigDecimal tuitionFee, int totalSessions, String status, String publicationStatus, boolean isFeatured, Date createdAt) {
         this.id = id;
         this.courseCode = courseCode;
         this.courseName = courseName;
+        this.slug = slug;
         this.tuitionFee = tuitionFee;
         this.totalSessions = totalSessions;
         this.status = status;
+        this.publicationStatus = publicationStatus;
+        this.isFeatured = isFeatured;
         this.createdAt = createdAt;
     }
 
@@ -126,12 +177,84 @@ public class Course implements Serializable {
         this.courseName = courseName;
     }
 
+    public String getSlug() {
+        return slug;
+    }
+
+    public void setSlug(String slug) {
+        this.slug = slug;
+    }
+
+    public String getShortDescription() {
+        return shortDescription;
+    }
+
+    public void setShortDescription(String shortDescription) {
+        this.shortDescription = shortDescription;
+    }
+
     public String getDescription() {
         return description;
     }
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getThumbnailUrl() {
+        return thumbnailUrl;
+    }
+
+    public void setThumbnailUrl(String thumbnailUrl) {
+        this.thumbnailUrl = thumbnailUrl;
+    }
+
+    public String getBannerUrl() {
+        return bannerUrl;
+    }
+
+    public void setBannerUrl(String bannerUrl) {
+        this.bannerUrl = bannerUrl;
+    }
+
+    public String getTargetAudience() {
+        return targetAudience;
+    }
+
+    public void setTargetAudience(String targetAudience) {
+        this.targetAudience = targetAudience;
+    }
+
+    public String getPrerequisites() {
+        return prerequisites;
+    }
+
+    public void setPrerequisites(String prerequisites) {
+        this.prerequisites = prerequisites;
+    }
+
+    public String getLearningOutcomes() {
+        return learningOutcomes;
+    }
+
+    public void setLearningOutcomes(String learningOutcomes) {
+        this.learningOutcomes = learningOutcomes;
+    }
+
+    public String getSyllabusSummary() {
+        return syllabusSummary;
+    }
+
+    public void setSyllabusSummary(String syllabusSummary) {
+        this.syllabusSummary = syllabusSummary;
+    }
+
+    public String getCertificateInfo() {
+        return certificateInfo;
+    }
+
+    public void setCertificateInfo(String certificateInfo) {
+        this.certificateInfo = certificateInfo;
     }
 
     public BigDecimal getTuitionFee() {
@@ -166,6 +289,30 @@ public class Course implements Serializable {
         this.status = status;
     }
 
+    public String getPublicationStatus() {
+        return publicationStatus;
+    }
+
+    public void setPublicationStatus(String publicationStatus) {
+        this.publicationStatus = publicationStatus;
+    }
+
+    public Date getPublishedAt() {
+        return publishedAt;
+    }
+
+    public void setPublishedAt(Date publishedAt) {
+        this.publishedAt = publishedAt;
+    }
+
+    public boolean getIsFeatured() {
+        return isFeatured;
+    }
+
+    public void setIsFeatured(boolean isFeatured) {
+        this.isFeatured = isFeatured;
+    }
+
     public Date getCreatedAt() {
         return createdAt;
     }
@@ -180,6 +327,14 @@ public class Course implements Serializable {
 
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public List<CourseSection> getCourseSectionList() {
+        return courseSectionList;
+    }
+
+    public void setCourseSectionList(List<CourseSection> courseSectionList) {
+        this.courseSectionList = courseSectionList;
     }
 
     public Level getLevelId() {
