@@ -17,6 +17,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
@@ -109,7 +110,7 @@ public class Course implements Serializable {
     @NotNull
     @Size(min = 1, max = 20)
     @Column(name = "publication_status")
-    private String publicationStatus;
+    private String publicationStatus = "DRAFT";
     @Column(name = "published_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date publishedAt;
@@ -126,6 +127,7 @@ public class Course implements Serializable {
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedAt;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "courseId")
+    @OrderBy("displayOrder ASC")
     private List<CourseSection> courseSectionList;
     @JoinColumn(name = "level_id", referencedColumnName = "id")
     @ManyToOne(optional = false)

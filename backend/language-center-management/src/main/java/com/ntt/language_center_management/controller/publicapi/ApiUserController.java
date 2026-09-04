@@ -43,10 +43,11 @@ public class ApiUserController {
                 token,
                 user.id(),
                 user.email(),
-                user.roleName());
+                user.roleName(),
+                user.roleCode());
         ApiResponse<LoginResponse> response = new ApiResponse<>(
                 HttpStatus.OK.value(),
-                "Đăng nhập thành công",
+                "Đăng nhập học viên hoặc giáo viên thành công",
                 loginResponse);
 
         return ResponseEntity.ok(response);

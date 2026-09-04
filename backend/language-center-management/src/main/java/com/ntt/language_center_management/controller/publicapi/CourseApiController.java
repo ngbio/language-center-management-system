@@ -1,20 +1,28 @@
 package com.ntt.language_center_management.controller.publicapi;
 
-import com.ntt.language_center_management.dto.request.CourseRequest;
-import com.ntt.language_center_management.dto.response.*;
+import com.ntt.language_center_management.dto.response.ApiResponse;
+import com.ntt.language_center_management.dto.response.CourseSectionResponse;
+import com.ntt.language_center_management.dto.response.CourseResponse;
+import com.ntt.language_center_management.dto.response.PageResponse;
 import com.ntt.language_center_management.service.CourseService;
-import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import com.ntt.language_center_management.service.CourseCurriculumService;
+import java.util.List;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/courses")
 public class CourseApiController {
   private final CourseService courseService;
+  private final CourseCurriculumService courseCurriculumService;
 
-  public CourseApiController(CourseService courseService) {
+  public CourseApiController(
+      CourseService courseService, CourseCurriculumService courseCurriculumService) {
     this.courseService = courseService;
+    this.courseCurriculumService = courseCurriculumService;
   }
 
   @GetMapping
@@ -22,39 +30,32 @@ public class CourseApiController {
       @RequestParam(required = false) String keyword,
       @RequestParam(required = false) Integer languageId,
       @RequestParam(required = false) Integer levelId,
-      @RequestParam(required = false) String status,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size,
       @RequestParam(defaultValue = "courseCode") String sort) {
     return new ApiResponse<>(
         200,
         "Lấy danh sách khóa học thành công",
-        courseService.search(keyword, languageId, levelId, status, page, size, sort));
+        courseService.searchPublished(keyword, languageId, levelId, page, size, sort));
   }
 
   @GetMapping("/{id}")
   public ApiResponse<CourseResponse> get(@PathVariable Integer id) {
-    return new ApiResponse<>(200, "Lấy khóa học thành công", courseService.getById(id));
+    return new ApiResponse<>(
+        200, "Lấy khóa học thành công", courseService.getPublishedById(id));
   }
 
-  @PostMapping
-  public ResponseEntity<ApiResponse<CourseResponse>> create(
-      @Valid @RequestBody CourseRequest request) {
-    request.setId(null);
-    return ResponseEntity.status(HttpStatus.CREATED)
-        .body(new ApiResponse<>(201, "Tạo khóa học thành công", courseService.save(request)));
+  @GetMapping("/slug/{slug}")
+  public ApiResponse<CourseResponse> getBySlug(@PathVariable String slug) {
+    return new ApiResponse<>(
+        200, "Lấy chi tiết khóa học thành công", courseService.getPublishedBySlug(slug));
   }
 
-  @PutMapping("/{id}")
-  public ApiResponse<CourseResponse> update(
-      @PathVariable Integer id, @Valid @RequestBody CourseRequest request) {
-    request.setId(id);
-    return new ApiResponse<>(200, "Cập nhật khóa học thành công", courseService.save(request));
-  }
-
-  @DeleteMapping("/{id}")
-  public ApiResponse<Void> delete(@PathVariable Integer id) {
-    courseService.delete(id);
-    return new ApiResponse<>(200, "Xóa khóa học thành công", null);
+  @GetMapping("/{id}/sections")
+  public ApiResponse<List<CourseSectionResponse>> getSections(@PathVariable Integer id) {
+    return new ApiResponse<>(
+        200,
+        "Lấy danh sách phần của khóa học thành công",
+        courseCurriculumService.getPublishedSections(id));
   }
 }

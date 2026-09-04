@@ -5,6 +5,7 @@ import com.ntt.language_center_management.dto.request.CreateEnrollmentRequest;
 import com.ntt.language_center_management.dto.request.TransferEnrollmentRequest;
 import com.ntt.language_center_management.dto.response.EnrollmentResponse;
 import com.ntt.language_center_management.dto.response.EnrollmentSummaryResponse;
+import com.ntt.language_center_management.dto.response.CourseResponse;
 import com.ntt.language_center_management.entity.Courseclass;
 import com.ntt.language_center_management.entity.Enrollment;
 import com.ntt.language_center_management.entity.Student;
@@ -13,6 +14,7 @@ import com.ntt.language_center_management.exception.DuplicateResourceException;
 import com.ntt.language_center_management.exception.ForbiddenException;
 import com.ntt.language_center_management.exception.ResourceNotFoundException;
 import com.ntt.language_center_management.mapper.EnrollmentMapper;
+import com.ntt.language_center_management.mapper.CourseMapper;
 import com.ntt.language_center_management.repository.CourseClassRepository;
 import com.ntt.language_center_management.repository.EnrollmentRepository;
 import com.ntt.language_center_management.repository.StudentRepository;
@@ -43,18 +45,21 @@ public class EnrollmentServiceImpl implements EnrollmentService {
   private final StudentRepository studentRepository;
   private final UserRepository userRepository;
   private final EnrollmentMapper enrollmentMapper;
+  private final CourseMapper courseMapper;
 
   public EnrollmentServiceImpl(
       EnrollmentRepository enrollmentRepository,
       CourseClassRepository courseClassRepository,
       StudentRepository studentRepository,
       UserRepository userRepository,
-      EnrollmentMapper enrollmentMapper) {
+      EnrollmentMapper enrollmentMapper,
+      CourseMapper courseMapper) {
     this.enrollmentRepository = enrollmentRepository;
     this.courseClassRepository = courseClassRepository;
     this.studentRepository = studentRepository;
     this.userRepository = userRepository;
     this.enrollmentMapper = enrollmentMapper;
+    this.courseMapper = courseMapper;
   }
 
   @Override
@@ -76,6 +81,15 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     Student student = findCurrentStudent(principal);
     return enrollmentRepository.findByStudentId_IdOrderByEnrollmentDateDesc(student.getId()).stream()
         .map(enrollmentMapper::toSummaryResponse)
+        .toList();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<CourseResponse> getMyCourses(Principal principal) {
+    Student student = findCurrentStudent(principal);
+    return enrollmentRepository.findAccessibleCoursesByStudentId(student.getId()).stream()
+        .map(courseMapper::toResponse)
         .toList();
   }
 

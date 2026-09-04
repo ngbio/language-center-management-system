@@ -17,6 +17,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -53,6 +54,7 @@ public class CourseSection implements Serializable {
     @Column(name = "display_order")
     private int displayOrder;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "sectionId")
+    @OrderBy("displayOrder ASC")
     private List<CourseContent> courseContentList;
     @JoinColumn(name = "course_id", referencedColumnName = "id")
     @ManyToOne(optional = false)

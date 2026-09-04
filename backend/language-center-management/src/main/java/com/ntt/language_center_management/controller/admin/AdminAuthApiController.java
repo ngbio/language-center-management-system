@@ -32,7 +32,11 @@ public class AdminAuthApiController {
     UserResponse user = userService.loginAdmin(request);
     LoginResponse loginResponse =
         new LoginResponse(
-            jwtUtils.generateToken(user.email()), user.id(), user.email(), user.roleName());
+            jwtUtils.generateToken(user.email()),
+            user.id(),
+            user.email(),
+            user.roleName(),
+            user.roleCode());
 
     return ResponseEntity.ok(
         new ApiResponse<>(HttpStatus.OK.value(), "Đăng nhập quản trị thành công", loginResponse));

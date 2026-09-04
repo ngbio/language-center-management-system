@@ -62,7 +62,7 @@ public class CourseContent implements Serializable {
     @NotNull
     @Size(min = 1, max = 30)
     @Column(name = "content_type")
-    private String contentType;
+    private String contentType = "LESSON";
     @Basic(optional = false)
     @NotNull
     @Column(name = "display_order")
@@ -75,7 +75,7 @@ public class CourseContent implements Serializable {
     @NotNull
     @Size(min = 1, max = 20)
     @Column(name = "publication_status")
-    private String publicationStatus;
+    private String publicationStatus = "DRAFT";
     @JoinColumn(name = "section_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private CourseSection sectionId;
