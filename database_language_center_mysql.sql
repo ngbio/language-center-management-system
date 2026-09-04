@@ -127,21 +127,76 @@ CREATE TABLE course (
     level_id            INT NOT NULL,
     course_code         VARCHAR(30) NOT NULL,
     course_name         VARCHAR(200) NOT NULL,
+    slug                VARCHAR(220) NOT NULL,
+    short_description   VARCHAR(500) NULL,
     description         VARCHAR(1000) NULL,
+    thumbnail_url       VARCHAR(500) NULL,
+    banner_url          VARCHAR(500) NULL,
+    target_audience     TEXT NULL,
+    prerequisites       TEXT NULL,
+    learning_outcomes   TEXT NULL,
+    syllabus_summary    TEXT NULL,
+    certificate_info    VARCHAR(500) NULL,
     tuition_fee         DECIMAL(18,2) NOT NULL,
     total_sessions      INT NOT NULL,
     duration_hours      INT NULL,
     status              VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    publication_status  VARCHAR(20) NOT NULL DEFAULT 'DRAFT',
+    published_at        DATETIME NULL,
+    is_featured         BOOLEAN NOT NULL DEFAULT FALSE,
     created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at          DATETIME NULL,
     PRIMARY KEY (id),
     CONSTRAINT uq_course_code UNIQUE (course_code),
+    CONSTRAINT uq_course_slug UNIQUE (slug),
     CONSTRAINT fk_course_level FOREIGN KEY (level_id) REFERENCES level(id),
     CONSTRAINT ck_course_tuition_fee CHECK (tuition_fee >= 0),
     CONSTRAINT ck_course_total_sessions CHECK (total_sessions > 0),
     CONSTRAINT ck_course_duration_hours
         CHECK (duration_hours IS NULL OR duration_hours > 0),
-    CONSTRAINT ck_course_status CHECK (status IN ('ACTIVE', 'INACTIVE'))
+    CONSTRAINT ck_course_status CHECK (status IN ('ACTIVE', 'INACTIVE')),
+    CONSTRAINT ck_course_publication_status
+        CHECK (publication_status IN ('DRAFT', 'PUBLISHED', 'ARCHIVED')),
+    CONSTRAINT ck_course_published_at CHECK (
+        publication_status <> 'PUBLISHED' OR published_at IS NOT NULL
+    )
+) ENGINE=InnoDB;
+
+CREATE TABLE course_section (
+    id              INT NOT NULL AUTO_INCREMENT,
+    course_id       INT NOT NULL,
+    title           VARCHAR(255) NOT NULL,
+    description     TEXT NULL,
+    display_order   INT NOT NULL DEFAULT 1,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_course_section_course
+        FOREIGN KEY (course_id) REFERENCES course(id),
+    CONSTRAINT uq_course_section_order UNIQUE (course_id, display_order),
+    CONSTRAINT ck_course_section_display_order CHECK (display_order > 0)
+) ENGINE=InnoDB;
+
+CREATE TABLE course_content (
+    id                  INT NOT NULL AUTO_INCREMENT,
+    section_id          INT NOT NULL,
+    title               VARCHAR(255) NOT NULL,
+    summary             TEXT NULL,
+    content_html        LONGTEXT NULL,
+    audio_url           VARCHAR(500) NULL,
+    video_url           VARCHAR(500) NULL,
+    document_url        VARCHAR(500) NULL,
+    content_type        VARCHAR(30) NOT NULL DEFAULT 'LESSON',
+    display_order       INT NOT NULL DEFAULT 1,
+    is_preview          BOOLEAN NOT NULL DEFAULT FALSE,
+    publication_status  VARCHAR(20) NOT NULL DEFAULT 'DRAFT',
+    PRIMARY KEY (id),
+    CONSTRAINT fk_course_content_section
+        FOREIGN KEY (section_id) REFERENCES course_section(id),
+    CONSTRAINT uq_course_content_order UNIQUE (section_id, display_order),
+    CONSTRAINT ck_course_content_type
+        CHECK (content_type IN ('LESSON', 'VOCABULARY', 'GRAMMAR', 'LISTENING', 'EXERCISE')),
+    CONSTRAINT ck_course_content_display_order CHECK (display_order > 0),
+    CONSTRAINT ck_course_content_publication_status
+        CHECK (publication_status IN ('DRAFT', 'PUBLISHED', 'ARCHIVED'))
 ) ENGINE=InnoDB;
 
 CREATE TABLE room (
@@ -299,6 +354,10 @@ CREATE INDEX ix_level_language_order
     ON level(language_id, display_order);
 CREATE INDEX ix_course_level_status
     ON course(level_id, status);
+CREATE INDEX ix_course_publication_featured
+    ON course(publication_status, is_featured);
+CREATE INDEX ix_course_content_section_status
+    ON course_content(section_id, publication_status);
 CREATE INDEX ix_courseclass_course_status
     ON courseclass(course_id, status);
 CREATE INDEX ix_courseclass_teacher

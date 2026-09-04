@@ -16,6 +16,13 @@ public interface CourseService {
 
   CourseResponse getById(Integer id);
 
+  CourseResponse getPublishedById(Integer id);
+
+  CourseResponse getPublishedBySlug(String slug);
+
+  PageResponse<CourseResponse> searchPublished(
+      String keyword, Integer languageId, Integer levelId, int page, int size, String sort);
+
   CourseRequest getRequestById(Integer id);
 
   CourseResponse save(CourseRequest request);

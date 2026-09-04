@@ -10,6 +10,7 @@ public record UserResponse(
     String phoneNumber,
     String address,
     String roleName,
+    String roleCode,
     String status,
     Date createdAt,
     Date updatedAt) {}

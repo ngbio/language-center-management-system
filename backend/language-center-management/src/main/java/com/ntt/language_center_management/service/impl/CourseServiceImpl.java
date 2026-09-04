@@ -23,6 +23,8 @@ import org.springframework.util.StringUtils;
 @Transactional
 public class CourseServiceImpl implements CourseService {
   private static final Set<String> STATUSES = Set.of("ACTIVE", "INACTIVE");
+  private static final Set<String> PUBLICATION_STATUSES =
+      Set.of("DRAFT", "PUBLISHED", "ARCHIVED");
   private static final Set<String> SORT_FIELDS =
       Set.of("courseCode", "courseName", "tuitionFee", "createdAt");
   private final CourseRepository courseRepository;
@@ -86,6 +88,68 @@ public class CourseServiceImpl implements CourseService {
 
   @Override
   @Transactional(readOnly = true)
+  public CourseResponse getPublishedById(Integer id) {
+    Course course =
+        courseRepository
+            .findById(id)
+            .filter(
+                value ->
+                    "ACTIVE".equals(value.getStatus())
+                        && "PUBLISHED".equals(value.getPublicationStatus()))
+            .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy khóa học"));
+    return courseMapper.toResponse(course);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public CourseResponse getPublishedBySlug(String slug) {
+    String normalizedSlug = slug == null ? "" : slug.trim().toLowerCase();
+    Course course =
+        courseRepository
+            .findBySlugAndStatusAndPublicationStatus(normalizedSlug, "ACTIVE", "PUBLISHED")
+            .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy khóa học"));
+    return courseMapper.toResponse(course);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public PageResponse<CourseResponse> searchPublished(
+      String keyword, Integer languageId, Integer levelId, int page, int size, String sort) {
+    int safePage = Math.max(page, 0);
+    int safeSize = Math.min(Math.max(size, 1), 100);
+    String sortField = SORT_FIELDS.contains(sort) ? sort : "courseCode";
+    Specification<Course> spec =
+        (root, query, cb) ->
+            cb.and(
+                cb.equal(root.get("status"), "ACTIVE"),
+                cb.equal(root.get("publicationStatus"), "PUBLISHED"));
+    if (StringUtils.hasText(keyword)) {
+      String value = "%" + keyword.trim().toLowerCase() + "%";
+      spec =
+          spec.and(
+              (root, query, cb) ->
+                  cb.or(
+                      cb.like(cb.lower(root.get("courseCode")), value),
+                      cb.like(cb.lower(root.get("courseName")), value)));
+    }
+    if (languageId != null) {
+      spec =
+          spec.and(
+              (root, query, cb) ->
+                  cb.equal(root.get("levelId").get("languageId").get("id"), languageId));
+    }
+    if (levelId != null) {
+      spec = spec.and((root, query, cb) -> cb.equal(root.get("levelId").get("id"), levelId));
+    }
+    var result =
+        courseRepository
+            .findAll(spec, PageRequest.of(safePage, safeSize, Sort.by(sortField).ascending()))
+            .map(courseMapper::toResponse);
+    return PageResponse.from(result);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
   public CourseRequest getRequestById(Integer id) {
     return courseMapper.toRequest(find(id));
   }
@@ -93,10 +157,16 @@ public class CourseServiceImpl implements CourseService {
   @Override
   public CourseResponse save(CourseRequest request) {
     String code = request.getCourseCode().trim().toUpperCase();
+    String slug = request.getSlug().trim().toLowerCase();
     if (request.getId() == null
         ? courseRepository.existsByCourseCodeIgnoreCase(code)
         : courseRepository.existsByCourseCodeIgnoreCaseAndIdNot(code, request.getId())) {
       throw new DuplicateResourceException("Mã khóa học đã tồn tại");
+    }
+    if (request.getId() == null
+        ? courseRepository.existsBySlugIgnoreCase(slug)
+        : courseRepository.existsBySlugIgnoreCaseAndIdNot(slug, request.getId())) {
+      throw new DuplicateResourceException("Đường dẫn khóa học đã tồn tại");
     }
     var level =
         levelRepository
@@ -112,11 +182,28 @@ public class CourseServiceImpl implements CourseService {
     course.setUpdatedAt(now);
     course.setCourseCode(code);
     course.setCourseName(request.getCourseName().trim());
+    course.setSlug(slug);
+    course.setShortDescription(trimToNull(request.getShortDescription()));
     course.setDescription(trimToNull(request.getDescription()));
+    course.setThumbnailUrl(trimToNull(request.getThumbnailUrl()));
+    course.setBannerUrl(trimToNull(request.getBannerUrl()));
+    course.setTargetAudience(trimToNull(request.getTargetAudience()));
+    course.setPrerequisites(trimToNull(request.getPrerequisites()));
+    course.setLearningOutcomes(trimToNull(request.getLearningOutcomes()));
+    course.setSyllabusSummary(trimToNull(request.getSyllabusSummary()));
+    course.setCertificateInfo(trimToNull(request.getCertificateInfo()));
     course.setTuitionFee(request.getTuitionFee());
     course.setTotalSessions(request.getTotalSessions());
     course.setDurationHours(request.getDurationHours());
     course.setStatus(normalizeStatus(request.getStatus()));
+    String publicationStatus = normalizePublicationStatus(request.getPublicationStatus());
+    course.setPublicationStatus(publicationStatus);
+    if ("PUBLISHED".equals(publicationStatus) && course.getPublishedAt() == null) {
+      course.setPublishedAt(now);
+    } else if ("DRAFT".equals(publicationStatus)) {
+      course.setPublishedAt(null);
+    }
+    course.setIsFeatured(request.isFeatured());
     course.setLevelId(level);
     return courseMapper.toResponse(courseRepository.save(course));
   }
@@ -139,6 +226,13 @@ public class CourseServiceImpl implements CourseService {
     String status = value == null ? "ACTIVE" : value.trim().toUpperCase();
     if (!STATUSES.contains(status))
       throw new IllegalArgumentException("Trạng thái khóa học không hợp lệ");
+    return status;
+  }
+
+  private String normalizePublicationStatus(String value) {
+    String status = value == null ? "DRAFT" : value.trim().toUpperCase();
+    if (!PUBLICATION_STATUSES.contains(status))
+      throw new IllegalArgumentException("Trạng thái xuất bản khóa học không hợp lệ");
     return status;
   }
 

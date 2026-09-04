@@ -4,5 +4,6 @@ public record LoginResponse(
         String token,
         Integer userId,
         String email,
-        String role) {
+        String role,
+        String roleCode) {
 }

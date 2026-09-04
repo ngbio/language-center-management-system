@@ -10,9 +10,16 @@ public interface CourseRepository
 
   Optional<Course> findByCourseCodeIgnoreCase(String courseCode);
 
+  Optional<Course> findBySlugAndStatusAndPublicationStatus(
+      String slug, String status, String publicationStatus);
+
   Optional<Course> findByIdAndStatus(Integer id, String status);
 
   boolean existsByCourseCodeIgnoreCase(String courseCode);
 
   boolean existsByCourseCodeIgnoreCaseAndIdNot(String courseCode, Integer id);
+
+  boolean existsBySlugIgnoreCase(String slug);
+
+  boolean existsBySlugIgnoreCaseAndIdNot(String slug, Integer id);
 }

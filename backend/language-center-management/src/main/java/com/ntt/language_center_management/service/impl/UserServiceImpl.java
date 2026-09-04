@@ -99,7 +99,13 @@ public class UserServiceImpl implements UserService {
   @Override
   @Transactional(readOnly = true)
   public UserResponse login(LoginRequest request) {
-    return userMapper.toResponse(authenticate(request));
+    User user = authenticate(request);
+    if (user.getRoleId() == null
+        || !Set.of(DEFAULT_ROLE_CODE, TEACHER_ROLE_CODE)
+            .contains(user.getRoleId().getRoleCode())) {
+      throw new UnauthorizedException("Cổng đăng nhập này chỉ dành cho học viên và giáo viên");
+    }
+    return userMapper.toResponse(user);
   }
 
   @Override
