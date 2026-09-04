@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { SESSION_KEYS, clearSession } from "../utils/authSession";
 
 const navigation = [
   ["/admin", "▦", "Tổng quan"],
@@ -15,9 +16,7 @@ export default function AdminLayout() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const logout = () => {
-    ["token", "role", "adminEmail"].forEach((key) =>
-      localStorage.removeItem(key),
-    );
+    clearSession();
     navigate("/admin/login", { replace: true });
   };
 
@@ -48,7 +47,7 @@ export default function AdminLayout() {
           <span className="avatar">A</span>
           <div>
             <strong>Administrator</strong>
-            <small>{localStorage.getItem("adminEmail")}</small>
+            <small>{localStorage.getItem(SESSION_KEYS.email)}</small>
           </div>
         </div>
       </aside>

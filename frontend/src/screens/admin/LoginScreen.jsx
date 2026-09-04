@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import Apis, { endpoints } from "../../configs/Apis";
 import { apiData, apiError } from "../../utils/api";
+import { SESSION_KEYS, isTokenActive } from "../../utils/authSession";
 
 export default function LoginScreen() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -9,6 +10,12 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const existingToken = localStorage.getItem(SESSION_KEYS.token);
+  const existingRole = localStorage.getItem(SESSION_KEYS.role);
+
+  if (isTokenActive(existingToken) && existingRole === "ADMIN") {
+    return <Navigate to="/admin" replace />;
+  }
 
   const submit = async (event) => {
     event.preventDefault();
@@ -16,9 +23,9 @@ export default function LoginScreen() {
     setError("");
     try {
       const data = apiData(await Apis.post(endpoints["admin-login"], form));
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("role", data.role);
-      localStorage.setItem("adminEmail", data.email);
+      localStorage.setItem(SESSION_KEYS.token, data.token);
+      localStorage.setItem(SESSION_KEYS.role, data.roleCode);
+      localStorage.setItem(SESSION_KEYS.email, data.email);
       navigate(location.state?.from?.pathname || "/admin", { replace: true });
     } catch (requestError) {
       setError(apiError(requestError));

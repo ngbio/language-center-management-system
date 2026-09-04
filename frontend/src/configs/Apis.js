@@ -1,4 +1,5 @@
 import axios from "axios";
+import { SESSION_KEYS, clearSession } from "../utils/authSession";
 
 const BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8081/api";
@@ -31,6 +32,9 @@ export const endpoints = {
 
   courses: "/courses",
   "course-details": (courseId) => `/courses/${courseId}`,
+  "course-by-slug": (slug) => `/courses/slug/${slug}`,
+  "course-sections": (courseId) => `/courses/${courseId}/sections`,
+  "section-contents": (sectionId) => `/sections/${sectionId}/contents`,
   "admin-courses": "/admin/courses",
   "admin-course-details": (courseId) => `/admin/courses/${courseId}`,
 
@@ -48,19 +52,31 @@ export const endpoints = {
   "change-class-status": (classId) => `/admin/classes/${classId}/status`,
 
   "teacher-classes": "/teachers/me/classes",
+  "my-courses": "/students/me/courses",
 };
 
 export const authApis = () => {
-  const token = localStorage.getItem("token");
-
-  return axios.create({
+  const token = localStorage.getItem(SESSION_KEYS.token);
+  const instance = axios.create({
     baseURL: BASE_URL,
-    headers: token
-      ? {
-          Authorization: `Bearer ${token}`,
-        }
-      : {},
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
+
+  instance.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (error.response?.status === 401) {
+        clearSession();
+        const loginPath = window.location.pathname.startsWith("/admin")
+          ? "/admin/login"
+          : "/login";
+        if (window.location.pathname !== loginPath) window.location.assign(loginPath);
+      }
+      return Promise.reject(error);
+    },
+  );
+
+  return instance;
 };
 
 export default axios.create({

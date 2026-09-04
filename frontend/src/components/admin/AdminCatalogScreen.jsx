@@ -63,21 +63,43 @@ const definitions = {
       ["levelId", "Trình độ", "level"],
       ["courseCode", "Mã khóa học", "text"],
       ["courseName", "Tên khóa học", "text"],
+      ["slug", "Slug", "text"],
       ["tuitionFee", "Học phí", "number"],
       ["totalSessions", "Số buổi", "number"],
       ["durationHours", "Tổng số giờ", "number"],
       ["description", "Mô tả", "textarea"],
+      ["shortDescription", "Mô tả ngắn", "textarea"],
+      ["thumbnailUrl", "Ảnh đại diện", "text"],
+      ["bannerUrl", "Ảnh banner", "text"],
+      ["targetAudience", "Đối tượng học", "textarea"],
+      ["prerequisites", "Yêu cầu đầu vào", "textarea"],
+      ["learningOutcomes", "Kết quả đầu ra", "textarea"],
+      ["syllabusSummary", "Tổng quan giáo trình", "textarea"],
+      ["certificateInfo", "Thông tin chứng chỉ", "textarea"],
       ["status", "Trạng thái", "status"],
+      ["publicationStatus", "Trạng thái xuất bản", "publicationStatus"],
+      ["featured", "Khóa học nổi bật", "checkbox"],
     ],
     initial: {
       levelId: "",
       courseCode: "",
       courseName: "",
+      slug: "",
       tuitionFee: "",
       totalSessions: 1,
       durationHours: 1,
       description: "",
+      shortDescription: "",
+      thumbnailUrl: "",
+      bannerUrl: "",
+      targetAudience: "",
+      prerequisites: "",
+      learningOutcomes: "",
+      syllabusSummary: "",
+      certificateInfo: "",
       status: "ACTIVE",
+      publicationStatus: "DRAFT",
+      featured: false,
     },
   },
   rooms: {
@@ -220,7 +242,21 @@ export default function AdminCatalogScreen({ type }) {
     const common = {
       value: form[key] ?? "",
       onChange: (e) => setForm({ ...form, [key]: e.target.value }),
-      required: !["description", "location", "durationHours"].includes(key),
+      required:
+        ![
+          "description",
+          "shortDescription",
+          "thumbnailUrl",
+          "bannerUrl",
+          "targetAudience",
+          "prerequisites",
+          "learningOutcomes",
+          "syllabusSummary",
+          "certificateInfo",
+          "location",
+          "durationHours",
+          "featured",
+        ].includes(key),
     };
     if (kind === "textarea")
       return (
@@ -248,6 +284,30 @@ export default function AdminCatalogScreen({ type }) {
             <option>MAINTENANCE</option>
             <option>INACTIVE</option>
           </select>
+        </label>
+      );
+    if (kind === "publicationStatus")
+      return (
+        <label key={key}>
+          {label}
+          <select {...common}>
+            <option>DRAFT</option>
+            <option>PUBLISHED</option>
+            <option>ARCHIVED</option>
+          </select>
+        </label>
+      );
+    if (kind === "checkbox")
+      return (
+        <label key={key}>
+          <input
+            type="checkbox"
+            checked={Boolean(form[key])}
+            onChange={(event) =>
+              setForm({ ...form, [key]: event.target.checked })
+            }
+          />
+          {label}
         </label>
       );
     if (kind === "language")
