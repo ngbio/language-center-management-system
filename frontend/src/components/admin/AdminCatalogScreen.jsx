@@ -153,6 +153,11 @@ export default function AdminCatalogScreen({ type }) {
   const [form, setForm] = useState(null);
   const [keyword, setKeyword] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [languageFilter, setLanguageFilter] = useState("");
+  const [levelFilter, setLevelFilter] = useState("");
+  const [courseSort, setCourseSort] = useState("courseCode:asc");
+  const [coursePage, setCoursePage] = useState(0);
+  const [courseTotalPages, setCourseTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -161,20 +166,29 @@ export default function AdminCatalogScreen({ type }) {
     setError("");
     try {
       const api = authApis();
+      const [sort, direction] = courseSort.split(":");
       const calls = [
         api.get(listEndpoint(type), {
           params: {
-            ...(type === "courses" ? { page: 0, size: 100 } : {}),
+            ...(type === "courses" ? {
+              page: coursePage, size: 10,
+              keyword: keyword || undefined,
+              languageId: languageFilter || undefined,
+              levelId: levelFilter || undefined,
+              sort,
+              direction,
+            } : {}),
             status: statusFilter || undefined,
           },
         }),
       ];
       if (type === "levels") calls.push(api.get(endpoints["admin-languages"]));
       if (type === "courses") calls.push(api.get(endpoints.languages));
-      if (type === "courses") calls.push(api.get(endpoints.levels));
+      if (type === "courses") calls.push(api.get(endpoints["admin-levels"], { params: { languageId: languageFilter || undefined } }));
       const responses = await Promise.all(calls);
       const primary = apiData(responses[0]);
       setItems(primary?.content || primary || []);
+      if (type === "courses") setCourseTotalPages(primary?.totalPages || 0);
       if (responses[1]) setLanguages(apiData(responses[1]) || []);
       if (responses[2]) setLevels(apiData(responses[2]) || []);
     } catch (requestError) {
@@ -182,7 +196,7 @@ export default function AdminCatalogScreen({ type }) {
     } finally {
       setLoading(false);
     }
-  }, [type, statusFilter]);
+  }, [type, statusFilter, keyword, languageFilter, levelFilter, courseSort, coursePage]);
 
   useEffect(() => {
     // Fetch lại danh mục khi loại màn hình thay đổi.
@@ -191,12 +205,12 @@ export default function AdminCatalogScreen({ type }) {
   }, [load]);
   const visible = useMemo(
     () =>
-      items.filter((item) =>
+      items.filter((item) => type === "courses" ||
         `${item[config.code]} ${item[config.name]}`
           .toLowerCase()
           .includes(keyword.toLowerCase()),
       ),
-    [items, keyword, config],
+    [items, keyword, config, type],
   );
 
   const save = async (event) => {
@@ -373,12 +387,12 @@ export default function AdminCatalogScreen({ type }) {
             <input
               placeholder={`Tìm ${config.title.toLowerCase()}...`}
               value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
+              onChange={(e) => { setKeyword(e.target.value); if (type === "courses") setCoursePage(0); }}
             />
           </div>
           <select
             value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value)}
+            onChange={(event) => { setStatusFilter(event.target.value); if (type === "courses") setCoursePage(0); }}
           >
             <option value="">Tất cả trạng thái</option>
             {statusOptions[type].map((status) => (
@@ -387,6 +401,9 @@ export default function AdminCatalogScreen({ type }) {
               </option>
             ))}
           </select>
+          {type === "courses" && <select value={languageFilter} onChange={(event) => { setLanguageFilter(event.target.value); setLevelFilter(""); setCoursePage(0); }}><option value="">Tất cả ngôn ngữ</option>{languages.map((language) => <option value={language.id} key={language.id}>{language.languageName}</option>)}</select>}
+          {type === "courses" && <select value={levelFilter} onChange={(event) => { setLevelFilter(event.target.value); setCoursePage(0); }}><option value="">Tất cả trình độ</option>{levels.map((level) => <option value={level.id} key={level.id}>{level.levelCode} · {level.levelName}</option>)}</select>}
+          {type === "courses" && <select value={courseSort} onChange={(event) => { setCourseSort(event.target.value); setCoursePage(0); }}><option value="courseCode:asc">Mã A–Z</option><option value="courseName:asc">Tên A–Z</option><option value="courseName:desc">Tên Z–A</option><option value="tuitionFee:asc">Học phí thấp nhất</option><option value="tuitionFee:desc">Học phí cao nhất</option><option value="createdAt:desc">Mới nhất</option></select>}
           <span className="record-count">{visible.length} kết quả</span>
         </div>
         <div className="table-wrap">
@@ -446,6 +463,7 @@ export default function AdminCatalogScreen({ type }) {
           {!loading && !visible.length && <EmptyState />}
         </div>
       </section>
+      {type === "courses" && courseTotalPages > 1 && <div className="pagination"><button disabled={coursePage === 0} onClick={() => setCoursePage((value) => value - 1)}>←</button><span>Trang {coursePage + 1} / {courseTotalPages}</span><button disabled={coursePage + 1 >= courseTotalPages} onClick={() => setCoursePage((value) => value + 1)}>→</button></div>}
       {form && (
         <Modal
           title={`${form.id ? "Cập nhật" : "Thêm"} ${config.title.toLowerCase()}`}

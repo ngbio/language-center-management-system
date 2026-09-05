@@ -38,9 +38,13 @@ const classStatusTransitions = {
 export default function ClassListScreen() {
   const [result, setResult] = useState({ content: [], page: 0, totalPages: 0 });
   const [courses, setCourses] = useState([]);
+  const [levels, setLevels] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [keyword, setKeyword] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [courseFilter, setCourseFilter] = useState("");
+  const [levelFilter, setLevelFilter] = useState("");
+  const [sorting, setSorting] = useState("startDate:asc");
   const [form, setForm] = useState(null);
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -52,31 +56,38 @@ export default function ClassListScreen() {
       setError("");
       try {
         const api = authApis();
-        const [classesResponse, coursesResponse, teachersResponse] =
+        const [sort, direction] = sorting.split(":");
+        const [classesResponse, coursesResponse, teachersResponse, levelsResponse] =
           await Promise.all([
             api.get(endpoints["admin-classes"], {
               params: {
                 keyword,
                 status: statusFilter || undefined,
+                courseId: courseFilter || undefined,
+                levelId: levelFilter || undefined,
                 page,
                 size: 10,
+                sort,
+                direction,
               },
             }),
             api.get(endpoints.courses, {
-              params: { page: 0, size: 100, status: "ACTIVE" },
+              params: { page: 0, size: 100 },
             }),
             api.get(endpoints["admin-teachers"]),
+            api.get(endpoints["admin-levels"]),
           ]);
         setResult(apiData(classesResponse));
         setCourses(apiData(coursesResponse).content);
         setTeachers(apiData(teachersResponse));
+        setLevels(apiData(levelsResponse) || []);
       } catch (requestError) {
         setError(apiError(requestError));
       } finally {
         setLoading(false);
       }
     },
-    [keyword, statusFilter],
+    [keyword, statusFilter, courseFilter, levelFilter, sorting],
   );
 
   useEffect(() => {
@@ -167,6 +178,9 @@ export default function ClassListScreen() {
               ),
             )}
           </select>
+          <select value={courseFilter} onChange={(event) => setCourseFilter(event.target.value)}><option value="">Tất cả khóa học</option>{courses.map((course) => <option value={course.id} key={course.id}>{course.courseName}</option>)}</select>
+          <select value={levelFilter} onChange={(event) => setLevelFilter(event.target.value)}><option value="">Tất cả trình độ</option>{levels.map((level) => <option value={level.id} key={level.id}>{level.languageCode} · {level.levelCode}</option>)}</select>
+          <select value={sorting} onChange={(event) => setSorting(event.target.value)}><option value="startDate:asc">Khai giảng gần nhất</option><option value="startDate:desc">Khai giảng mới nhất</option><option value="className:asc">Tên lớp A–Z</option><option value="className:desc">Tên lớp Z–A</option><option value="appliedTuitionFee:asc">Học phí thấp nhất</option><option value="appliedTuitionFee:desc">Học phí cao nhất</option></select>
         </div>
         <div className="table-wrap">
           <table>

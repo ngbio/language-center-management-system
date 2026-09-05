@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import api, { authApis, endpoints } from "../../configs/Apis";
-import { apiData, apiError, formatMoney } from "../../utils/api";
+import { apiData, apiError, formatDate, formatMoney } from "../../utils/api";
+import { isTokenActive, SESSION_KEYS } from "../../utils/authSession";
 
 const plainText = (html) => {
   if (!html) return "";
@@ -18,6 +19,15 @@ export default function CourseDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [sectionLoading, setSectionLoading] = useState(null);
   const [error, setError] = useState("");
+  const [enrollmentOpen, setEnrollmentOpen] = useState(false);
+  const [openClasses, setOpenClasses] = useState([]);
+  const [selectedClass, setSelectedClass] = useState(null);
+  const [selectedSchedules, setSelectedSchedules] = useState([]);
+  const [enrollmentLoading, setEnrollmentLoading] = useState(false);
+  const [enrollmentMessage, setEnrollmentMessage] = useState("");
+  const [currentEnrollment, setCurrentEnrollment] = useState(null);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     let active = true;
@@ -34,6 +44,23 @@ export default function CourseDetailScreen() {
     return () => { active = false; };
   }, [slug]);
 
+  useEffect(() => {
+    if (!course) return undefined;
+    const token = localStorage.getItem(SESSION_KEYS.token);
+    const role = localStorage.getItem(SESSION_KEYS.role);
+    if (!isTokenActive(token) || role !== "STUDENT") return undefined;
+    let active = true;
+    authApis().get(endpoints["my-enrollments"])
+      .then((response) => {
+        if (!active) return;
+        const enrollment = (apiData(response) || []).find((item) =>
+          item.courseId === course.id && ["PENDING", "CONFIRMED"].includes(item.enrollmentStatus));
+        setCurrentEnrollment(enrollment || null);
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [course]);
+
   const toggleSection = async (sectionId) => {
     if (openSection === sectionId) { setOpenSection(null); return; }
     setOpenSection(sectionId);
@@ -46,6 +73,59 @@ export default function CourseDetailScreen() {
       setError(apiError(requestError));
     } finally {
       setSectionLoading(null);
+    }
+  };
+
+  const beginEnrollment = async () => {
+    const token = localStorage.getItem(SESSION_KEYS.token);
+    const role = localStorage.getItem(SESSION_KEYS.role);
+    if (!isTokenActive(token)) {
+      navigate("/login", { state: { from: location } });
+      return;
+    }
+    if (role !== "STUDENT") {
+      setError("Chỉ tài khoản học viên mới có thể đăng ký lớp học.");
+      return;
+    }
+    setEnrollmentOpen(true);
+    setEnrollmentLoading(true);
+    setEnrollmentMessage("");
+    setSelectedClass(null);
+    setSelectedSchedules([]);
+    try {
+      const response = await api.get(endpoints.classes, { params: { courseId: course.id, page: 0, size: 100, sort: "startDate", direction: "asc" } });
+      setOpenClasses(apiData(response)?.content || []);
+    } catch (requestError) {
+      setEnrollmentMessage(apiError(requestError));
+    } finally {
+      setEnrollmentLoading(false);
+    }
+  };
+
+  const chooseClass = async (item) => {
+    setSelectedClass(item);
+    setSelectedSchedules([]);
+    try {
+      const response = await api.get(endpoints["class-schedules"](item.id));
+      setSelectedSchedules(apiData(response) || []);
+    } catch (requestError) {
+      setEnrollmentMessage(apiError(requestError));
+    }
+  };
+
+  const confirmEnrollment = async () => {
+    if (!selectedClass) return;
+    setEnrollmentLoading(true);
+    setEnrollmentMessage("");
+    try {
+      const response = await authApis().post(endpoints.enrollments, { courseClassId: selectedClass.id });
+      setCurrentEnrollment(apiData(response));
+      setEnrollmentMessage("Đăng ký lớp thành công. Yêu cầu của bạn đang chờ trung tâm xác nhận và thanh toán.");
+      setOpenClasses([]);
+    } catch (requestError) {
+      setEnrollmentMessage(apiError(requestError));
+    } finally {
+      setEnrollmentLoading(false);
     }
   };
 
@@ -64,7 +144,7 @@ export default function CourseDetailScreen() {
         )}
         <div className="public-container detail-hero-grid">
           <div><Link className="breadcrumb" to="/">Trang chủ</Link><span className="breadcrumb"> / Khóa học</span><span className="section-kicker">{course.languageName} · {course.levelName}</span><h1>{course.courseName}</h1><p>{course.shortDescription || course.description}</p><div className="detail-facts"><span><b>{course.totalSessions}</b> buổi học</span><span><b>{course.durationHours || "—"}</b> giờ</span><span><b>{sections.length}</b> phần nội dung</span></div></div>
-          <aside className="enroll-card"><span>Học phí khóa học</span><strong>{Number(course.tuitionFee) === 0 ? "Miễn phí" : formatMoney(course.tuitionFee)}</strong><a className="primary-cta" href="#curriculum">Xem chương trình</a><small>Thông tin lớp khai giảng sẽ được cập nhật thường xuyên.</small></aside>
+          <aside className="enroll-card"><span>Học phí khóa học</span><strong>{Number(course.tuitionFee) === 0 ? "Miễn phí" : formatMoney(course.tuitionFee)}</strong>{currentEnrollment ? <><div className="already-enrolled">✓ {enrollmentStatusText(currentEnrollment)}</div><Link className="enroll-curriculum-link" to="/lop-hoc-cua-toi">Xem đăng ký của tôi →</Link></> : <button className="primary-cta enroll-action" type="button" onClick={beginEnrollment}>Đăng ký khóa học</button>}<a className="enroll-curriculum-link" href="#curriculum">Xem chương trình</a><small>{currentEnrollment ? `Lớp: ${currentEnrollment.className}` : "Chọn một lớp đang mở và gửi yêu cầu đăng ký tới trung tâm."}</small></aside>
         </div>
       </section>
 
@@ -78,6 +158,15 @@ export default function CourseDetailScreen() {
         </div>
         <aside className="detail-side"><div><span className="section-kicker">THÔNG TIN</span><h3>Tổng quan khóa học</h3><dl><dt>Mã khóa học</dt><dd>{course.courseCode}</dd><dt>Trình độ</dt><dd>{course.levelName}</dd><dt>Ngôn ngữ</dt><dd>{course.languageName}</dd><dt>Chứng chỉ</dt><dd>{course.certificateInfo || "Đang cập nhật"}</dd></dl></div></aside>
       </section>
+      {enrollmentOpen && <div className="public-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setEnrollmentOpen(false); }}><section className="public-enrollment-modal" role="dialog" aria-modal="true" aria-labelledby="enrollment-title"><button className="public-modal-close" type="button" onClick={() => setEnrollmentOpen(false)}>×</button><span className="section-kicker">ĐĂNG KÝ KHÓA HỌC</span><h2 id="enrollment-title">Chọn lớp cho {course.courseName}</h2>{enrollmentMessage && <div className={openClasses.length ? "public-alert" : "register-note"}>{enrollmentMessage}</div>}{enrollmentLoading && <div className="public-empty">Đang xử lý...</div>}{!enrollmentLoading && openClasses.length > 0 && <><div className="enrollment-class-list">{openClasses.map((item) => <button type="button" className={selectedClass?.id === item.id ? "selected" : ""} onClick={() => chooseClass(item)} key={item.id}><span><strong>{item.className}</strong><small>{item.classCode} · {item.levelCode}</small></span><span><b>{formatDate(item.startDate)}</b><small>{item.availableSeats} chỗ còn lại</small></span></button>)}</div>{selectedClass && <div className="enrollment-confirm"><h3>Thông tin đăng ký</h3><dl><div><dt>Lớp</dt><dd>{selectedClass.className}</dd></div><div><dt>Thời gian</dt><dd>{formatDate(selectedClass.startDate)} – {formatDate(selectedClass.endDate)}</dd></div><div><dt>Lịch cố định</dt><dd>{formatWeeklySchedules(selectedSchedules)}</dd></div><div><dt>Giáo viên</dt><dd>{selectedClass.teacherName || "Đang cập nhật"}</dd></div><div><dt>Học phí</dt><dd>{formatMoney(selectedClass.appliedTuitionFee)}</dd></div></dl><button className="primary-cta" type="button" onClick={confirmEnrollment}>Xác nhận đăng ký</button></div>}</>}{!enrollmentLoading && !enrollmentMessage && openClasses.length === 0 && <div className="public-empty">Khóa học này chưa có lớp đang mở đăng ký.</div>}</section></div>}
     </>
   );
 }
+
+const weekDays = { 1: "Thứ 2", 2: "Thứ 3", 3: "Thứ 4", 4: "Thứ 5", 5: "Thứ 6", 6: "Thứ 7", 7: "Chủ nhật" };
+const formatWeeklySchedules = (values) => values.length
+  ? values.map((item) => `${weekDays[item.dayOfWeek]} ${item.startTime}–${item.endTime}`).join(", ")
+  : "Đang cập nhật";
+const enrollmentStatusText = (enrollment) => enrollment.enrollmentStatus === "PENDING"
+  ? "Đang chờ trung tâm xác nhận"
+  : enrollment.paymentStatus === "PAID" ? "Đã đăng ký và thanh toán" : "Đã được xác nhận";

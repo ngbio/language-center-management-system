@@ -8,6 +8,7 @@ export const endpoints = {
   login: "/auth/login",
   "admin-login": "/admin/auth/login",
   register: "/auth/register",
+  "teacher-register": "/auth/teacher/register",
   profile: "/auth/me",
   "register-teacher": "/admin/teachers",
   "admin-teachers": "/admin/teachers",
@@ -31,7 +32,6 @@ export const endpoints = {
   "change-level-status": (levelId) => `/admin/levels/${levelId}/status`,
 
   courses: "/courses",
-  "course-details": (courseId) => `/courses/${courseId}`,
   "course-by-slug": (slug) => `/courses/slug/${slug}`,
   "course-sections": (courseId) => `/courses/${courseId}/sections`,
   "section-contents": (sectionId) => `/sections/${sectionId}/contents`,
@@ -45,6 +45,8 @@ export const endpoints = {
 
   classes: "/classes",
   "class-details": (classId) => `/classes/${classId}`,
+  "class-schedules": (classId) => `/classes/${classId}/schedules`,
+  enrollments: "/enrollments",
 
   "admin-classes": "/admin/classes",
   "admin-class-details": (classId) => `/admin/classes/${classId}`,
@@ -53,6 +55,9 @@ export const endpoints = {
 
   "teacher-classes": "/teachers/me/classes",
   "my-courses": "/students/me/courses",
+  "my-classes": "/students/me/classes",
+  "my-schedules": "/students/me/schedules",
+  "my-enrollments": "/students/me/enrollments",
 };
 
 export const authApis = () => {

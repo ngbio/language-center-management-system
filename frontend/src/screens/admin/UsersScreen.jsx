@@ -25,6 +25,7 @@ export default function UsersScreen() {
     status: "",
   });
   const [selected, setSelected] = useState(null);
+  const [sorting, setSorting] = useState("createdAt:desc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -33,10 +34,19 @@ export default function UsersScreen() {
       setLoading(true);
       setError("");
       try {
+        const [sort, direction] = sorting.split(":");
         setResult(
           apiData(
             await authApis().get(endpoints["admin-users"], {
-              params: { ...filters, page, size: 10 },
+              params: {
+                keyword: filters.keyword || undefined,
+                roleCode: filters.roleCode || undefined,
+                status: filters.status || undefined,
+                page,
+                size: 10,
+                sort,
+                direction,
+              },
             }),
           ),
         );
@@ -46,7 +56,7 @@ export default function UsersScreen() {
         setLoading(false);
       }
     },
-    [filters],
+    [filters, sorting],
   );
 
   useEffect(() => {
@@ -108,6 +118,13 @@ export default function UsersScreen() {
             <option>CONSULTANT</option>
             <option>TEACHER</option>
             <option>STUDENT</option>
+          </select>
+          <select value={sorting} onChange={(event) => setSorting(event.target.value)}>
+            <option value="createdAt:desc">Mới tạo gần đây</option>
+            <option value="createdAt:asc">Cũ nhất</option>
+            <option value="fullName:asc">Tên A–Z</option>
+            <option value="fullName:desc">Tên Z–A</option>
+            <option value="email:asc">Email A–Z</option>
           </select>
           <select
             value={filters.status}

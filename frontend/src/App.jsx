@@ -12,7 +12,13 @@ import RoomListScreen from "./screens/admin/rooms/RoomListScreen";
 import UsersScreen from "./screens/admin/UsersScreen";
 import CourseDetailScreen from "./screens/public/CourseDetailScreen";
 import HomeScreen from "./screens/public/HomeScreen";
+import MyCoursesScreen from "./screens/public/MyCoursesScreen";
+import MyClassesScreen from "./screens/public/MyClassesScreen";
 import StudentLoginScreen from "./screens/public/StudentLoginScreen";
+import RegisterScreen from "./screens/public/RegisterScreen";
+import CoursesScreen from "./screens/public/CoursesScreen";
+import LanguagesScreen from "./screens/public/LanguagesScreen";
+import OpenClassesScreen from "./screens/public/OpenClassesScreen";
 import "./App.css";
 
 function App() {
@@ -20,9 +26,15 @@ function App() {
     <Routes>
       <Route element={<PublicLayout />}>
         <Route path="/" element={<HomeScreen />} />
+        <Route path="/khoa-hoc" element={<CoursesScreen />} />
+        <Route path="/ngon-ngu" element={<LanguagesScreen />} />
+        <Route path="/lop-hoc" element={<OpenClassesScreen />} />
         <Route path="/khoa-hoc/:slug" element={<CourseDetailScreen />} />
+        <Route path="/khoa-hoc-cua-toi" element={<MyCoursesScreen />} />
+        <Route path="/lop-hoc-cua-toi" element={<MyClassesScreen />} />
       </Route>
       <Route path="/login" element={<StudentLoginScreen />} />
+      <Route path="/register" element={<RegisterScreen />} />
       <Route path="/admin/login" element={<LoginScreen />} />
       <Route element={<ProtectedAdminRoute />}>
         <Route path="/admin" element={<AdminLayout />}>

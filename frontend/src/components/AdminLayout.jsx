@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { SESSION_KEYS, clearSession } from "../utils/authSession";
 
 const navigation = [
@@ -15,6 +15,16 @@ const navigation = [
 export default function AdminLayout() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const [sessionNotice, setSessionNotice] = useState(location.state?.sessionNotice || "");
+
+  useEffect(() => {
+    if (!location.state?.sessionNotice) return;
+    navigate(`${location.pathname}${location.search}${location.hash}`, {
+      replace: true,
+      state: null,
+    });
+  }, [location.hash, location.pathname, location.search, location.state, navigate]);
   const logout = () => {
     clearSession();
     navigate("/admin/login", { replace: true });
@@ -22,6 +32,13 @@ export default function AdminLayout() {
 
   return (
     <div className="admin-shell">
+      {sessionNotice && (
+        <div className="session-notice admin-session-notice" role="alert">
+          <span aria-hidden="true">!</span>
+          <p><strong>Không thể đăng nhập tài khoản khác</strong>{sessionNotice}</p>
+          <button type="button" onClick={() => setSessionNotice("")} aria-label="Đóng thông báo">×</button>
+        </div>
+      )}
       <aside className={`sidebar ${open ? "is-open" : ""}`}>
         <div className="brand">
           <span className="brand-mark">LC</span>

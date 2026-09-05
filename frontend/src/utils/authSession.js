@@ -24,3 +24,11 @@ export const isTokenActive = (token) => {
     return false;
   }
 };
+
+export const getActiveSessionHome = () => {
+  const token = localStorage.getItem(SESSION_KEYS.token);
+  if (!isTokenActive(token)) return null;
+
+  const role = localStorage.getItem(SESSION_KEYS.role);
+  return role === "ADMIN" ? "/admin" : "/";
+};
