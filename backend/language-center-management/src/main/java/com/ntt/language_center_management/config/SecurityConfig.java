@@ -96,7 +96,9 @@ public class SecurityConfig {
                     .requestMatchers(
                         HttpMethod.GET,
                         "/api/students/me/enrollments",
-                        "/api/students/me/courses")
+                        "/api/students/me/courses",
+                        "/api/students/me/classes",
+                        "/api/students/me/schedules")
                     .hasRole("STUDENT")
                     .requestMatchers(HttpMethod.POST, "/api/enrollments/*/cancel-request")
                     .hasRole("STUDENT")

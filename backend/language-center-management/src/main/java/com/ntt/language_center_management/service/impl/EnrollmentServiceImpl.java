@@ -6,6 +6,8 @@ import com.ntt.language_center_management.dto.request.TransferEnrollmentRequest;
 import com.ntt.language_center_management.dto.response.EnrollmentResponse;
 import com.ntt.language_center_management.dto.response.EnrollmentSummaryResponse;
 import com.ntt.language_center_management.dto.response.CourseResponse;
+import com.ntt.language_center_management.dto.response.CourseClassResponse;
+import com.ntt.language_center_management.dto.response.ClassScheduleResponse;
 import com.ntt.language_center_management.entity.Courseclass;
 import com.ntt.language_center_management.entity.Enrollment;
 import com.ntt.language_center_management.entity.Student;
@@ -15,6 +17,9 @@ import com.ntt.language_center_management.exception.ForbiddenException;
 import com.ntt.language_center_management.exception.ResourceNotFoundException;
 import com.ntt.language_center_management.mapper.EnrollmentMapper;
 import com.ntt.language_center_management.mapper.CourseMapper;
+import com.ntt.language_center_management.mapper.CourseClassMapper;
+import com.ntt.language_center_management.mapper.ClassScheduleMapper;
+import com.ntt.language_center_management.repository.ClassScheduleRepository;
 import com.ntt.language_center_management.repository.CourseClassRepository;
 import com.ntt.language_center_management.repository.EnrollmentRepository;
 import com.ntt.language_center_management.repository.StudentRepository;
@@ -46,6 +51,9 @@ public class EnrollmentServiceImpl implements EnrollmentService {
   private final UserRepository userRepository;
   private final EnrollmentMapper enrollmentMapper;
   private final CourseMapper courseMapper;
+  private final CourseClassMapper courseClassMapper;
+  private final ClassScheduleMapper classScheduleMapper;
+  private final ClassScheduleRepository classScheduleRepository;
 
   public EnrollmentServiceImpl(
       EnrollmentRepository enrollmentRepository,
@@ -53,13 +61,19 @@ public class EnrollmentServiceImpl implements EnrollmentService {
       StudentRepository studentRepository,
       UserRepository userRepository,
       EnrollmentMapper enrollmentMapper,
-      CourseMapper courseMapper) {
+      CourseMapper courseMapper,
+      CourseClassMapper courseClassMapper,
+      ClassScheduleMapper classScheduleMapper,
+      ClassScheduleRepository classScheduleRepository) {
     this.enrollmentRepository = enrollmentRepository;
     this.courseClassRepository = courseClassRepository;
     this.studentRepository = studentRepository;
     this.userRepository = userRepository;
     this.enrollmentMapper = enrollmentMapper;
     this.courseMapper = courseMapper;
+    this.courseClassMapper = courseClassMapper;
+    this.classScheduleMapper = classScheduleMapper;
+    this.classScheduleRepository = classScheduleRepository;
   }
 
   @Override
@@ -90,6 +104,27 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     Student student = findCurrentStudent(principal);
     return enrollmentRepository.findAccessibleCoursesByStudentId(student.getId()).stream()
         .map(courseMapper::toResponse)
+        .toList();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<CourseClassResponse> getMyClasses(Principal principal) {
+    Student student = findCurrentStudent(principal);
+    return enrollmentRepository.findAccessibleClassesByStudentId(student.getId()).stream()
+        .map(
+            courseClass ->
+                courseClassMapper.toResponse(
+                    courseClass, countActiveEnrollments(courseClass.getId())))
+        .toList();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<ClassScheduleResponse> getMySchedules(Principal principal) {
+    Student student = findCurrentStudent(principal);
+    return classScheduleRepository.findAccessibleSchedulesByStudentId(student.getId()).stream()
+        .map(classScheduleMapper::toResponse)
         .toList();
   }
 
@@ -240,7 +275,6 @@ public class EnrollmentServiceImpl implements EnrollmentService {
       throw new IllegalArgumentException("Lớp học hiện không mở đăng ký");
     }
     if (countActiveEnrollments(courseClass.getId()) >= courseClass.getMaxStudents()) {
-      courseClass.setStatus("FULL");
       throw new IllegalArgumentException("Lớp học đã đủ số lượng học viên");
     }
   }

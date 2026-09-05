@@ -28,6 +28,8 @@ public interface UserService {
 
     UserResponse addTeacher(TeacherRegisterRequest request);
 
+    UserResponse registerTeacher(TeacherRegisterRequest request);
+
     UserResponse getCurrentUserProfile(Principal principal);
 
     PageResponse<UserResponse> searchUsers(

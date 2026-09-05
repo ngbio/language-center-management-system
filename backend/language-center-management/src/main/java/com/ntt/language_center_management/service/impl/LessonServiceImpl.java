@@ -35,7 +35,6 @@ import org.springframework.util.StringUtils;
 @Service
 @Transactional
 public class LessonServiceImpl implements LessonService {
-  private static final Set<String> ACTIVE_ENROLLMENTS = Set.of("PENDING", "CONFIRMED");
 
   private final LessonRepository lessonRepository;
   private final ClassScheduleRepository classScheduleRepository;
@@ -216,8 +215,9 @@ public class LessonServiceImpl implements LessonService {
           studentRepository
               .findByUserId_EmailIgnoreCase(user.getEmail())
               .orElseThrow(() -> new ForbiddenException("Không có hồ sơ học viên hợp lệ"));
-      if (enrollmentRepository.existsByStudentId_IdAndCourseClassId_IdAndEnrollmentStatusIn(
-          student.getId(), courseClass.getId(), ACTIVE_ENROLLMENTS)) {
+      if (enrollmentRepository
+          .existsByStudentId_IdAndCourseClassId_IdAndEnrollmentStatusAndPaymentStatus(
+              student.getId(), courseClass.getId(), "CONFIRMED", "PAID")) {
         return;
       }
     }

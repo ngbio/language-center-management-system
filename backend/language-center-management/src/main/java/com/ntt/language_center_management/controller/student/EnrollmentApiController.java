@@ -6,6 +6,8 @@ import com.ntt.language_center_management.dto.response.ApiResponse;
 import com.ntt.language_center_management.dto.response.EnrollmentResponse;
 import com.ntt.language_center_management.dto.response.EnrollmentSummaryResponse;
 import com.ntt.language_center_management.dto.response.CourseResponse;
+import com.ntt.language_center_management.dto.response.CourseClassResponse;
+import com.ntt.language_center_management.dto.response.ClassScheduleResponse;
 import com.ntt.language_center_management.service.EnrollmentService;
 import jakarta.validation.Valid;
 import java.security.Principal;
@@ -48,6 +50,20 @@ public class EnrollmentApiController {
   public ApiResponse<List<CourseResponse>> getMyCourses(Principal principal) {
     return new ApiResponse<>(
         200, "Lấy danh sách khóa học của tôi thành công", enrollmentService.getMyCourses(principal));
+  }
+
+  @GetMapping("/students/me/classes")
+  public ApiResponse<List<CourseClassResponse>> getMyClasses(Principal principal) {
+    return new ApiResponse<>(
+        200,
+        "Lấy danh sách lớp học của tôi thành công",
+        enrollmentService.getMyClasses(principal));
+  }
+
+  @GetMapping("/students/me/schedules")
+  public ApiResponse<List<ClassScheduleResponse>> getMySchedules(Principal principal) {
+    return new ApiResponse<>(
+        200, "Lấy thời khóa biểu thành công", enrollmentService.getMySchedules(principal));
   }
 
   @PostMapping("/enrollments/{id}/cancel-request")

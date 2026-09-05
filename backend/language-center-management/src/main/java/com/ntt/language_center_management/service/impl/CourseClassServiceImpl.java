@@ -99,12 +99,7 @@ public class CourseClassServiceImpl implements CourseClassService {
                   cb.equal(root.get("courseId").get("levelId").get("id"), levelId));
     }
     if (date != null) {
-      spec =
-          spec.and(
-              (root, query, cb) ->
-                  cb.and(
-                      cb.lessThanOrEqualTo(root.get("startDate"), date),
-                      cb.greaterThanOrEqualTo(root.get("endDate"), date)));
+      spec = spec.and((root, query, cb) -> cb.equal(root.get("startDate"), date));
     }
 
     int safePage = Math.max(page, 0);

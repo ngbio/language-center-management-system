@@ -49,7 +49,8 @@ public class CourseServiceImpl implements CourseService {
       String status,
       int page,
       int size,
-      String sort) {
+      String sort,
+      String direction) {
     int safePage = Math.max(page, 0);
     int safeSize = Math.min(Math.max(size, 1), 100);
     String sortField = SORT_FIELDS.contains(sort) ? sort : "courseCode";
@@ -75,7 +76,7 @@ public class CourseServiceImpl implements CourseService {
     }
     var result =
         courseRepository
-            .findAll(spec, PageRequest.of(safePage, safeSize, Sort.by(sortField).ascending()))
+            .findAll(spec, PageRequest.of(safePage, safeSize, Sort.by(parseDirection(direction), sortField)))
             .map(courseMapper::toResponse);
     return PageResponse.from(result);
   }
@@ -84,20 +85,6 @@ public class CourseServiceImpl implements CourseService {
   @Transactional(readOnly = true)
   public CourseResponse getById(Integer id) {
     return courseMapper.toResponse(find(id));
-  }
-
-  @Override
-  @Transactional(readOnly = true)
-  public CourseResponse getPublishedById(Integer id) {
-    Course course =
-        courseRepository
-            .findById(id)
-            .filter(
-                value ->
-                    "ACTIVE".equals(value.getStatus())
-                        && "PUBLISHED".equals(value.getPublicationStatus()))
-            .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy khóa học"));
-    return courseMapper.toResponse(course);
   }
 
   @Override
@@ -114,7 +101,8 @@ public class CourseServiceImpl implements CourseService {
   @Override
   @Transactional(readOnly = true)
   public PageResponse<CourseResponse> searchPublished(
-      String keyword, Integer languageId, Integer levelId, int page, int size, String sort) {
+      String keyword, Integer languageId, Integer levelId, int page, int size, String sort,
+      String direction) {
     int safePage = Math.max(page, 0);
     int safeSize = Math.min(Math.max(size, 1), 100);
     String sortField = SORT_FIELDS.contains(sort) ? sort : "courseCode";
@@ -143,9 +131,13 @@ public class CourseServiceImpl implements CourseService {
     }
     var result =
         courseRepository
-            .findAll(spec, PageRequest.of(safePage, safeSize, Sort.by(sortField).ascending()))
+            .findAll(spec, PageRequest.of(safePage, safeSize, Sort.by(parseDirection(direction), sortField)))
             .map(courseMapper::toResponse);
     return PageResponse.from(result);
+  }
+
+  private Sort.Direction parseDirection(String direction) {
+    return "desc".equalsIgnoreCase(direction) ? Sort.Direction.DESC : Sort.Direction.ASC;
   }
 
   @Override

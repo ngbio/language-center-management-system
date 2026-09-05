@@ -180,6 +180,15 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public UserResponse addTeacher(TeacherRegisterRequest request) {
+    return createTeacher(request, "ACTIVE");
+  }
+
+  @Override
+  public UserResponse registerTeacher(TeacherRegisterRequest request) {
+    return createTeacher(request, "INACTIVE");
+  }
+
+  private UserResponse createTeacher(TeacherRegisterRequest request, String initialStatus) {
     if (userRepository.existsByEmailIgnoreCase(request.email())) {
       throw new DuplicateResourceException("Email này đã có người đăng ký!");
     }
@@ -198,7 +207,7 @@ public class UserServiceImpl implements UserService {
     Date now = new Date();
     user.setCreatedAt(now);
     user.setUpdatedAt(now);
-    user.setStatus("ACTIVE");
+    user.setStatus(initialStatus);
     user.setRoleId(
         roleRepository
             .findByRoleCodeIgnoreCase(TEACHER_ROLE_CODE)
@@ -309,10 +318,15 @@ public class UserServiceImpl implements UserService {
   }
 
   private String normalizeStatusFilter(String status) {
-    if (status != null && !USER_STATUSES.contains(status)) {
+    if (!StringUtils.hasText(status)) {
+      return null;
+    }
+
+    String normalized = status.trim().toUpperCase(Locale.ROOT);
+    if (!USER_STATUSES.contains(normalized)) {
       throw new IllegalArgumentException(
           "Trạng thái phải là ACTIVE, INACTIVE hoặc LOCKED");
     }
-    return status;
+    return normalized;
   }
 }
