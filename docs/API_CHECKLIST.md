@@ -207,6 +207,8 @@ Cập nhật: **05/09/2026**
 | ✅ | POST | `/api/payments/zalopay/callback` | Nhận và xác minh MAC callback ZaloPay |
 | ✅ | POST | `/api/staff/enrollments/{id}/refunds` | Staff/Admin hoàn tiền, chống lặp và chặn hoàn vượt thực thu |
 | ✅ | GET | `/api/enrollments/{id}/refunds` | Chủ sở hữu/Staff xem lịch sử hoàn tiền |
+| ✅ | GET | `/api/staff/refunds` | Staff xem và lọc toàn bộ yêu cầu hoàn tiền |
+| ✅ | POST | `/api/staff/refunds/{id}/refresh` | Đồng bộ trạng thái hoàn tiền từ cổng thanh toán |
 | ✅ | GET | `/api/enrollments/{id}/invoice` | Dữ liệu hóa đơn gồm tổng thu, hoàn và thực thu |
 | ✅ | GET | `/api/enrollments/{id}/invoice.pdf` | Xuất file PDF; Student tải hóa đơn của mình từ lịch sử đăng ký và thanh toán |
 

@@ -408,11 +408,14 @@ Chỉ hủy trước ngày khai giảng và khi chưa phát sinh thanh toán.
 ### POST `/staff/enrollments/{id}/refunds`
 
 - Quyền: ADMIN/CONSULTANT.
-- Ghi nhận Staff đã hoàn tiền sau khi xử lý yêu cầu với học viên.
+- Tạo refund `PENDING` và gửi yêu cầu hoàn tiền sang đúng cổng của payment gốc (`MOMO` hoặc `ZALOPAY`).
 - `amount` có thể để `null` để hoàn toàn bộ số tiền thực thu còn lại.
 - `idempotencyKey` bắt buộc và duy nhất, giúp việc gửi lại cùng một request không tạo hai lần hoàn tiền.
 - Không cho tổng tiền hoàn vượt tổng payment `PAID`.
-- Khi hoàn hết: enrollment chuyển `CANCELLED`, payment status của enrollment chuyển `REFUNDED` và quyền học bị thu hồi.
+- Không cho tạo yêu cầu mới khi đang có refund `PENDING`.
+- Chỉ khi cổng xác nhận `COMPLETED`: nếu hoàn hết thì enrollment chuyển `CANCELLED`, payment status chuyển `REFUNDED` và quyền học bị thu hồi.
+- Nếu cổng từ chối hoặc lỗi, refund chuyển `FAILED`; enrollment vẫn giữ nguyên.
+- Nếu timeout/mất kết nối và chưa biết cổng đã nhận hay chưa, refund giữ `PENDING` để query lại, tránh gửi trùng giao dịch hoàn tiền.
 
 ```json
 {
@@ -426,6 +429,17 @@ Chỉ hủy trước ngày khai giảng và khi chưa phát sinh thanh toán.
 
 - Quyền: Student sở hữu enrollment hoặc ADMIN/CONSULTANT.
 - Trả lịch sử hoàn tiền, người xử lý, lý do và thời điểm hoàn tất.
+
+### GET `/staff/refunds?status={status}`
+
+- Quyền: ADMIN/CONSULTANT.
+- Danh sách toàn bộ yêu cầu hoàn tiền; có thể lọc `PENDING`, `COMPLETED`, `FAILED`, `CANCELLED`.
+
+### POST `/staff/refunds/{id}/refresh`
+
+- Quyền: ADMIN/CONSULTANT.
+- Truy vấn lại trạng thái refund `PENDING` từ MoMo/ZaloPay.
+- ZaloPay xử lý refund bất đồng bộ nên cần API này để đối soát đến trạng thái cuối.
 
 ### GET `/enrollments/{id}/invoice`
 

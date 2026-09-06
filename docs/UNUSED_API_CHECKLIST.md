@@ -71,6 +71,8 @@ Tài liệu này đối chiếu controller backend với các lời gọi API tr
 | ⬜ | GET | `/api/payments/{transactionCode}` | Backend đã có; chưa có ô tra cứu giao dịch |
 | ✅ | POST | `/api/staff/enrollments/{id}/refunds` | Đã có nút hoàn toàn bộ học phí trong màn quản lý enrollment |
 | ⬜ | GET | `/api/enrollments/{id}/refunds` | Backend đã có; chưa hiển thị lịch sử hoàn tiền chi tiết |
+| ✅ | GET | `/api/staff/refunds` | Đã dùng tại màn quản lý hoàn tiền của Staff/Admin |
+| ✅ | POST | `/api/staff/refunds/{id}/refresh` | Đã có nút đồng bộ refund đang PENDING |
 | ⬜ | GET | `/api/enrollments/{id}/invoice` | Backend đã có JSON; frontend hiện dùng endpoint PDF |
 | ✅ | GET | `/api/enrollments/{id}/invoice.pdf` | Nút “Tải hóa đơn PDF” đã tích hợp trong lịch sử đăng ký và thanh toán của Student |
 | ✅ | POST | `/api/enrollments/{id}/cancel-request` | Đã có nút yêu cầu hủy tại trang lịch sử riêng |
