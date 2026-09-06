@@ -15,23 +15,14 @@ export default function StudentLoginScreen() {
   const activeSessionHome = getActiveSessionHome();
 
   if (activeSessionHome) {
-    return (
-      <Navigate
-        to={activeSessionHome}
-        state={{ sessionNotice: "Bạn đang có một phiên đăng nhập. Vui lòng đăng xuất khỏi tài khoản hiện tại trước khi đăng nhập tài khoản khác." }}
-        replace
-      />
-    );
+    return <Navigate to={activeSessionHome} replace />;
   }
 
   const submit = async (event) => {
     event.preventDefault();
     const currentSessionHome = getActiveSessionHome();
     if (currentSessionHome) {
-      navigate(currentSessionHome, {
-        replace: true,
-        state: { sessionNotice: "Bạn đang có một phiên đăng nhập. Vui lòng đăng xuất khỏi tài khoản hiện tại trước khi đăng nhập tài khoản khác." },
-      });
+      navigate(currentSessionHome, { replace: true });
       return;
     }
     setLoading(true);

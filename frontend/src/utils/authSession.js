@@ -27,8 +27,19 @@ export const isTokenActive = (token) => {
 
 export const getActiveSessionHome = () => {
   const token = localStorage.getItem(SESSION_KEYS.token);
-  if (!isTokenActive(token)) return null;
-
   const role = localStorage.getItem(SESSION_KEYS.role);
-  return role === "ADMIN" ? "/admin" : "/";
+  const email = localStorage.getItem(SESSION_KEYS.email);
+  const homes = {
+    ADMIN: "/admin",
+    CONSULTANT: "/staff/enrollments",
+    STUDENT: "/",
+    TEACHER: "/",
+  };
+
+  if (!isTokenActive(token) || !email || !homes[role]) {
+    clearSession();
+    return null;
+  }
+
+  return homes[role];
 };

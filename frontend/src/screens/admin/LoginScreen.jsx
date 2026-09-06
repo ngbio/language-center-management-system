@@ -13,23 +13,14 @@ export default function LoginScreen() {
   const activeSessionHome = getActiveSessionHome();
 
   if (activeSessionHome) {
-    return (
-      <Navigate
-        to={activeSessionHome}
-        state={{ sessionNotice: "Bạn đang đăng nhập bằng tài khoản khác. Vui lòng đăng xuất khỏi tài khoản hiện tại trước khi đăng nhập Admin." }}
-        replace
-      />
-    );
+    return <Navigate to={activeSessionHome} replace />;
   }
 
   const submit = async (event) => {
     event.preventDefault();
     const currentSessionHome = getActiveSessionHome();
     if (currentSessionHome) {
-      navigate(currentSessionHome, {
-        replace: true,
-        state: { sessionNotice: "Bạn đang đăng nhập bằng tài khoản khác. Vui lòng đăng xuất khỏi tài khoản hiện tại trước khi đăng nhập Admin." },
-      });
+      navigate(currentSessionHome, { replace: true });
       return;
     }
     setLoading(true);

@@ -12,7 +12,6 @@ export default function PublicLayout() {
   const location = useLocation();
   const accountMenuRef = useRef(null);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
-  const [sessionNotice, setSessionNotice] = useState(location.state?.sessionNotice || "");
   const [darkMode, setDarkMode] = useState(() => {
     const savedTheme = localStorage.getItem("publicTheme");
     if (savedTheme) return savedTheme === "dark";
@@ -38,8 +37,19 @@ export default function PublicLayout() {
     setAccountMenuOpen(false);
     navigate("/");
   };
+
+  useEffect(() => {
+    setSession({
+      token: localStorage.getItem(SESSION_KEYS.token),
+      role: localStorage.getItem(SESSION_KEYS.role),
+      email: localStorage.getItem(SESSION_KEYS.email) || "",
+    });
+  }, [location.pathname]);
+
+  const sessionAuthenticated =
+    isTokenActive(session.token) && ["STUDENT", "TEACHER", "ADMIN", "CONSULTANT"].includes(session.role);
   const publicAuthenticated =
-    isTokenActive(session.token) && ["STUDENT", "TEACHER", "ADMIN"].includes(session.role);
+    sessionAuthenticated && ["STUDENT", "TEACHER", "ADMIN"].includes(session.role);
 
   useEffect(() => {
     if (!accountMenuOpen) return undefined;
@@ -57,25 +67,10 @@ export default function PublicLayout() {
     };
   }, [accountMenuOpen]);
 
-  useEffect(() => {
-    if (!location.state?.sessionNotice) return;
-    navigate(`${location.pathname}${location.search}${location.hash}`, {
-      replace: true,
-      state: null,
-    });
-  }, [location.hash, location.pathname, location.search, location.state, navigate]);
-
   const accountLabel = session.email.split("@")[0] || "Tài khoản";
 
   return (
     <div className={`public-site ${darkMode ? "dark" : ""}`}>
-      {sessionNotice && (
-        <div className="session-notice" role="alert">
-          <span aria-hidden="true">!</span>
-          <p><strong>Không thể đăng nhập tài khoản khác</strong>{sessionNotice}</p>
-          <button type="button" onClick={() => setSessionNotice("")} aria-label="Đóng thông báo">×</button>
-        </div>
-      )}
       <header className="public-header">
         <div className="public-container public-nav">
           <Link className="public-brand" to="/">
@@ -101,7 +96,8 @@ export default function PublicLayout() {
             >
               <span aria-hidden="true">{darkMode ? "☀" : "☾"}</span>
             </button>
-            {!publicAuthenticated && <Link className="public-login" to="/login">Đăng nhập</Link>}
+            {!sessionAuthenticated && <Link className="public-register" to="/register">Đăng ký tài khoản</Link>}
+            {!sessionAuthenticated && <Link className="public-login" to="/login">Đăng nhập</Link>}
             {publicAuthenticated && (
               <div className="public-account" ref={accountMenuRef}>
                 <button className="account-trigger" type="button" aria-haspopup="menu" aria-expanded={accountMenuOpen} onClick={() => setAccountMenuOpen((open) => !open)}>
@@ -117,8 +113,12 @@ export default function PublicLayout() {
                     <div className="account-menu-heading"><strong>Xin chào, {accountLabel}</strong><span>{session.email}</span></div>
                     {session.role === "STUDENT" && <Link role="menuitem" to="/khoa-hoc-cua-toi" onClick={() => setAccountMenuOpen(false)}><span aria-hidden="true">▣</span> Khóa học của tôi</Link>}
                     {session.role === "STUDENT" && <Link role="menuitem" to="/lop-hoc-cua-toi" onClick={() => setAccountMenuOpen(false)}><span aria-hidden="true">▤</span> Lớp học & thời khóa biểu</Link>}
+                    {session.role === "STUDENT" && <Link role="menuitem" to="/lich-su-dang-ky" onClick={() => setAccountMenuOpen(false)}><span aria-hidden="true">↻</span> Lịch sử đăng ký & thanh toán</Link>}
+                    {session.role === "TEACHER" && <Link role="menuitem" to="/giao-vien/khoa-hoc" onClick={() => setAccountMenuOpen(false)}><span aria-hidden="true">▣</span> Khóa học phụ trách</Link>}
+                    {session.role === "TEACHER" && <Link role="menuitem" to="/giao-vien/lop-hoc" onClick={() => setAccountMenuOpen(false)}><span aria-hidden="true">▤</span> Lớp học & thời khóa biểu</Link>}
+                    {session.role === "TEACHER" && <Link role="menuitem" to="/giao-vien/thong-tin-ca-nhan" onClick={() => setAccountMenuOpen(false)}><span aria-hidden="true">◎</span> Thông tin cá nhân</Link>}
                     {session.role === "ADMIN" && <Link role="menuitem" to="/admin" onClick={() => setAccountMenuOpen(false)}><span aria-hidden="true">▦</span> Trang quản trị</Link>}
-                    <button role="menuitem" type="button" disabled><span aria-hidden="true">◎</span> Thông tin cá nhân <small>Sắp có</small></button>
+                    {session.role === "STUDENT" && <Link role="menuitem" to="/thong-tin-ca-nhan" onClick={() => setAccountMenuOpen(false)}><span aria-hidden="true">◎</span> Thông tin cá nhân</Link>}
                     <a role="menuitem" href="mailto:hello@linguacenter.vn"><span aria-hidden="true">?</span> Hỗ trợ học tập</a>
                     <button className="account-logout" role="menuitem" type="button" onClick={logout}><span aria-hidden="true">↪</span> Đăng xuất</button>
                   </div>
@@ -140,7 +140,7 @@ export default function PublicLayout() {
             </Link>
             <p>Nền tảng học ngoại ngữ với lộ trình rõ ràng, nội dung dễ tiếp cận và lớp học linh hoạt.</p>
           </div>
-          <div><h3>Khám phá</h3><Link to="/khoa-hoc">Khóa học</Link><Link to="/ngon-ngu">Ngôn ngữ</Link><Link to="/lop-hoc">Lớp đang mở</Link><Link to="/admin/login">Cổng quản trị</Link></div>
+          <div><h3>Khám phá</h3><Link to="/khoa-hoc">Khóa học</Link><Link to="/ngon-ngu">Ngôn ngữ</Link><Link to="/lop-hoc">Lớp đang mở</Link>{!sessionAuthenticated && <><Link to="/staff/login">Cổng nhân viên</Link><Link to="/admin/login">Cổng quản trị</Link></>}</div>
           <div><h3>Liên hệ</h3><span>028 7300 1234</span><span>hello@linguacenter.vn</span><span>TP. Hồ Chí Minh, Việt Nam</span></div>
         </div>
         <div className="public-container footer-bottom"><span>© 2026 Lingua Center</span><span>Học hôm nay, mở lối ngày mai.</span></div>

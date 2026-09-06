@@ -7,8 +7,10 @@ const BASE_URL =
 export const endpoints = {
   login: "/auth/login",
   "admin-login": "/admin/auth/login",
+  "staff-login": "/staff/auth/login",
   register: "/auth/register",
   "teacher-register": "/auth/teacher/register",
+  teachers: "/teachers",
   profile: "/auth/me",
   "register-teacher": "/admin/teachers",
   "admin-teachers": "/admin/teachers",
@@ -47,6 +49,13 @@ export const endpoints = {
   "class-details": (classId) => `/classes/${classId}`,
   "class-schedules": (classId) => `/classes/${classId}/schedules`,
   enrollments: "/enrollments",
+  payments: "/payments",
+  "my-payments": "/students/me/payments",
+  "staff-enrollments": "/staff/enrollments",
+  "class-enrollments": (classId) => `/classes/${classId}/enrollments`,
+  "change-enrollment-status": (enrollmentId) => `/staff/enrollments/${enrollmentId}/status`,
+  "transfer-enrollment": (enrollmentId) => `/staff/enrollments/${enrollmentId}/transfer`,
+  "cancel-enrollment": (enrollmentId) => `/enrollments/${enrollmentId}/cancel-request`,
 
   "admin-classes": "/admin/classes",
   "admin-class-details": (classId) => `/admin/classes/${classId}`,
@@ -54,10 +63,13 @@ export const endpoints = {
   "change-class-status": (classId) => `/admin/classes/${classId}/status`,
 
   "teacher-classes": "/teachers/me/classes",
+  "teacher-courses": "/teachers/me/courses",
+  "teacher-profile": "/teachers/me/profile",
   "my-courses": "/students/me/courses",
   "my-classes": "/students/me/classes",
   "my-schedules": "/students/me/schedules",
   "my-enrollments": "/students/me/enrollments",
+  "student-profile": "/students/me/profile",
 };
 
 export const authApis = () => {
@@ -74,7 +86,9 @@ export const authApis = () => {
         clearSession();
         const loginPath = window.location.pathname.startsWith("/admin")
           ? "/admin/login"
-          : "/login";
+          : window.location.pathname.startsWith("/staff")
+            ? "/staff/login"
+            : "/login";
         if (window.location.pathname !== loginPath) window.location.assign(loginPath);
       }
       return Promise.reject(error);

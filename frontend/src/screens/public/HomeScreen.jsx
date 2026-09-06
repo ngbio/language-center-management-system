@@ -1,6 +1,23 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import APIs, { endpoints } from "../../configs/Apis";
+import { apiData } from "../../utils/api";
 
 export default function HomeScreen() {
+  const [teachers, setTeachers] = useState([]);
+
+  useEffect(() => {
+    let active = true;
+    APIs.get(endpoints.teachers)
+      .then((response) => {
+        if (active) setTeachers((apiData(response) || []).slice(0, 4));
+      })
+      .catch(() => {
+        if (active) setTeachers([]);
+      });
+    return () => { active = false; };
+  }, []);
+
   return (
     <>
       <section className="public-hero">
@@ -24,6 +41,30 @@ export default function HomeScreen() {
       <section className="benefits-section" id="benefits">
         <div className="public-container"><div className="section-heading centered"><div><span className="section-kicker">HỌC CÓ ĐỊNH HƯỚNG</span><h2>Một hành trình vừa sức, dễ theo dõi</h2></div></div><div className="benefit-grid"><article><span>01</span><h3>Nội dung theo từng bài</h3><p>Mở section và chỉ tải nội dung khi bạn cần xem.</p></article><article><span>02</span><h3>Lộ trình rõ ràng</h3><p>Biết mình sẽ học gì và đang tiến tới đâu.</p></article><article><span>03</span><h3>Linh hoạt mọi thiết bị</h3><p>Giao diện tối ưu cho máy tính, máy tính bảng và điện thoại.</p></article></div></div>
       </section>
+
+      {teachers.length > 0 && (
+        <section className="teacher-showcase">
+          <div className="public-container">
+            <div className="section-heading">
+              <div><span className="section-kicker">ĐỒNG HÀNH CÙNG BẠN</span><h2>Đội ngũ giảng viên chuyên nghiệp</h2></div>
+              <p>Các giảng viên đang hoạt động tại trung tâm, có chuyên môn rõ ràng và kinh nghiệm giảng dạy thực tế.</p>
+            </div>
+            <div className="teacher-showcase-grid">
+              {teachers.map((teacher, index) => (
+                <article key={teacher.id}>
+                  <div className={`teacher-portrait teacher-portrait-${(index % 4) + 1}`} aria-hidden="true">
+                    {teacher.fullName?.split(" ").filter(Boolean).slice(-2).map((part) => part.charAt(0)).join("") || "GV"}
+                  </div>
+                  <small>{teacher.teacherCode}</small>
+                  <h3>{teacher.fullName}</h3>
+                  <p>{teacher.specialization || "Giảng viên ngoại ngữ"}</p>
+                  <span>{teacher.degree || "Chuyên môn đang cập nhật"}</span>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
     </>
   );
 }
