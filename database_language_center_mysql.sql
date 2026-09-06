@@ -326,7 +326,7 @@ CREATE TABLE payment (
         FOREIGN KEY (enrollment_id) REFERENCES enrollment(id),
     CONSTRAINT ck_payment_amount CHECK (amount > 0),
     CONSTRAINT ck_payment_method
-        CHECK (method IN ('CASH', 'BANK_TRANSFER', 'E_WALLET', 'CARD')),
+        CHECK (method IN ('MOMO', 'ZALOPAY')),
     CONSTRAINT ck_payment_status
         CHECK (status IN ('PENDING', 'PAID', 'FAILED', 'CANCELLED'))
 ) ENGINE=InnoDB;

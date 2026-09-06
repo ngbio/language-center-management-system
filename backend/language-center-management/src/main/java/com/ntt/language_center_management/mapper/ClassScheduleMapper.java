@@ -25,6 +25,7 @@ public class ClassScheduleMapper {
         room == null ? null : room.getId(),
         room == null ? null : room.getRoomCode(),
         room == null ? null : room.getRoomName(),
+        room == null ? null : room.getLocation(),
         schedule.getMeetingUrl());
   }
 
