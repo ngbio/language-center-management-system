@@ -134,19 +134,32 @@ export default function EnrollmentManagementScreen() {
     });
   };
 
-  const refund = (item) => {
+  const refund = async (item) => {
     const reason = window.prompt(`Nhập lý do hoàn toàn bộ học phí cho ${item.studentName}:`);
     if (!reason?.trim()) return;
     const idempotencyKey = globalThis.crypto?.randomUUID?.()
       || `refund-${item.id}-${Date.now()}`;
-    perform(
-      () => authApis().post(endpoints["staff-refund"](item.id), {
+    setSaving(true); setError(""); setNotice("");
+    try {
+      const response = await authApis().post(endpoints["staff-refund"](item.id), {
         amount: null,
         reason: reason.trim(),
         idempotencyKey,
-      }),
-      "Đã ghi nhận hoàn tiền và hủy quyền truy cập lớp học.",
-    );
+      });
+      const result = apiData(response);
+      if (result.status === "COMPLETED") {
+        setNotice("Cổng thanh toán đã xác nhận hoàn tiền. Quyền truy cập lớp đã được cập nhật.");
+      } else if (result.status === "PENDING") {
+        setNotice("Yêu cầu hoàn tiền đang được cổng thanh toán xử lý.");
+      } else {
+        setError(result.errorMessage || "Cổng thanh toán từ chối yêu cầu hoàn tiền.");
+      }
+      await loadEnrollments(classId);
+    } catch (requestError) {
+      setError(apiError(requestError));
+    } finally {
+      setSaving(false);
+    }
   };
 
   return <>

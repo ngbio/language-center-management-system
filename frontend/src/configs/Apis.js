@@ -61,6 +61,8 @@ export const endpoints = {
   "enrollment-invoice": (enrollmentId) => `/enrollments/${enrollmentId}/invoice`,
   "enrollment-invoice-pdf": (enrollmentId) => `/enrollments/${enrollmentId}/invoice.pdf`,
   "staff-refund": (enrollmentId) => `/staff/enrollments/${enrollmentId}/refunds`,
+  "staff-refunds": "/staff/refunds",
+  "staff-refresh-refund": (refundId) => `/staff/refunds/${refundId}/refresh`,
 
   "admin-classes": "/admin/classes",
   "admin-class-details": (classId) => `/admin/classes/${classId}`,

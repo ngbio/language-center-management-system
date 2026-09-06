@@ -13,6 +13,7 @@ import LoginScreen from "./screens/admin/LoginScreen";
 import RoomListScreen from "./screens/admin/rooms/RoomListScreen";
 import UsersScreen from "./screens/admin/UsersScreen";
 import EnrollmentManagementScreen from "./screens/admin/enrollments/EnrollmentManagementScreen";
+import RefundManagementScreen from "./screens/admin/refunds/RefundManagementScreen";
 import CourseDetailScreen from "./screens/public/CourseDetailScreen";
 import HomeScreen from "./screens/public/HomeScreen";
 import MyCoursesScreen from "./screens/public/MyCoursesScreen";
@@ -63,12 +64,14 @@ function App() {
           <Route path="rooms" element={<RoomListScreen />} />
           <Route path="classes" element={<ClassListScreen />} />
           <Route path="enrollments" element={<EnrollmentManagementScreen />} />
+          <Route path="refunds" element={<RefundManagementScreen />} />
         </Route>
       </Route>
       <Route element={<ProtectedStaffRoute />}>
         <Route path="/staff" element={<StaffLayout />}>
           <Route index element={<Navigate to="enrollments" replace />} />
           <Route path="enrollments" element={<EnrollmentManagementScreen />} />
+          <Route path="refunds" element={<RefundManagementScreen />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
