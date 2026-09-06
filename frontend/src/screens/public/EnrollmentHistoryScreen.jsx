@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { authApis, endpoints } from "../../configs/Apis";
-import { apiData, apiError, formatDate, formatMoney } from "../../utils/api";
+import { apiData, apiError, formatDate, formatDateTime, formatMoney } from "../../utils/api";
 import { SESSION_KEYS, isTokenActive } from "../../utils/authSession";
 
 const labels = { PENDING: "Đang chờ", CONFIRMED: "Đã xác nhận", CANCELLED: "Đã hủy", PAID: "Đã thanh toán", FAILED: "Thất bại", REFUNDED: "Đã hoàn tiền" };
@@ -15,6 +15,7 @@ export default function EnrollmentHistoryScreen() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [payingId, setPayingId] = useState(null);
+  const [downloadingId, setDownloadingId] = useState(null);
   const [methods, setMethods] = useState({});
 
   const loadHistory = async () => {
@@ -58,6 +59,37 @@ export default function EnrollmentHistoryScreen() {
     } catch (requestError) { setError(apiError(requestError)); }
   };
 
+  const downloadInvoice = async (enrollment) => {
+    setDownloadingId(enrollment.id); setError(""); setNotice("");
+    try {
+      const response = await authApis().get(endpoints["enrollment-invoice-pdf"](enrollment.id), {
+        responseType: "blob",
+      });
+      const url = URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `hoa-don-${enrollment.classCode}-${enrollment.studentCode}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (requestError) {
+      const responseBody = requestError.response?.data;
+      if (responseBody instanceof Blob) {
+        try {
+          const payload = JSON.parse(await responseBody.text());
+          setError(payload.message || apiError(requestError));
+        } catch {
+          setError(apiError(requestError));
+        }
+      } else {
+        setError(apiError(requestError));
+      }
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
   if (!isTokenActive(token)) return <Navigate to="/login" replace />;
   if (role !== "STUDENT") return <Navigate to="/" replace />;
 
@@ -72,9 +104,10 @@ export default function EnrollmentHistoryScreen() {
               const transaction = latestPayment.get(item.id);
               const canPay = item.enrollmentStatus === "CONFIRMED" && item.paymentStatus === "PENDING" && Number(item.amountDue) > 0;
               const canCancel = item.enrollmentStatus !== "CANCELLED" && item.paymentStatus !== "PAID";
-              return <tr key={item.id}><td>{formatDate(item.enrollmentDate)}</td><td><strong>{item.className}</strong><small>{item.classCode} · {item.courseName}</small></td><td>{formatMoney(item.amountDue)}</td><td><Status value={item.enrollmentStatus} /></td><td><Status value={item.paymentStatus} /></td><td>{transaction ? <><strong>{transaction.method}</strong><small>{transaction.transactionCode}<br />{labels[transaction.status] || transaction.status}</small></> : "Chưa có"}</td><td><div className="student-enrollment-actions">
+              return <tr key={item.id}><td>{formatDate(item.enrollmentDate)}{item.paymentStatus === "PENDING" && <small>Hạn: {formatDateTime(item.paymentDeadline)}</small>}</td><td><strong>{item.className}</strong><small>{item.classCode} · {item.courseName}</small></td><td>{formatMoney(item.amountDue)}</td><td><Status value={item.enrollmentStatus} /></td><td><Status value={item.paymentStatus} /></td><td>{transaction ? <><strong>{transaction.method}</strong><small>{transaction.transactionCode}<br />{labels[transaction.status] || transaction.status}</small></> : "Chưa có"}</td><td><div className="student-enrollment-actions">
                 {canPay && <><select value={methods[item.id] || "MOMO"} onChange={(event) => setMethods((current) => ({ ...current, [item.id]: event.target.value }))}><option value="MOMO">MoMo</option><option value="ZALOPAY">ZaloPay</option></select><button className="pay-enrollment-button" disabled={payingId === item.id} onClick={() => pay(item)}>{payingId === item.id ? "Đang tạo..." : "Thanh toán"}</button></>}
-                {item.enrollmentStatus === "PENDING" && <small>Chờ Staff xác nhận để thanh toán.</small>}{canCancel && <button type="button" onClick={() => cancel(item)}>Hủy đăng ký</button>}
+                {canCancel && <button type="button" onClick={() => cancel(item)}>Hủy đăng ký</button>}
+                {["PAID", "REFUNDED"].includes(item.paymentStatus) && <button type="button" className="pay-enrollment-button" disabled={downloadingId === item.id} onClick={() => downloadInvoice(item)}>{downloadingId === item.id ? "Đang xuất..." : "Tải hóa đơn PDF"}</button>}
               </div></td></tr>;
             }) : <tr><td colSpan="7">Bạn chưa có đăng ký lớp học nào.</td></tr>}
           </tbody></table>

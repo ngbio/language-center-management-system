@@ -65,6 +65,11 @@ public class Enrollment implements Serializable {
     @Column(name = "confirmed_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date confirmedAt;
+    @Basic(optional = false)
+    @NotNull
+    @Column(name = "payment_deadline")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date paymentDeadline;
     @Column(name = "cancelled_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date cancelledAt;
@@ -143,6 +148,14 @@ public class Enrollment implements Serializable {
 
     public void setConfirmedAt(Date confirmedAt) {
         this.confirmedAt = confirmedAt;
+    }
+
+    public Date getPaymentDeadline() {
+        return paymentDeadline;
+    }
+
+    public void setPaymentDeadline(Date paymentDeadline) {
+        this.paymentDeadline = paymentDeadline;
     }
 
     public Date getCancelledAt() {

@@ -99,6 +99,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/payments")
                     .hasRole("STUDENT")
+                    .requestMatchers(HttpMethod.POST, "/api/enrollments/*/payments")
+                    .hasRole("STUDENT")
                     .requestMatchers("/api/students/me/**")
                     .hasRole("STUDENT")
                     .requestMatchers(HttpMethod.POST, "/api/enrollments/*/cancel-request")

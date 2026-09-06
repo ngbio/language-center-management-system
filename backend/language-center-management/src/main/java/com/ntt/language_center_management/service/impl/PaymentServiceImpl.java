@@ -11,6 +11,7 @@ import com.ntt.language_center_management.repository.EnrollmentRepository;
 import com.ntt.language_center_management.repository.PaymentRepository;
 import com.ntt.language_center_management.repository.StudentRepository;
 import com.ntt.language_center_management.service.PaymentService;
+import com.ntt.language_center_management.service.EnrollmentExpirationService;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
@@ -47,6 +48,7 @@ public class PaymentServiceImpl implements PaymentService {
   private final StudentRepository studentRepository;
   private final ObjectMapper objectMapper;
   private final RestClient restClient;
+  private final EnrollmentExpirationService enrollmentExpirationService;
 
   @Value("${payment.momo.endpoint}") private String momoEndpoint;
   @Value("${payment.momo.partner-code}") private String momoPartnerCode;
@@ -65,17 +67,22 @@ public class PaymentServiceImpl implements PaymentService {
       PaymentRepository paymentRepository,
       EnrollmentRepository enrollmentRepository,
       StudentRepository studentRepository,
-      ObjectMapper objectMapper) {
+      ObjectMapper objectMapper,
+      EnrollmentExpirationService enrollmentExpirationService) {
     this.paymentRepository = paymentRepository;
     this.enrollmentRepository = enrollmentRepository;
     this.studentRepository = studentRepository;
     this.objectMapper = objectMapper;
+    this.enrollmentExpirationService = enrollmentExpirationService;
     this.restClient = RestClient.builder().build();
   }
 
   @Override
   public PaymentResponse createPayment(CreatePaymentRequest request, Principal principal) {
     Student student = currentStudent(principal);
+    if (enrollmentExpirationService.expireIfOverdue(request.enrollmentId())) {
+      throw new IllegalArgumentException("Đăng ký đã hết hạn thanh toán 48 giờ");
+    }
     Enrollment enrollment = enrollmentRepository.lockById(request.enrollmentId())
         .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đăng ký"));
     if (!enrollment.getStudentId().getId().equals(student.getId())) {
@@ -83,6 +90,9 @@ public class PaymentServiceImpl implements PaymentService {
     }
     if ("CANCELLED".equals(enrollment.getEnrollmentStatus())) {
       throw new IllegalArgumentException("Đăng ký đã bị hủy");
+    }
+    if (!"CONFIRMED".equals(enrollment.getEnrollmentStatus())) {
+      throw new IllegalArgumentException("Đăng ký không ở trạng thái được phép thanh toán");
     }
     if ("PAID".equals(enrollment.getPaymentStatus())) {
       throw new IllegalArgumentException("Đăng ký đã được thanh toán");
@@ -239,11 +249,11 @@ public class PaymentServiceImpl implements PaymentService {
     if (paidAmount != amount(payment.getEnrollmentId())) throw new IllegalArgumentException("Số tiền thanh toán không khớp");
     Enrollment enrollment = payment.getEnrollmentId();
     if ("CANCELLED".equals(enrollment.getEnrollmentStatus())) throw new IllegalArgumentException("Đăng ký đã hủy");
+    if (!"CONFIRMED".equals(enrollment.getEnrollmentStatus())) throw new IllegalArgumentException("Đăng ký không còn hiệu lực");
     Date now = new Date();
     payment.setStatus("PAID");
     payment.setCompletedAt(now);
     payment.setReferenceCode(reference);
-    enrollment.setEnrollmentStatus("CONFIRMED");
     enrollment.setPaymentStatus("PAID");
     if (enrollment.getConfirmedAt() == null) enrollment.setConfirmedAt(now);
     paymentRepository.save(payment);

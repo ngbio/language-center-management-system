@@ -99,7 +99,7 @@ Cập nhật: **05/09/2026**
 |:---:|---|---|---|
 | ✅ | POST | `/api/staff/enrollments` | Admin/Consultant xếp lớp cho Student |
 | ✅ | GET | `/api/classes/{id}/enrollments` | Admin/Consultant/Teacher xem enrollment của lớp |
-| ✅ | PATCH | `/api/staff/enrollments/{id}/status` | Chuyển `PENDING`, `CONFIRMED`, `CANCELLED` |
+| ✅ | PATCH | `/api/staff/enrollments/{id}/status` | Quản lý trạng thái cũ/hủy; đăng ký mới tự `CONFIRMED` |
 | ✅ | POST | `/api/staff/enrollments/{id}/transfer` | Chuyển enrollment chưa thanh toán sang lớp khác |
 | ⬜ | GET | `/api/staff/enrollments` | Chưa có tìm kiếm tất cả enrollment có phân trang |
 | ⬜ | GET | `/api/staff/enrollments/{id}` | Chưa có API chi tiết riêng theo enrollment ID |
@@ -199,10 +199,16 @@ Cập nhật: **05/09/2026**
 | Trạng thái | Method | API đề xuất | Chức năng/Ghi chú |
 |:---:|---|---|---|
 | ✅ | POST | `/api/payments` | Student tạo giao dịch sandbox `MOMO` hoặc `ZALOPAY` |
+| ✅ | POST | `/api/enrollments/{id}/payments` | Student tạo giao dịch theo enrollment |
 | ✅ | GET | `/api/students/me/payments` | Đã tích hợp cùng lịch sử đăng ký tại `/lich-su-dang-ky` |
+| ✅ | GET | `/api/enrollments/{id}/payments` | Chủ sở hữu/Staff xem mọi lần thử thanh toán |
+| ✅ | GET | `/api/payments/{transactionCode}` | Tra cứu trạng thái giao dịch có kiểm tra ownership |
 | ✅ | POST | `/api/payments/momo/ipn` | Nhận và xác minh chữ ký IPN MoMo |
 | ✅ | POST | `/api/payments/zalopay/callback` | Nhận và xác minh MAC callback ZaloPay |
-| ⬜ | POST | `/api/payments/{id}/refund` | Hoàn tiền |
+| ✅ | POST | `/api/staff/enrollments/{id}/refunds` | Staff/Admin hoàn tiền, chống lặp và chặn hoàn vượt thực thu |
+| ✅ | GET | `/api/enrollments/{id}/refunds` | Chủ sở hữu/Staff xem lịch sử hoàn tiền |
+| ✅ | GET | `/api/enrollments/{id}/invoice` | Dữ liệu hóa đơn gồm tổng thu, hoàn và thực thu |
+| ✅ | GET | `/api/enrollments/{id}/invoice.pdf` | Xuất file PDF; Student tải hóa đơn của mình từ lịch sử đăng ký và thanh toán |
 
 ## Các việc nên ưu tiên tiếp theo
 
@@ -212,6 +218,6 @@ Cập nhật: **05/09/2026**
 | 2 | ✅ | Lọc lớp Public theo Course `ACTIVE + PUBLISHED` |
 | 3 | 🟡 | Khi mở lớp phải kiểm tra Course đã `PUBLISHED` |
 | 4 | ⬜ | Thêm CRUD cho `course_section` và `course_content` |
-| 5 | 🟡 | Đã tích hợp sandbox MoMo/ZaloPay; còn hoàn tiền và truy vấn trạng thái |
+| 5 | ✅ | Đã tích hợp sandbox MoMo/ZaloPay, hoàn tiền, truy vấn trạng thái và dữ liệu hóa đơn |
 | 6 | ✅ | Đã có API và giao diện profile riêng cho Student và Teacher |
 | 7 | ⬜ | Thêm API điểm danh và tiến độ học tập |

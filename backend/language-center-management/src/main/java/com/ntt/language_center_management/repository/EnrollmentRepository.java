@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import java.util.Date;
 
 public interface EnrollmentRepository extends JpaRepository<Enrollment, Integer> {
 
@@ -102,4 +103,7 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Integer>
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select e from Enrollment e where e.id = :id")
   Optional<Enrollment> lockById(@Param("id") Integer id);
+
+  @Query("select e.id from Enrollment e where e.enrollmentStatus = 'CONFIRMED' and e.paymentStatus = 'PENDING' and e.paymentDeadline < :now")
+  List<Integer> findExpiredPendingIds(@Param("now") Date now);
 }

@@ -285,6 +285,7 @@ CREATE TABLE enrollment (
     student_id              INT NOT NULL,
     course_class_id         INT NOT NULL,
     enrollment_date         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    payment_deadline        DATETIME NOT NULL,
     amount_due              DECIMAL(18,2) NOT NULL,
     enrollment_status       VARCHAR(30) NOT NULL DEFAULT 'PENDING',
     payment_status          VARCHAR(30) NOT NULL DEFAULT 'PENDING',
@@ -302,7 +303,7 @@ CREATE TABLE enrollment (
     CONSTRAINT ck_enrollment_status
         CHECK (enrollment_status IN ('PENDING', 'CONFIRMED', 'CANCELLED')),
     CONSTRAINT ck_enrollment_payment_status
-        CHECK (payment_status IN ('PENDING', 'PAID', 'FAILED', 'CANCELLED'))
+        CHECK (payment_status IN ('PENDING', 'PAID', 'FAILED', 'CANCELLED', 'REFUNDED'))
 ) ENGINE=InnoDB;
 
 CREATE TABLE payment (
@@ -329,6 +330,28 @@ CREATE TABLE payment (
         CHECK (method IN ('MOMO', 'ZALOPAY')),
     CONSTRAINT ck_payment_status
         CHECK (status IN ('PENDING', 'PAID', 'FAILED', 'CANCELLED'))
+) ENGINE=InnoDB;
+
+CREATE TABLE refund (
+    id                  INT NOT NULL AUTO_INCREMENT,
+    enrollment_id       INT NOT NULL,
+    payment_id          INT NOT NULL,
+    processed_by        INT NOT NULL,
+    refund_code         VARCHAR(100) NOT NULL,
+    idempotency_key     VARCHAR(100) NOT NULL,
+    amount              DECIMAL(18,2) NOT NULL,
+    status              VARCHAR(20) NOT NULL DEFAULT 'COMPLETED',
+    reason              VARCHAR(500) NOT NULL,
+    created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    completed_at        DATETIME NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT uq_refund_code UNIQUE (refund_code),
+    CONSTRAINT uq_refund_idempotency_key UNIQUE (idempotency_key),
+    CONSTRAINT fk_refund_enrollment FOREIGN KEY (enrollment_id) REFERENCES enrollment(id),
+    CONSTRAINT fk_refund_payment FOREIGN KEY (payment_id) REFERENCES payment(id),
+    CONSTRAINT fk_refund_processed_by FOREIGN KEY (processed_by) REFERENCES user(id),
+    CONSTRAINT ck_refund_amount CHECK (amount > 0),
+    CONSTRAINT ck_refund_status CHECK (status IN ('PENDING', 'COMPLETED', 'FAILED', 'CANCELLED'))
 ) ENGINE=InnoDB;
 
 CREATE TABLE attendance (

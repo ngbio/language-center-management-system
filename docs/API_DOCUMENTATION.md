@@ -316,7 +316,8 @@ Response `data`:
 }
 ```
 
-- Khi tạo mới: `enrollmentStatus = PENDING`, `paymentStatus = PENDING`.
+- Khi tạo khóa học có phí: `enrollmentStatus = CONFIRMED`, `paymentStatus = PENDING`, giữ chỗ ngay trong 48 giờ.
+- Khóa học miễn phí được tạo với `CONFIRMED + PAID` và kích hoạt ngay.
 - Trả về HTTP `201` và `EnrollmentResponse`.
 
 ### GET `/students/me/enrollments`
@@ -365,7 +366,8 @@ Chỉ hủy trước ngày khai giảng và khi chưa phát sinh thanh toán.
 ### POST `/payments`
 
 - Quyền: STUDENT; chỉ thanh toán enrollment thuộc chính tài khoản hiện tại.
-- Enrollment phải được Staff xác nhận: `enrollmentStatus = CONFIRMED` và `paymentStatus = PENDING`.
+- Enrollment được giữ chỗ ngay khi đăng ký: `enrollmentStatus = CONFIRMED`, `paymentStatus = PENDING`.
+- Phải thanh toán trước `paymentDeadline` (48 giờ từ lúc đăng ký); quá hạn hệ thống tự chuyển thành `CANCELLED + CANCELLED` và trả chỗ cho lớp.
 - Phương thức: `MOMO` hoặc `ZALOPAY`.
 - Hệ thống chỉ hỗ trợ thanh toán online qua hai ví này; không nhận tiền mặt, chuyển khoản ngân hàng hoặc thẻ trực tiếp trong bảng `payment`.
 - Hệ thống tạo giao dịch `PENDING`, ký request ở backend và trả `paymentUrl` để frontend chuyển trang.
@@ -382,15 +384,72 @@ Chỉ hủy trước ngày khai giảng và khi chưa phát sinh thanh toán.
 - Quyền: STUDENT.
 - Trả lịch sử giao dịch của Student hiện tại, không trả secret hoặc dữ liệu của tài khoản khác.
 
+### POST `/enrollments/{id}/payments`
+
+- Quyền: STUDENT sở hữu enrollment.
+- Tác dụng giống `POST /payments`, nhưng enrollment được xác định trên URL.
+
+```json
+{
+  "method": "MOMO"
+}
+```
+
+### GET `/enrollments/{id}/payments`
+
+- Quyền: Student sở hữu enrollment hoặc ADMIN/CONSULTANT.
+- Trả toàn bộ các lần thử thanh toán, gồm cả `PENDING`, `PAID`, `FAILED` và `CANCELLED`.
+
+### GET `/payments/{transactionCode}`
+
+- Quyền: Student sở hữu giao dịch hoặc ADMIN/CONSULTANT.
+- Tra cứu trạng thái một giao dịch theo mã duy nhất.
+
+### POST `/staff/enrollments/{id}/refunds`
+
+- Quyền: ADMIN/CONSULTANT.
+- Ghi nhận Staff đã hoàn tiền sau khi xử lý yêu cầu với học viên.
+- `amount` có thể để `null` để hoàn toàn bộ số tiền thực thu còn lại.
+- `idempotencyKey` bắt buộc và duy nhất, giúp việc gửi lại cùng một request không tạo hai lần hoàn tiền.
+- Không cho tổng tiền hoàn vượt tổng payment `PAID`.
+- Khi hoàn hết: enrollment chuyển `CANCELLED`, payment status của enrollment chuyển `REFUNDED` và quyền học bị thu hồi.
+
+```json
+{
+  "amount": null,
+  "reason": "Học viên và trung tâm đã thống nhất hoàn học phí",
+  "idempotencyKey": "refund-enrollment-15-20260906"
+}
+```
+
+### GET `/enrollments/{id}/refunds`
+
+- Quyền: Student sở hữu enrollment hoặc ADMIN/CONSULTANT.
+- Trả lịch sử hoàn tiền, người xử lý, lý do và thời điểm hoàn tất.
+
+### GET `/enrollments/{id}/invoice`
+
+- Quyền: Student sở hữu enrollment hoặc ADMIN/CONSULTANT.
+- Trả dữ liệu hóa đơn dạng JSON gồm học viên, khóa/lớp, học phí, tổng đã thu, tổng đã hoàn, thực thu và toàn bộ payment/refund.
+- Đây là dữ liệu nguồn JSON để hiển thị hoặc đối soát hóa đơn.
+
+### GET `/enrollments/{id}/invoice.pdf`
+
+- Quyền: Student sở hữu enrollment hoặc ADMIN/CONSULTANT.
+- Trả trực tiếp `application/pdf` dưới dạng file đính kèm.
+- PDF gồm thông tin học viên, khóa/lớp, học phí, tổng đã thu, đã hoàn, thực thu, trạng thái và lịch sử payment/refund.
+- Giao diện lịch sử đăng ký và thanh toán của Student có nút **Tải hóa đơn PDF** đối với đăng ký `PAID` hoặc `REFUNDED`.
+- Font tiếng Việt lấy từ biến môi trường `INVOICE_PDF_FONT_PATH`.
+
 ### POST `/payments/momo/ipn`
 
 - Public callback dành cho MoMo sandbox.
-- Backend xác minh HMAC-SHA256, mã giao dịch và số tiền trước khi cập nhật payment và enrollment sang `PAID`.
+- Backend xác minh HMAC-SHA256, mã giao dịch và số tiền trước khi cập nhật payment và payment status của enrollment sang `PAID`.
 
 ### POST `/payments/zalopay/callback`
 
 - Public callback dành cho ZaloPay sandbox.
-- Backend xác minh MAC bằng `ZALOPAY_KEY2`, mã giao dịch và số tiền trước khi cập nhật payment và enrollment sang `PAID`.
+- Backend xác minh MAC bằng `ZALOPAY_KEY2`, mã giao dịch và số tiền trước khi cập nhật payment và payment status của enrollment sang `PAID`.
 
 ---
 
@@ -469,9 +528,11 @@ Chỉ hủy trước ngày khai giảng và khi chưa phát sinh thanh toán.
 ```json
 {
   "courseClassId": 1,
-  "studentId": 10
+  "studentEmail": "student1@languagecenter.local"
 }
 ```
+
+Staff đăng ký giúp cũng giữ chỗ ngay với `CONFIRMED + PENDING`; không cần bước xác nhận thủ công. Khóa học miễn phí được kích hoạt ngay. Khóa học có phí phải thanh toán trong 48 giờ.
 
 ### PATCH `/staff/enrollments/{id}/status`
 
@@ -889,6 +950,6 @@ Chỉ hủy trước ngày khai giảng và khi chưa phát sinh thanh toán.
 
 - Backend dùng session stateless; server không lưu phiên đăng nhập, frontend giữ JWT trong `localStorage`.
 - Một Bearer Token sai hoặc hết hạn gửi vào cả API Public cũng bị `JwtFilter` trả `401`; khi gọi với tư cách khách, không gửi header Authorization.
-- Staff chỉ xác nhận, hủy hoặc chuyển enrollment. `PAID` chỉ được cập nhật sau callback MoMo/ZaloPay có chữ ký hợp lệ.
+- Staff có thể đăng ký giúp, hủy, chuyển lớp hoặc hoàn tiền. `PAID` chỉ được cập nhật sau callback MoMo/ZaloPay có chữ ký hợp lệ.
 - API CRUD cho `course_section` và `course_content` chưa có; hiện backend mới cung cấp API đọc public cho curriculum.
 - Student và Teacher đã có API cùng giao diện đọc/cập nhật hồ sơ riêng.

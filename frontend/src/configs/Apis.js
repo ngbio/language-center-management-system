@@ -56,6 +56,11 @@ export const endpoints = {
   "change-enrollment-status": (enrollmentId) => `/staff/enrollments/${enrollmentId}/status`,
   "transfer-enrollment": (enrollmentId) => `/staff/enrollments/${enrollmentId}/transfer`,
   "cancel-enrollment": (enrollmentId) => `/enrollments/${enrollmentId}/cancel-request`,
+  "enrollment-payments": (enrollmentId) => `/enrollments/${enrollmentId}/payments`,
+  "enrollment-refunds": (enrollmentId) => `/enrollments/${enrollmentId}/refunds`,
+  "enrollment-invoice": (enrollmentId) => `/enrollments/${enrollmentId}/invoice`,
+  "enrollment-invoice-pdf": (enrollmentId) => `/enrollments/${enrollmentId}/invoice.pdf`,
+  "staff-refund": (enrollmentId) => `/staff/enrollments/${enrollmentId}/refunds`,
 
   "admin-classes": "/admin/classes",
   "admin-class-details": (classId) => `/admin/classes/${classId}`,

@@ -1,6 +1,7 @@
 package com.ntt.language_center_management.controller.student;
 
 import com.ntt.language_center_management.dto.request.CreatePaymentRequest;
+import com.ntt.language_center_management.dto.request.PaymentMethodRequest;
 import com.ntt.language_center_management.dto.response.ApiResponse;
 import com.ntt.language_center_management.dto.response.PaymentResponse;
 import com.ntt.language_center_management.service.PaymentService;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
 @RequestMapping("/api")
@@ -27,6 +29,15 @@ public class PaymentApiController {
   public ApiResponse<PaymentResponse> create(
       @Valid @RequestBody CreatePaymentRequest request, Principal principal) {
     return new ApiResponse<>(200, "Tạo yêu cầu thanh toán thành công", paymentService.createPayment(request, principal));
+  }
+
+  @PostMapping("/enrollments/{enrollmentId}/payments")
+  public ApiResponse<PaymentResponse> createForEnrollment(
+      @PathVariable Integer enrollmentId,
+      @Valid @RequestBody PaymentMethodRequest request,
+      Principal principal) {
+    return new ApiResponse<>(200, "Tạo yêu cầu thanh toán thành công",
+        paymentService.createPayment(new CreatePaymentRequest(enrollmentId, request.method()), principal));
   }
 
   @GetMapping("/students/me/payments")

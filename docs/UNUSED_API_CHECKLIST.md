@@ -65,8 +65,14 @@ Tài liệu này đối chiếu controller backend với các lời gọi API tr
 | ✅ | GET | `/api/students/me/schedules` | Đã dùng ở tab “Thời khóa biểu” |
 | ✅ | GET | `/api/students/me/profile` | Đã dùng tại trang “Thông tin cá nhân” của Student |
 | ✅ | PUT | `/api/students/me/profile` | Đã dùng để cập nhật hồ sơ Student |
-| ✅ | POST | `/api/payments` | Đã dùng tại trang “Lịch sử đăng ký & thanh toán” sau khi Staff xác nhận enrollment |
+| ✅ | POST | `/api/payments` | Đã dùng tại trang lịch sử; enrollment giữ chỗ ngay và có hạn thanh toán 48 giờ |
 | ✅ | GET | `/api/students/me/payments` | Đã dùng tại trang kết quả thanh toán |
+| ⬜ | GET | `/api/enrollments/{id}/payments` | Backend đã có; chưa có màn chi tiết mọi lần thử thanh toán |
+| ⬜ | GET | `/api/payments/{transactionCode}` | Backend đã có; chưa có ô tra cứu giao dịch |
+| ✅ | POST | `/api/staff/enrollments/{id}/refunds` | Đã có nút hoàn toàn bộ học phí trong màn quản lý enrollment |
+| ⬜ | GET | `/api/enrollments/{id}/refunds` | Backend đã có; chưa hiển thị lịch sử hoàn tiền chi tiết |
+| ⬜ | GET | `/api/enrollments/{id}/invoice` | Backend đã có JSON; frontend hiện dùng endpoint PDF |
+| ✅ | GET | `/api/enrollments/{id}/invoice.pdf` | Nút “Tải hóa đơn PDF” đã tích hợp trong lịch sử đăng ký và thanh toán của Student |
 | ✅ | POST | `/api/enrollments/{id}/cancel-request` | Đã có nút yêu cầu hủy tại trang lịch sử riêng |
 | ⬜ | GET | `/api/classes/{classId}/lessons` | Chưa có màn hình danh sách buổi học cho Student |
 
@@ -90,9 +96,9 @@ Hiện frontend chưa có workspace hoặc route riêng dành cho Teacher.
 
 | Trạng thái | Method | API | Giao diện cần bổ sung |
 |:---:|---|---|---|
-| ✅ | POST | `/api/staff/enrollments` | Form Admin xếp Student vào lớp bằng mã ID |
+| ✅ | POST | `/api/staff/enrollments` | Form Staff/Admin lọc theo khóa học, chọn lớp, tìm Student bằng email và xếp lớp |
 | ✅ | GET | `/api/classes/{id}/enrollments` | Danh sách đăng ký theo lớp trên màn hình Admin |
-| ✅ | PATCH | `/api/staff/enrollments/{id}/status` | Nút xác nhận hoặc hủy enrollment |
+| ✅ | PATCH | `/api/staff/enrollments/{id}/status` | Giao diện dùng để hủy; không còn nút xác nhận thủ công |
 | ✅ | POST | `/api/staff/enrollments/{id}/transfer` | Thao tác chuyển đăng ký sang lớp khác cùng khóa học |
 
 ## 8. Quản lý lịch học và buổi học
