@@ -3,6 +3,7 @@ package com.ntt.language_center_management.service.impl;
 import com.ntt.language_center_management.dto.request.CancelEnrollmentRequest;
 import com.ntt.language_center_management.dto.request.CreateEnrollmentRequest;
 import com.ntt.language_center_management.dto.request.TransferEnrollmentRequest;
+import com.ntt.language_center_management.dto.request.StaffCreateEnrollmentRequest;
 import com.ntt.language_center_management.dto.response.EnrollmentResponse;
 import com.ntt.language_center_management.dto.response.EnrollmentSummaryResponse;
 import com.ntt.language_center_management.dto.response.CourseResponse;
@@ -82,11 +83,12 @@ public class EnrollmentServiceImpl implements EnrollmentService {
   }
 
   @Override
-  public EnrollmentResponse enrollByStaff(CreateEnrollmentRequest request) {
-    if (request.studentId() == null) {
-      throw new IllegalArgumentException("Học viên không được để trống khi nhân viên đăng ký");
-    }
-    return createEnrollment(findStudent(request.studentId()), request.courseClassId());
+  public EnrollmentResponse enrollByStaff(StaffCreateEnrollmentRequest request) {
+    Student student = studentRepository
+        .findByUserId_EmailIgnoreCase(request.studentEmail().trim())
+        .orElseThrow(() -> new ResourceNotFoundException(
+            "Không tìm thấy tài khoản học viên với email " + request.studentEmail().trim()));
+    return createEnrollment(student, request.courseClassId());
   }
 
   @Override
@@ -207,10 +209,10 @@ public class EnrollmentServiceImpl implements EnrollmentService {
   public EnrollmentResponse transfer(Integer enrollmentId, TransferEnrollmentRequest request) {
     Enrollment enrollment = lockEnrollment(enrollmentId);
     validateActiveStudent(enrollment.getStudentId());
-    if (!PENDING.equals(enrollment.getEnrollmentStatus())
+    if (!CONFIRMED.equals(enrollment.getEnrollmentStatus())
         || !PENDING.equals(enrollment.getPaymentStatus())) {
       throw new IllegalArgumentException(
-          "Chỉ được chuyển lớp cho đăng ký đang chờ xử lý và chưa thanh toán");
+          "Chỉ được chuyển lớp cho đăng ký đã xác nhận và chưa thanh toán");
     }
     validateTransferPolicy(enrollment.getCourseClassId());
 
@@ -223,6 +225,10 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     Courseclass[] lockedClasses = lockClassesInOrder(sourceClassId, targetClassId);
     Courseclass sourceClass = findLockedClass(lockedClasses, sourceClassId);
     Courseclass targetClass = findLockedClass(lockedClasses, targetClassId);
+
+    if (!sourceClass.getCourseId().getId().equals(targetClass.getCourseId().getId())) {
+      throw new IllegalArgumentException("Chỉ được chuyển sang lớp thuộc cùng khóa học");
+    }
 
     validateOpenClassAndCapacity(targetClass);
     if (enrollmentRepository.existsByStudentId_IdAndCourseClassId_Id(
@@ -256,10 +262,15 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     Enrollment enrollment = new Enrollment();
     enrollment.setStudentId(student);
     enrollment.setCourseClassId(courseClass);
-    enrollment.setEnrollmentDate(new Date());
+    Date now = new Date();
+    enrollment.setEnrollmentDate(now);
+    enrollment.setPaymentDeadline(Date.from(now.toInstant().plusSeconds(2 * 24 * 60 * 60L)));
     enrollment.setAmountDue(courseClass.getAppliedTuitionFee());
-    enrollment.setEnrollmentStatus(PENDING);
-    enrollment.setPaymentStatus(PENDING);
+    enrollment.setEnrollmentStatus(CONFIRMED);
+    enrollment.setPaymentStatus(
+        courseClass.getAppliedTuitionFee().compareTo(java.math.BigDecimal.ZERO) == 0
+            ? "PAID" : PENDING);
+    enrollment.setConfirmedAt(now);
 
     try {
       Enrollment saved = enrollmentRepository.saveAndFlush(enrollment);
@@ -365,12 +376,6 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     return courseClassRepository
         .lockById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp học"));
-  }
-
-  private Student findStudent(Integer id) {
-    return studentRepository
-        .findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy học viên"));
   }
 
   private Student findCurrentStudent(Principal principal) {

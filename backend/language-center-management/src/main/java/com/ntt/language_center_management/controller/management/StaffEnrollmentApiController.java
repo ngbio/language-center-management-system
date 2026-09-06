@@ -1,7 +1,7 @@
 package com.ntt.language_center_management.controller.management;
 
 import com.ntt.language_center_management.dto.request.ChangeEnrollmentStatusRequest;
-import com.ntt.language_center_management.dto.request.CreateEnrollmentRequest;
+import com.ntt.language_center_management.dto.request.StaffCreateEnrollmentRequest;
 import com.ntt.language_center_management.dto.request.TransferEnrollmentRequest;
 import com.ntt.language_center_management.dto.response.ApiResponse;
 import com.ntt.language_center_management.dto.response.EnrollmentResponse;
@@ -32,7 +32,7 @@ public class StaffEnrollmentApiController {
 
   @PostMapping("/staff/enrollments")
   public ResponseEntity<ApiResponse<EnrollmentResponse>> enrollByStaff(
-      @Valid @RequestBody CreateEnrollmentRequest request) {
+      @Valid @RequestBody StaffCreateEnrollmentRequest request) {
     return ResponseEntity.status(HttpStatus.CREATED)
         .body(
             new ApiResponse<>(

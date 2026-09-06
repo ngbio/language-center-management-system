@@ -15,7 +15,7 @@ public class EnrollmentMapper {
     var course = courseClass.getCourseId();
 
     return new EnrollmentResponse(
-        value.getId(), value.getEnrollmentDate(), value.getAmountDue(),
+        value.getId(), value.getEnrollmentDate(), value.getPaymentDeadline(), value.getAmountDue(),
         value.getEnrollmentStatus(), value.getPaymentStatus(), value.getConfirmedAt(),
         value.getCancelledAt(), value.getCancellationReason(), student.getId(),
         student.getStudentCode(), user.getFullName(), user.getEmail(), courseClass.getId(),
@@ -32,7 +32,7 @@ public class EnrollmentMapper {
         value.getId(), student.getId(), student.getStudentCode(),
         student.getUserId().getFullName(), courseClass.getId(), courseClass.getClassCode(),
         courseClass.getClassName(), course.getId(), course.getCourseCode(), course.getCourseName(),
-        value.getEnrollmentDate(), value.getAmountDue(),
+        value.getEnrollmentDate(), value.getPaymentDeadline(), value.getAmountDue(),
         value.getEnrollmentStatus(), value.getPaymentStatus());
   }
 }

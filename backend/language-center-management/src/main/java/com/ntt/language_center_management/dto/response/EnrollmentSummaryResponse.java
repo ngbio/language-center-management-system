@@ -15,6 +15,7 @@ public record EnrollmentSummaryResponse(
     String courseCode,
     String courseName,
     Date enrollmentDate,
+    Date paymentDeadline,
     BigDecimal amountDue,
     String enrollmentStatus,
     String paymentStatus) {}

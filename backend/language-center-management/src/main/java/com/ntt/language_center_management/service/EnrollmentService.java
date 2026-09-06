@@ -3,6 +3,7 @@ package com.ntt.language_center_management.service;
 import com.ntt.language_center_management.dto.request.CancelEnrollmentRequest;
 import com.ntt.language_center_management.dto.request.CreateEnrollmentRequest;
 import com.ntt.language_center_management.dto.request.TransferEnrollmentRequest;
+import com.ntt.language_center_management.dto.request.StaffCreateEnrollmentRequest;
 import com.ntt.language_center_management.dto.response.EnrollmentResponse;
 import com.ntt.language_center_management.dto.response.EnrollmentSummaryResponse;
 import com.ntt.language_center_management.dto.response.CourseResponse;
@@ -15,7 +16,7 @@ public interface EnrollmentService {
 
   EnrollmentResponse enrollMe(CreateEnrollmentRequest request, Principal principal);
 
-  EnrollmentResponse enrollByStaff(CreateEnrollmentRequest request);
+  EnrollmentResponse enrollByStaff(StaffCreateEnrollmentRequest request);
 
   List<EnrollmentSummaryResponse> getMyEnrollments(Principal principal);
 

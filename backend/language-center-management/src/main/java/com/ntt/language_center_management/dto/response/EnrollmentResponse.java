@@ -6,6 +6,7 @@ import java.util.Date;
 public record EnrollmentResponse(
     Integer id,
     Date enrollmentDate,
+    Date paymentDeadline,
     BigDecimal amountDue,
     String enrollmentStatus,
     String paymentStatus,
