@@ -5,5 +5,7 @@ import java.util.Date;
 
 public record RefundResponse(
     Integer id, Integer enrollmentId, Integer paymentId, String refundCode,
-    BigDecimal amount, String status, String reason, Integer processedById,
+    String paymentMethod, String studentName, String className,
+    BigDecimal amount, String status, String gatewayRefundId, String errorMessage,
+    String reason, Integer processedById,
     String processedByName, Date createdAt, Date completedAt) {}

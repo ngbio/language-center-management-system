@@ -11,6 +11,8 @@ public interface BillingService {
   List<PaymentResponse> getPayments(Integer enrollmentId, Principal principal);
   PaymentResponse getPayment(String transactionCode, Principal principal);
   List<RefundResponse> getRefunds(Integer enrollmentId, Principal principal);
+  List<RefundResponse> getStaffRefunds(String status, Principal principal);
   RefundResponse createRefund(Integer enrollmentId, RefundRequest request, Principal principal);
+  RefundResponse refreshRefund(Integer refundId, Principal principal);
   InvoiceResponse getInvoice(Integer enrollmentId, Principal principal);
 }

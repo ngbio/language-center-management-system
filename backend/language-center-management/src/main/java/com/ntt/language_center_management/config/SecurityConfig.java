@@ -107,6 +107,8 @@ public class SecurityConfig {
                     .hasRole("STUDENT")
                     .requestMatchers("/api/staff/enrollments/**")
                     .hasAnyRole("ADMIN", "CONSULTANT")
+                    .requestMatchers("/api/staff/refunds/**")
+                    .hasAnyRole("ADMIN", "CONSULTANT")
                     .requestMatchers(HttpMethod.GET, "/api/classes/*/enrollments")
                     .hasAnyRole("ADMIN", "CONSULTANT", "TEACHER")
                     .requestMatchers(
