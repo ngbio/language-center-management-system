@@ -271,7 +271,39 @@ Response `data`:
 
 ---
 
+### GET `/teachers`
+
+- Quyền: Public.
+- Công dụng: lấy danh sách giảng viên có tài khoản `ACTIVE` để giới thiệu trên trang chủ.
+- Trả về: `TeacherOptionResponse[]`, gồm `id`, `teacherCode`, `fullName`, `specialization` và `degree`.
+- Không trả email, số điện thoại hoặc thông tin đăng nhập của giảng viên.
+
+---
+
 ## 6. API dành cho Student
+
+### GET `/students/me/profile`
+
+- Quyền: STUDENT.
+- Công dụng: lấy thông tin tài khoản và hồ sơ Student đang đăng nhập, gồm mã học viên, họ tên, email, số điện thoại, địa chỉ, ngày sinh, giới tính và ảnh đại diện.
+- Trả về: `StudentProfileResponse`.
+
+### PUT `/students/me/profile`
+
+- Quyền: STUDENT.
+- Công dụng: cập nhật họ tên, số điện thoại, địa chỉ, ngày sinh, giới tính và URL ảnh đại diện.
+- Không cho sửa email, username, mã học viên, vai trò hoặc trạng thái tài khoản.
+
+```json
+{
+  "fullName": "Nguyễn Văn An",
+  "phoneNumber": "0901234567",
+  "address": "TP. Hồ Chí Minh",
+  "dateOfBirth": "2002-05-20",
+  "gender": "MALE",
+  "avatar": "https://example.com/avatar.jpg"
+}
+```
 
 ### POST `/enrollments`
 
@@ -330,15 +362,74 @@ Response `data`:
 
 Chỉ hủy trước ngày khai giảng và khi chưa phát sinh thanh toán.
 
+### POST `/payments`
+
+- Quyền: STUDENT; chỉ thanh toán enrollment thuộc chính tài khoản hiện tại.
+- Enrollment phải được Staff xác nhận: `enrollmentStatus = CONFIRMED` và `paymentStatus = PENDING`.
+- Phương thức: `MOMO` hoặc `ZALOPAY`.
+- Hệ thống chỉ hỗ trợ thanh toán online qua hai ví này; không nhận tiền mặt, chuyển khoản ngân hàng hoặc thẻ trực tiếp trong bảng `payment`.
+- Hệ thống tạo giao dịch `PENDING`, ký request ở backend và trả `paymentUrl` để frontend chuyển trang.
+
+```json
+{
+  "enrollmentId": 15,
+  "method": "MOMO"
+}
+```
+
+### GET `/students/me/payments`
+
+- Quyền: STUDENT.
+- Trả lịch sử giao dịch của Student hiện tại, không trả secret hoặc dữ liệu của tài khoản khác.
+
+### POST `/payments/momo/ipn`
+
+- Public callback dành cho MoMo sandbox.
+- Backend xác minh HMAC-SHA256, mã giao dịch và số tiền trước khi cập nhật payment và enrollment sang `PAID`.
+
+### POST `/payments/zalopay/callback`
+
+- Public callback dành cho ZaloPay sandbox.
+- Backend xác minh MAC bằng `ZALOPAY_KEY2`, mã giao dịch và số tiền trước khi cập nhật payment và enrollment sang `PAID`.
+
 ---
 
 ## 7. API dành cho Teacher
+
+### GET `/teachers/me/profile`
+
+- Quyền: TEACHER.
+- Công dụng: lấy tài khoản và hồ sơ chuyên môn của giảng viên đang đăng nhập.
+- Trả về: mã giảng viên, username, họ tên, email, điện thoại, địa chỉ, chuyên môn, bằng cấp, số năm kinh nghiệm và trạng thái.
+
+### PUT `/teachers/me/profile`
+
+- Quyền: TEACHER.
+- Công dụng: cập nhật họ tên, điện thoại, địa chỉ và thông tin chuyên môn của chính giảng viên.
+- Không cho sửa email, username, mã giảng viên, vai trò hoặc trạng thái tài khoản.
+
+```json
+{
+  "fullName": "Lê Hoàng Nam",
+  "phoneNumber": "0902000002",
+  "address": "Thành phố Hồ Chí Minh",
+  "specialization": "Japanese language and JLPT",
+  "degree": "Bachelor of Japanese Studies",
+  "experienceYears": 5
+}
+```
 
 ### GET `/teachers/me/classes`
 
 - Quyền: TEACHER
 - Công dụng: lấy các lớp được phân công cho giáo viên hiện tại.
 - Trả về: `CourseClassResponse[]`.
+
+### GET `/teachers/me/courses`
+
+- Quyền: TEACHER
+- Công dụng: lấy danh sách khóa học không trùng lặp từ các lớp được phân công cho giáo viên hiện tại.
+- Trả về: `CourseResponse[]`.
 
 ### GET `/classes/{classId}/enrollments`
 
@@ -367,6 +458,8 @@ Chỉ hủy trước ngày khai giảng và khi chưa phát sinh thanh toán.
 ---
 
 ## 8. Quản lý enrollment — Staff
+
+> Các API hiện đã được tích hợp vào màn hình Admin `/admin/enrollments`. Màn hình làm việc theo từng lớp vì backend chưa có API phân trang toàn bộ enrollment.
 
 ### POST `/staff/enrollments`
 
@@ -787,7 +880,7 @@ Chỉ hủy trước ngày khai giảng và khi chưa phát sinh thanh toán.
 - `CourseSectionResponse`: `id`, `title`, `description`, `displayOrder`.
 - `CourseContentResponse`: `id`, `title`, `summary`, `contentHtml`, `audioUrl`, `videoUrl`, `documentUrl`, `contentType`, `displayOrder`, `preview`.
 - `CourseClassResponse`: thông tin lớp, số chỗ đã đăng ký/còn lại, khóa học và giáo viên.
-- `ClassScheduleResponse`: lớp, thứ, giờ học, hình thức, phòng hoặc meeting URL.
+- `ClassScheduleResponse`: lớp, thứ, giờ học, hình thức, `roomCode`, `roomName`, `roomLocation` hoặc `meetingUrl`.
 - `LessonResponse`: ngày/giờ học, chủ đề, trạng thái, hình thức, phòng hoặc meeting URL.
 - `EnrollmentResponse`: thông tin đầy đủ enrollment, học viên, lớp và khóa học.
 - `EnrollmentSummaryResponse`: thông tin tóm tắt enrollment dùng cho danh sách.
@@ -796,6 +889,6 @@ Chỉ hủy trước ngày khai giảng và khi chưa phát sinh thanh toán.
 
 - Backend dùng session stateless; server không lưu phiên đăng nhập, frontend giữ JWT trong `localStorage`.
 - Một Bearer Token sai hoặc hết hạn gửi vào cả API Public cũng bị `JwtFilter` trả `401`; khi gọi với tư cách khách, không gửi header Authorization.
-- API chưa có chức năng cập nhật `paymentStatus`; dữ liệu `PAID` hiện cần được xử lý bằng luồng thanh toán hoặc quản trị dữ liệu khác.
+- Staff chỉ xác nhận, hủy hoặc chuyển enrollment. `PAID` chỉ được cập nhật sau callback MoMo/ZaloPay có chữ ký hợp lệ.
 - API CRUD cho `course_section` và `course_content` chưa có; hiện backend mới cung cấp API đọc public cho curriculum.
-- API “Thông tin cá nhân” mới chỉ có đọc `/auth/me`, chưa có API cập nhật profile.
+- Student và Teacher đã có API cùng giao diện đọc/cập nhật hồ sơ riêng.

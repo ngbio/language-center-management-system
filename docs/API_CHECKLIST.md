@@ -48,6 +48,7 @@ Cập nhật: **05/09/2026**
 | ✅ | GET | `/api/levels/{id}` | Chi tiết trình độ đang hoạt động |
 | ✅ | GET | `/api/rooms` | Danh sách phòng |
 | ✅ | GET | `/api/rooms/{id}` | Chi tiết phòng |
+| ✅ | GET | `/api/teachers` | Danh sách giảng viên `ACTIVE` hiển thị trên trang chủ |
 | ✅ | POST | `/api/rooms` | Tạo phòng, yêu cầu Admin |
 | ✅ | PUT | `/api/rooms/{id}` | Cập nhật phòng, yêu cầu Admin |
 | ✅ | DELETE | `/api/rooms/{id}` | Xóa phòng, yêu cầu Admin |
@@ -56,8 +57,8 @@ Cập nhật: **05/09/2026**
 
 | Trạng thái | Method | API | Chức năng/Ghi chú |
 |:---:|---|---|---|
-| 🟡 | GET | `/api/classes` | Đã có; cần lọc thêm Course `ACTIVE + PUBLISHED` |
-| 🟡 | GET | `/api/classes/{id}` | Đã có; cần kiểm tra Course `ACTIVE + PUBLISHED` |
+| ✅ | GET | `/api/classes` | Chỉ trả lớp `OPEN` thuộc Course `ACTIVE + PUBLISHED` |
+| ✅ | GET | `/api/classes/{id}` | Chỉ trả lớp `OPEN` thuộc Course `ACTIVE + PUBLISHED` |
 | ✅ | GET | `/api/classes/{classId}/schedules` | Lấy lịch cố định của lớp |
 
 ## Student
@@ -71,11 +72,11 @@ Cập nhật: **05/09/2026**
 | ✅ | GET | `/api/students/me/schedules` | Thời khóa biểu của các lớp đã kích hoạt |
 | ✅ | POST | `/api/enrollments/{id}/cancel-request` | Hủy enrollment của chính Student |
 | ✅ | GET | `/api/classes/{classId}/lessons` | Student phải có enrollment `CONFIRMED + PAID` đúng lớp |
-| ⬜ | GET | `/api/students/me/profile` | Có thể dùng `/auth/me`, nhưng chưa có DTO hồ sơ Student đầy đủ |
-| ⬜ | PUT | `/api/students/me/profile` | Chưa có cập nhật thông tin cá nhân |
+| ✅ | GET | `/api/students/me/profile` | Lấy đầy đủ tài khoản và hồ sơ Student hiện tại |
+| ✅ | PUT | `/api/students/me/profile` | Đã tích hợp màn hình cập nhật thông tin cá nhân |
 | ⬜ | GET | `/api/students/me/courses/{courseId}/progress` | Chưa theo dõi tiến độ học |
 | ⬜ | PATCH | `/api/students/me/contents/{contentId}/complete` | Chưa đánh dấu bài đã học |
-| ⬜ | GET | `/api/students/me/payments` | Chưa có lịch sử thanh toán |
+| ✅ | GET | `/api/students/me/payments` | Lịch sử giao dịch MoMo/ZaloPay của Student |
 | ⬜ | GET | `/api/students/me/certificates` | Chưa có chứng chỉ của Student |
 
 ## Teacher
@@ -83,11 +84,12 @@ Cập nhật: **05/09/2026**
 | Trạng thái | Method | API | Chức năng/Ghi chú |
 |:---:|---|---|---|
 | ✅ | GET | `/api/teachers/me/classes` | Các lớp được phân công |
+| ✅ | GET | `/api/teachers/me/courses` | Các khóa học suy ra từ lớp Teacher phụ trách |
 | ✅ | GET | `/api/classes/{classId}/enrollments` | Danh sách học viên; service kiểm tra giáo viên phụ trách |
 | ✅ | GET | `/api/classes/{classId}/lessons` | Danh sách buổi học của lớp phụ trách |
 | ✅ | PUT | `/api/lessons/{id}` | Cập nhật chủ đề và link học |
-| ⬜ | GET | `/api/teachers/me/profile` | Chưa có hồ sơ Teacher riêng |
-| ⬜ | PUT | `/api/teachers/me/profile` | Chưa có cập nhật hồ sơ Teacher |
+| ✅ | GET | `/api/teachers/me/profile` | Lấy thông tin tài khoản và hồ sơ chuyên môn của Teacher hiện tại |
+| ✅ | PUT | `/api/teachers/me/profile` | Đã tích hợp màn hình cập nhật hồ sơ Teacher |
 | ⬜ | POST | `/api/lessons/{id}/attendance` | Chưa có API điểm danh |
 | ⬜ | PUT | `/api/lessons/{id}/attendance` | Chưa có cập nhật điểm danh |
 
@@ -99,7 +101,6 @@ Cập nhật: **05/09/2026**
 | ✅ | GET | `/api/classes/{id}/enrollments` | Admin/Consultant/Teacher xem enrollment của lớp |
 | ✅ | PATCH | `/api/staff/enrollments/{id}/status` | Chuyển `PENDING`, `CONFIRMED`, `CANCELLED` |
 | ✅ | POST | `/api/staff/enrollments/{id}/transfer` | Chuyển enrollment chưa thanh toán sang lớp khác |
-| ⬜ | PATCH | `/api/staff/enrollments/{id}/payment-status` | Chưa có cập nhật trạng thái thanh toán |
 | ⬜ | GET | `/api/staff/enrollments` | Chưa có tìm kiếm tất cả enrollment có phân trang |
 | ⬜ | GET | `/api/staff/enrollments/{id}` | Chưa có API chi tiết riêng theo enrollment ID |
 
@@ -193,14 +194,14 @@ Cập nhật: **05/09/2026**
 | ✅ | PUT | `/api/admin/rooms/{id}` | Cập nhật phòng |
 | ✅ | DELETE | `/api/admin/rooms/{id}` | Xóa khi chưa có lịch học |
 
-## Thanh toán — chưa triển khai
+## Thanh toán
 
 | Trạng thái | Method | API đề xuất | Chức năng/Ghi chú |
 |:---:|---|---|---|
-| ⬜ | POST | `/api/enrollments/{id}/payments` | Tạo giao dịch thanh toán |
-| ⬜ | GET | `/api/enrollments/{id}/payments` | Lịch sử thanh toán của enrollment |
-| ⬜ | POST | `/api/payments/{id}/confirm` | Xác nhận thanh toán thủ công |
-| ⬜ | POST | `/api/payments/callback` | Nhận callback từ cổng thanh toán |
+| ✅ | POST | `/api/payments` | Student tạo giao dịch sandbox `MOMO` hoặc `ZALOPAY` |
+| ✅ | GET | `/api/students/me/payments` | Đã tích hợp cùng lịch sử đăng ký tại `/lich-su-dang-ky` |
+| ✅ | POST | `/api/payments/momo/ipn` | Nhận và xác minh chữ ký IPN MoMo |
+| ✅ | POST | `/api/payments/zalopay/callback` | Nhận và xác minh MAC callback ZaloPay |
 | ⬜ | POST | `/api/payments/{id}/refund` | Hoàn tiền |
 
 ## Các việc nên ưu tiên tiếp theo
@@ -208,9 +209,9 @@ Cập nhật: **05/09/2026**
 | Ưu tiên | Trạng thái | Công việc |
 |:---:|:---:|---|
 | 1 | ✅ | Quyền xem lesson của Student yêu cầu enrollment `CONFIRMED + PAID` |
-| 2 | 🟡 | Lọc lớp Public theo Course `ACTIVE + PUBLISHED` |
+| 2 | ✅ | Lọc lớp Public theo Course `ACTIVE + PUBLISHED` |
 | 3 | 🟡 | Khi mở lớp phải kiểm tra Course đã `PUBLISHED` |
 | 4 | ⬜ | Thêm CRUD cho `course_section` và `course_content` |
-| 5 | ⬜ | Xây dựng API payment để thay đổi `paymentStatus` hợp lệ |
-| 6 | ⬜ | Thêm API cập nhật profile Student/Teacher |
+| 5 | 🟡 | Đã tích hợp sandbox MoMo/ZaloPay; còn hoàn tiền và truy vấn trạng thái |
+| 6 | ✅ | Đã có API và giao diện profile riêng cho Student và Teacher |
 | 7 | ⬜ | Thêm API điểm danh và tiến độ học tập |

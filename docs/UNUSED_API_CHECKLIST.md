@@ -38,6 +38,7 @@ Tài liệu này đối chiếu controller backend với các lời gọi API tr
 | ⬜ | GET | `/api/languages/{id}` | Chưa có trang chi tiết ngôn ngữ Public |
 | ✅ | GET | `/api/languages/{id}/levels` | Bộ lọc khóa học Public gọi khi người dùng chọn ngôn ngữ |
 | ✅ | GET | `/api/levels` | Dashboard và form khóa học đang dùng |
+| ✅ | GET | `/api/teachers` | Đã dùng ở khu vực “Đội ngũ giảng viên” trên trang chủ |
 | ⬜ | GET | `/api/levels/{id}` | Chưa có trang chi tiết trình độ Public |
 | ✅ | GET | `/api/rooms` | Dashboard đang dùng để lấy tổng số phòng |
 | ⬜ | GET | `/api/rooms/{id}` | Chưa có giao diện chi tiết phòng Public |
@@ -58,11 +59,15 @@ Tài liệu này đối chiếu controller backend với các lời gọi API tr
 | Trạng thái | Method | API | Hiện trạng / giao diện còn thiếu |
 |:---:|---|---|---|
 | ✅ | POST | `/api/enrollments` | Đã có luồng chọn lớp và xác nhận đăng ký từ trang chi tiết khóa học |
-| ✅ | GET | `/api/students/me/enrollments` | Đã dùng ở tab “Lịch sử đăng ký” |
+| ✅ | GET | `/api/students/me/enrollments` | Đã dùng tại trang riêng “Lịch sử đăng ký & thanh toán” (`/lich-su-dang-ky`) |
 | ✅ | GET | `/api/students/me/courses` | Đã dùng ở nhóm “Khóa học đã mua” |
 | ✅ | GET | `/api/students/me/classes` | Đã dùng ở tab “Lớp học” |
 | ✅ | GET | `/api/students/me/schedules` | Đã dùng ở tab “Thời khóa biểu” |
-| ⬜ | POST | `/api/enrollments/{id}/cancel-request` | Chưa có nút yêu cầu hủy trong lịch sử đăng ký |
+| ✅ | GET | `/api/students/me/profile` | Đã dùng tại trang “Thông tin cá nhân” của Student |
+| ✅ | PUT | `/api/students/me/profile` | Đã dùng để cập nhật hồ sơ Student |
+| ✅ | POST | `/api/payments` | Đã dùng tại trang “Lịch sử đăng ký & thanh toán” sau khi Staff xác nhận enrollment |
+| ✅ | GET | `/api/students/me/payments` | Đã dùng tại trang kết quả thanh toán |
+| ✅ | POST | `/api/enrollments/{id}/cancel-request` | Đã có nút yêu cầu hủy tại trang lịch sử riêng |
 | ⬜ | GET | `/api/classes/{classId}/lessons` | Chưa có màn hình danh sách buổi học cho Student |
 
 ## 6. Teacher
@@ -71,21 +76,24 @@ Hiện frontend chưa có workspace hoặc route riêng dành cho Teacher.
 
 | Trạng thái | Method | API | Giao diện cần bổ sung |
 |:---:|---|---|---|
-| ⬜ | GET | `/api/teachers/me/classes` | Trang “Lớp được phân công” |
+| ✅ | GET | `/api/teachers/me/classes` | Đã dùng tại trang lớp học và thời khóa biểu Teacher |
+| ✅ | GET | `/api/teachers/me/courses` | Đã dùng tại trang khóa học phụ trách của Teacher |
+| ✅ | GET | `/api/teachers/me/profile` | Đã dùng tại trang thông tin cá nhân Teacher |
+| ✅ | PUT | `/api/teachers/me/profile` | Đã dùng để cập nhật hồ sơ chuyên môn Teacher |
 | ⬜ | GET | `/api/classes/{id}/enrollments` | Danh sách học viên trong lớp của Teacher |
 | ⬜ | GET | `/api/classes/{classId}/lessons` | Lịch và danh sách buổi dạy |
 | ⬜ | PUT | `/api/lessons/{id}` | Form cập nhật chủ đề và meeting URL |
 
 ## 7. Staff quản lý enrollment
 
-Hiện chưa có giao diện enrollment dành cho Admin/Consultant.
+Đã có màn hình quản lý enrollment tại `/admin/enrollments` dành cho Admin.
 
 | Trạng thái | Method | API | Giao diện cần bổ sung |
 |:---:|---|---|---|
-| ⬜ | POST | `/api/staff/enrollments` | Form nhân viên xếp lớp cho Student |
-| ⬜ | GET | `/api/classes/{id}/enrollments` | Danh sách đăng ký/học viên theo lớp |
-| ⬜ | PATCH | `/api/staff/enrollments/{id}/status` | Xác nhận hoặc hủy enrollment |
-| ⬜ | POST | `/api/staff/enrollments/{id}/transfer` | Form chuyển lớp |
+| ✅ | POST | `/api/staff/enrollments` | Form Admin xếp Student vào lớp bằng mã ID |
+| ✅ | GET | `/api/classes/{id}/enrollments` | Danh sách đăng ký theo lớp trên màn hình Admin |
+| ✅ | PATCH | `/api/staff/enrollments/{id}/status` | Nút xác nhận hoặc hủy enrollment |
+| ✅ | POST | `/api/staff/enrollments/{id}/transfer` | Thao tác chuyển đăng ký sang lớp khác cùng khóa học |
 
 ## 8. Quản lý lịch học và buổi học
 
