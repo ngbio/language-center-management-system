@@ -133,8 +133,8 @@ export default function CourseDetailScreen() {
       setCurrentEnrollment(enrollment);
       setEnrollmentMessage(
         Number(selectedClass.appliedTuitionFee) > 0
-          ? "Đăng ký lớp thành công. Sau khi Staff xác nhận, bạn có thể thanh toán trong Lịch sử đăng ký."
-          : "Đăng ký lớp miễn phí thành công. Trung tâm sẽ xác nhận đăng ký của bạn.",
+          ? "Đăng ký và giữ chỗ thành công. Vui lòng thanh toán trong vòng 48 giờ tại Lịch sử đăng ký."
+          : "Đăng ký lớp miễn phí thành công. Quyền học đã được kích hoạt.",
       );
       setOpenClasses([]);
     } catch (requestError) {
