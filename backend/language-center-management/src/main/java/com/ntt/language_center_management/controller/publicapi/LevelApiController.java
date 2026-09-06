@@ -5,7 +5,6 @@ import com.ntt.language_center_management.service.LevelService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -18,9 +17,9 @@ public class LevelApiController {
   }
 
   @GetMapping
-  public ApiResponse<?> list(@RequestParam(required = false) Integer languageId) {
+  public ApiResponse<?> list() {
     return new ApiResponse<>(
-        200, "Lấy danh sách trình độ thành công", levelService.getActive(languageId));
+        200, "Lấy danh sách trình độ thành công", levelService.getActive(null));
   }
 
   @GetMapping("/{id}")

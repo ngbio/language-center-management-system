@@ -91,12 +91,15 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/admin/auth/login")
                     .permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/staff/auth/login")
+                    .permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/enrollments")
                     .hasRole("STUDENT")
-                    .requestMatchers(
-                        HttpMethod.GET,
-                        "/api/students/me/enrollments",
-                        "/api/students/me/courses")
+                    .requestMatchers(HttpMethod.POST, "/api/payments/momo/ipn", "/api/payments/zalopay/callback")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/payments")
+                    .hasRole("STUDENT")
+                    .requestMatchers("/api/students/me/**")
                     .hasRole("STUDENT")
                     .requestMatchers(HttpMethod.POST, "/api/enrollments/*/cancel-request")
                     .hasRole("STUDENT")
@@ -132,9 +135,11 @@ public class SecurityConfig {
                     .authenticated()
                     .requestMatchers("/api/auth/**")
                     .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/teachers")
+                    .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/classes/**")
                     .permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/teachers/me/classes")
+                    .requestMatchers("/api/teachers/me/**")
                     .hasRole("TEACHER")
                     .requestMatchers(
                         HttpMethod.GET,

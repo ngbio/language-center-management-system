@@ -10,6 +10,7 @@ const navigation = [
   ["/admin/courses", "▤", "Khóa học"],
   ["/admin/rooms", "⌂", "Phòng học"],
   ["/admin/classes", "◫", "Lớp học"],
+  ["/admin/enrollments", "✓", "Đăng ký học"],
 ];
 
 export default function AdminLayout() {

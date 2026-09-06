@@ -2,6 +2,7 @@ package com.ntt.language_center_management.service;
 
 import com.ntt.language_center_management.dto.request.CourseClassRequest;
 import com.ntt.language_center_management.dto.response.CourseClassResponse;
+import com.ntt.language_center_management.dto.response.CourseResponse;
 import com.ntt.language_center_management.dto.response.PageResponse;
 import java.security.Principal;
 import java.util.Date;
@@ -40,4 +41,6 @@ public interface CourseClassService {
   CourseClassResponse changeStatus(Integer id, String status);
 
   List<CourseClassResponse> getTeacherClasses(Principal principal);
+
+  List<CourseResponse> getTeacherCourses(Principal principal);
 }

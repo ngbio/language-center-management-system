@@ -15,4 +15,5 @@ public record ClassScheduleResponse(
     Integer roomId,
     String roomCode,
     String roomName,
+    String roomLocation,
     String meetingUrl) {}

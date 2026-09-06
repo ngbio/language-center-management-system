@@ -26,11 +26,13 @@ public class EnrollmentMapper {
   public EnrollmentSummaryResponse toSummaryResponse(Enrollment value) {
     var student = value.getStudentId();
     var courseClass = value.getCourseClassId();
+    var course = courseClass.getCourseId();
 
     return new EnrollmentSummaryResponse(
         value.getId(), student.getId(), student.getStudentCode(),
         student.getUserId().getFullName(), courseClass.getId(), courseClass.getClassCode(),
-        courseClass.getClassName(), value.getEnrollmentDate(), value.getAmountDue(),
+        courseClass.getClassName(), course.getId(), course.getCourseCode(), course.getCourseName(),
+        value.getEnrollmentDate(), value.getAmountDue(),
         value.getEnrollmentStatus(), value.getPaymentStatus());
   }
 }

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import api, { endpoints } from "../../configs/Apis";
 import { apiData, apiError } from "../../utils/api";
-import { SESSION_KEYS, isTokenActive } from "../../utils/authSession";
+import { getActiveSessionHome, SESSION_KEYS } from "../../utils/authSession";
 import "../../styles/PublicSite.css";
 
 export default function StudentLoginScreen() {
@@ -12,15 +12,19 @@ export default function StudentLoginScreen() {
   const navigate = useNavigate();
   const location = useLocation();
   const darkMode = localStorage.getItem("publicTheme") === "dark";
-  const existingToken = localStorage.getItem(SESSION_KEYS.token);
-  const existingRole = localStorage.getItem(SESSION_KEYS.role);
+  const activeSessionHome = getActiveSessionHome();
 
-  if (isTokenActive(existingToken) && ["STUDENT", "TEACHER", "ADMIN"].includes(existingRole)) {
-    return <Navigate to="/" replace />;
+  if (activeSessionHome) {
+    return <Navigate to={activeSessionHome} replace />;
   }
 
   const submit = async (event) => {
     event.preventDefault();
+    const currentSessionHome = getActiveSessionHome();
+    if (currentSessionHome) {
+      navigate(currentSessionHome, { replace: true });
+      return;
+    }
     setLoading(true);
     setError("");
     try {
@@ -52,11 +56,14 @@ export default function StudentLoginScreen() {
           <span className="section-kicker">CHÀO MỪNG TRỞ LẠI</span>
           <h2>Đăng nhập</h2>
           <p>Sử dụng tài khoản học viên hoặc giáo viên để đăng nhập.</p>
+          {location.state?.registrationSuccess && (
+            <div className="public-alert public-alert-success">{location.state.registrationSuccess}</div>
+          )}
           {error && <div className="public-alert">{error}</div>}
           <label>Email<input type="email" required autoFocus value={form.email} placeholder="email@linguacenter.vn" onChange={(event) => setForm({ ...form, email: event.target.value })} /></label>
           <label>Mật khẩu<input type="password" required value={form.password} placeholder="Nhập mật khẩu" onChange={(event) => setForm({ ...form, password: event.target.value })} /></label>
           <button className="primary-cta student-login-submit" disabled={loading}>{loading ? "Đang xác thực..." : "Đăng nhập"}</button>
-          <small>Chưa có tài khoản? Liên hệ trung tâm để được hỗ trợ đăng ký.</small>
+          <small>Chưa có tài khoản? <Link to="/register">Đăng ký tại đây</Link>.</small>
         </form>
       </section>
     </main>

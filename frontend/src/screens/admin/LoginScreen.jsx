@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import Apis, { endpoints } from "../../configs/Apis";
 import { apiData, apiError } from "../../utils/api";
-import { SESSION_KEYS, isTokenActive } from "../../utils/authSession";
+import { getActiveSessionHome, SESSION_KEYS } from "../../utils/authSession";
 
 export default function LoginScreen() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -10,15 +10,19 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const existingToken = localStorage.getItem(SESSION_KEYS.token);
-  const existingRole = localStorage.getItem(SESSION_KEYS.role);
+  const activeSessionHome = getActiveSessionHome();
 
-  if (isTokenActive(existingToken) && existingRole === "ADMIN") {
-    return <Navigate to="/admin" replace />;
+  if (activeSessionHome) {
+    return <Navigate to={activeSessionHome} replace />;
   }
 
   const submit = async (event) => {
     event.preventDefault();
+    const currentSessionHome = getActiveSessionHome();
+    if (currentSessionHome) {
+      navigate(currentSessionHome, { replace: true });
+      return;
+    }
     setLoading(true);
     setError("");
     try {

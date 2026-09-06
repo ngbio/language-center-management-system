@@ -14,6 +14,26 @@ public interface ClassScheduleRepository extends JpaRepository<Classschedule, In
   List<Classschedule> findByCourseClassId_IdOrderByDayOfWeekAscStartTimeAsc(
       Integer courseClassId);
 
+  @Query(
+      """
+      select distinct schedule from Classschedule schedule
+      join schedule.courseClassId courseClass
+      join courseClass.courseId course
+      where exists (
+        select enrollment.id from Enrollment enrollment
+        where enrollment.courseClassId.id = courseClass.id
+          and enrollment.studentId.id = :studentId
+          and enrollment.enrollmentStatus = 'CONFIRMED'
+          and enrollment.paymentStatus = 'PAID'
+      )
+        and courseClass.status <> 'CANCELLED'
+        and course.status = 'ACTIVE'
+        and course.publicationStatus = 'PUBLISHED'
+      order by schedule.dayOfWeek asc, schedule.startTime asc
+      """)
+  List<Classschedule> findAccessibleSchedulesByStudentId(
+      @Param("studentId") Integer studentId);
+
   boolean existsByCourseClassId_IdAndDayOfWeekAndStartTime(
       Integer courseClassId, short dayOfWeek, Date startTime);
 

@@ -32,17 +32,12 @@ public class CourseApiController {
       @RequestParam(required = false) Integer levelId,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size,
-      @RequestParam(defaultValue = "courseCode") String sort) {
+      @RequestParam(defaultValue = "courseCode") String sort,
+      @RequestParam(defaultValue = "asc") String direction) {
     return new ApiResponse<>(
         200,
         "Lấy danh sách khóa học thành công",
-        courseService.searchPublished(keyword, languageId, levelId, page, size, sort));
-  }
-
-  @GetMapping("/{id}")
-  public ApiResponse<CourseResponse> get(@PathVariable Integer id) {
-    return new ApiResponse<>(
-        200, "Lấy khóa học thành công", courseService.getPublishedById(id));
+        courseService.searchPublished(keyword, languageId, levelId, page, size, sort, direction));
   }
 
   @GetMapping("/slug/{slug}")

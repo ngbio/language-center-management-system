@@ -2,6 +2,7 @@ package com.ntt.language_center_management.service.impl;
 
 import com.ntt.language_center_management.dto.request.CourseClassRequest;
 import com.ntt.language_center_management.dto.response.CourseClassResponse;
+import com.ntt.language_center_management.dto.response.CourseResponse;
 import com.ntt.language_center_management.dto.response.PageResponse;
 import com.ntt.language_center_management.entity.Classschedule;
 import com.ntt.language_center_management.entity.Courseclass;
@@ -9,6 +10,7 @@ import com.ntt.language_center_management.entity.Teacher;
 import com.ntt.language_center_management.exception.DuplicateResourceException;
 import com.ntt.language_center_management.exception.ResourceNotFoundException;
 import com.ntt.language_center_management.mapper.CourseClassMapper;
+import com.ntt.language_center_management.mapper.CourseMapper;
 import com.ntt.language_center_management.repository.ClassScheduleRepository;
 import com.ntt.language_center_management.repository.CourseClassRepository;
 import com.ntt.language_center_management.repository.CourseRepository;
@@ -20,6 +22,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import org.springframework.data.domain.PageRequest;
@@ -51,6 +54,7 @@ public class CourseClassServiceImpl implements CourseClassService {
   private final EnrollmentRepository enrollmentRepository;
   private final ClassScheduleRepository classScheduleRepository;
   private final CourseClassMapper courseClassMapper;
+  private final CourseMapper courseMapper;
 
   public CourseClassServiceImpl(
       CourseClassRepository courseClassRepository,
@@ -58,13 +62,15 @@ public class CourseClassServiceImpl implements CourseClassService {
       TeacherRepository teacherRepository,
       EnrollmentRepository enrollmentRepository,
       ClassScheduleRepository classScheduleRepository,
-      CourseClassMapper courseClassMapper) {
+      CourseClassMapper courseClassMapper,
+      CourseMapper courseMapper) {
     this.courseClassRepository = courseClassRepository;
     this.courseRepository = courseRepository;
     this.teacherRepository = teacherRepository;
     this.enrollmentRepository = enrollmentRepository;
     this.classScheduleRepository = classScheduleRepository;
     this.courseClassMapper = courseClassMapper;
+    this.courseMapper = courseMapper;
   }
 
   @Override
@@ -79,6 +85,9 @@ public class CourseClassServiceImpl implements CourseClassService {
       String sort,
       String direction) {
     Specification<Courseclass> spec = (root, query, cb) -> cb.equal(root.get("status"), "OPEN");
+    spec = spec.and((root, query, cb) -> cb.and(
+        cb.equal(root.get("courseId").get("status"), "ACTIVE"),
+        cb.equal(root.get("courseId").get("publicationStatus"), "PUBLISHED")));
 
     if (StringUtils.hasText(keyword)) {
       String value = "%" + keyword.trim().toLowerCase() + "%";
@@ -99,12 +108,7 @@ public class CourseClassServiceImpl implements CourseClassService {
                   cb.equal(root.get("courseId").get("levelId").get("id"), levelId));
     }
     if (date != null) {
-      spec =
-          spec.and(
-              (root, query, cb) ->
-                  cb.and(
-                      cb.lessThanOrEqualTo(root.get("startDate"), date),
-                      cb.greaterThanOrEqualTo(root.get("endDate"), date)));
+      spec = spec.and((root, query, cb) -> cb.equal(root.get("startDate"), date));
     }
 
     int safePage = Math.max(page, 0);
@@ -175,7 +179,9 @@ public class CourseClassServiceImpl implements CourseClassService {
   @Transactional(readOnly = true)
   public CourseClassResponse getById(Integer id) {
     Courseclass value = find(id);
-    if (!"OPEN".equals(value.getStatus())) {
+    if (!"OPEN".equals(value.getStatus())
+        || !"ACTIVE".equals(value.getCourseId().getStatus())
+        || !"PUBLISHED".equals(value.getCourseId().getPublicationStatus())) {
       throw new ResourceNotFoundException("Không tìm thấy lớp học đang mở");
     }
     return toResponse(value);
@@ -251,6 +257,27 @@ public class CourseClassServiceImpl implements CourseClassService {
     return courseClassRepository.findByTeacherId_IdOrderByStartDateDesc(teacher.getId()).stream()
         .map(this::toResponse)
         .toList();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<CourseResponse> getTeacherCourses(Principal principal) {
+    Teacher teacher = findTeacherByPrincipal(principal);
+    Set<Integer> courseIds = new HashSet<>();
+    return courseClassRepository.findByTeacherId_IdOrderByStartDateDesc(teacher.getId()).stream()
+        .map(Courseclass::getCourseId)
+        .filter(course -> courseIds.add(course.getId()))
+        .map(courseMapper::toResponse)
+        .toList();
+  }
+
+  private Teacher findTeacherByPrincipal(Principal principal) {
+    if (principal == null || !StringUtils.hasText(principal.getName())) {
+      throw new ResourceNotFoundException("Không thể xác định giáo viên hiện tại");
+    }
+    return teacherRepository
+        .findByUserId_EmailIgnoreCase(principal.getName())
+        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hồ sơ giáo viên"));
   }
 
   private void applyRequest(Courseclass value, CourseClassRequest request) {

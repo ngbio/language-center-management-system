@@ -12,16 +12,16 @@ public interface CourseService {
       String status,
       int page,
       int size,
-      String sort);
+      String sort,
+      String direction);
 
   CourseResponse getById(Integer id);
-
-  CourseResponse getPublishedById(Integer id);
 
   CourseResponse getPublishedBySlug(String slug);
 
   PageResponse<CourseResponse> searchPublished(
-      String keyword, Integer languageId, Integer levelId, int page, int size, String sort);
+      String keyword, Integer languageId, Integer levelId, int page, int size, String sort,
+      String direction);
 
   CourseRequest getRequestById(Integer id);
 

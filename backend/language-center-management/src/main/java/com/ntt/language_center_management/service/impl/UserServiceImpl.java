@@ -5,6 +5,8 @@ import com.ntt.language_center_management.dto.request.TeacherRegisterRequest;
 import com.ntt.language_center_management.dto.request.UserRegisterRequest;
 import com.ntt.language_center_management.dto.response.UserResponse;
 import com.ntt.language_center_management.dto.response.PageResponse;
+import com.ntt.language_center_management.dto.response.StudentProfileResponse;
+import com.ntt.language_center_management.dto.request.StudentProfileUpdateRequest;
 import com.ntt.language_center_management.entity.Role;
 import com.ntt.language_center_management.entity.Student;
 import com.ntt.language_center_management.entity.Teacher;
@@ -118,6 +120,16 @@ public class UserServiceImpl implements UserService {
     return userMapper.toResponse(user);
   }
 
+  @Override
+  @Transactional(readOnly = true)
+  public UserResponse loginStaff(LoginRequest request) {
+    User user = authenticate(request);
+    if (user.getRoleId() == null || !"CONSULTANT".equals(user.getRoleId().getRoleCode())) {
+      throw new UnauthorizedException("Tài khoản không có quyền nhân viên tư vấn");
+    }
+    return userMapper.toResponse(user);
+  }
+
   private User authenticate(LoginRequest request) {
     User user =
         userRepository
@@ -180,6 +192,15 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public UserResponse addTeacher(TeacherRegisterRequest request) {
+    return createTeacher(request, "ACTIVE");
+  }
+
+  @Override
+  public UserResponse registerTeacher(TeacherRegisterRequest request) {
+    return createTeacher(request, "INACTIVE");
+  }
+
+  private UserResponse createTeacher(TeacherRegisterRequest request, String initialStatus) {
     if (userRepository.existsByEmailIgnoreCase(request.email())) {
       throw new DuplicateResourceException("Email này đã có người đăng ký!");
     }
@@ -198,7 +219,7 @@ public class UserServiceImpl implements UserService {
     Date now = new Date();
     user.setCreatedAt(now);
     user.setUpdatedAt(now);
-    user.setStatus("ACTIVE");
+    user.setStatus(initialStatus);
     user.setRoleId(
         roleRepository
             .findByRoleCodeIgnoreCase(TEACHER_ROLE_CODE)
@@ -235,6 +256,49 @@ public class UserServiceImpl implements UserService {
   public UserResponse getCurrentUserProfile(Principal principal) {
     User user = validateAndGetCurrentUser(principal);
     return userMapper.toResponse(user);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public StudentProfileResponse getStudentProfile(Principal principal) {
+    return toStudentProfile(findCurrentStudent(principal));
+  }
+
+  @Override
+  public StudentProfileResponse updateStudentProfile(
+      Principal principal, StudentProfileUpdateRequest request) {
+    Student student = findCurrentStudent(principal);
+    User user = student.getUserId();
+    user.setFullName(request.fullName().trim());
+    user.setPhoneNumber(trimToNull(request.phoneNumber()));
+    user.setAddress(trimToNull(request.address()));
+    user.setUpdatedAt(new Date());
+    student.setDateOfBirth(request.dateOfBirth());
+    student.setGender(trimToNull(request.gender()));
+    student.setAvatar(trimToNull(request.avatar()));
+    userRepository.save(user);
+    return toStudentProfile(studentRepository.save(student));
+  }
+
+  private Student findCurrentStudent(Principal principal) {
+    if (principal == null || !StringUtils.hasText(principal.getName())) {
+      throw new UnauthorizedException("Không thể xác định học viên hiện tại");
+    }
+    return studentRepository.findByUserId_EmailIgnoreCase(principal.getName())
+        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hồ sơ học viên"));
+  }
+
+  private StudentProfileResponse toStudentProfile(Student student) {
+    User user = student.getUserId();
+    return new StudentProfileResponse(
+        student.getId(), student.getStudentCode(), user.getId(), user.getUsername(),
+        user.getFullName(), user.getEmail(), user.getPhoneNumber(), user.getAddress(),
+        student.getDateOfBirth(), student.getGender(), student.getAvatar(), user.getStatus(),
+        user.getCreatedAt(), user.getUpdatedAt());
+  }
+
+  private String trimToNull(String value) {
+    return StringUtils.hasText(value) ? value.trim() : null;
   }
 
   private User validateAndGetCurrentUser(Principal principal) {
@@ -309,10 +373,15 @@ public class UserServiceImpl implements UserService {
   }
 
   private String normalizeStatusFilter(String status) {
-    if (status != null && !USER_STATUSES.contains(status)) {
+    if (!StringUtils.hasText(status)) {
+      return null;
+    }
+
+    String normalized = status.trim().toUpperCase(Locale.ROOT);
+    if (!USER_STATUSES.contains(normalized)) {
       throw new IllegalArgumentException(
           "Trạng thái phải là ACTIVE, INACTIVE hoặc LOCKED");
     }
-    return status;
+    return normalized;
   }
 }

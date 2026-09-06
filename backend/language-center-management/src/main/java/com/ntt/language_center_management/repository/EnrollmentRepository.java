@@ -2,6 +2,7 @@ package com.ntt.language_center_management.repository;
 
 import com.ntt.language_center_management.entity.Enrollment;
 import com.ntt.language_center_management.entity.Course;
+import com.ntt.language_center_management.entity.Courseclass;
 import jakarta.persistence.LockModeType;
 import java.util.Collection;
 import java.util.List;
@@ -18,6 +19,12 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Integer>
 
   boolean existsByStudentId_IdAndCourseClassId_IdAndEnrollmentStatusIn(
       Integer studentId, Integer courseClassId, Collection<String> statuses);
+
+  boolean existsByStudentId_IdAndCourseClassId_IdAndEnrollmentStatusAndPaymentStatus(
+      Integer studentId,
+      Integer courseClassId,
+      String enrollmentStatus,
+      String paymentStatus);
 
   boolean existsByStudentId_IdAndCourseClassId_Id(Integer studentId, Integer courseClassId);
 
@@ -48,6 +55,21 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Integer>
       order by course.courseName asc
       """)
   List<Course> findAccessibleCoursesByStudentId(@Param("studentId") Integer studentId);
+
+  @Query(
+      """
+      select distinct courseClass from Enrollment e
+      join e.courseClassId courseClass
+      join courseClass.courseId course
+      where e.studentId.id = :studentId
+        and e.enrollmentStatus = 'CONFIRMED'
+        and e.paymentStatus = 'PAID'
+        and courseClass.status <> 'CANCELLED'
+        and course.status = 'ACTIVE'
+        and course.publicationStatus = 'PUBLISHED'
+      order by courseClass.startDate desc
+      """)
+  List<Courseclass> findAccessibleClassesByStudentId(@Param("studentId") Integer studentId);
 
   List<Enrollment> findByStudentId_IdOrderByEnrollmentDateDesc(Integer studentId);
 

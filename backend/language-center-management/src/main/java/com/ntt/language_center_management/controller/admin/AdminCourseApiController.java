@@ -35,11 +35,12 @@ public class AdminCourseApiController {
       @RequestParam(required = false) String status,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size,
-      @RequestParam(defaultValue = "courseCode") String sort) {
+      @RequestParam(defaultValue = "courseCode") String sort,
+      @RequestParam(defaultValue = "asc") String direction) {
     return new ApiResponse<>(
         200,
         "Lấy danh sách khóa học thành công",
-        courseService.search(keyword, languageId, levelId, status, page, size, sort));
+        courseService.search(keyword, languageId, levelId, status, page, size, sort, direction));
   }
 
   @GetMapping("/{id}")

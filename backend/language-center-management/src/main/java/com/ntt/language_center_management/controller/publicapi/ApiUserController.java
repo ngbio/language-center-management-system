@@ -12,6 +12,7 @@ import java.security.Principal;
 
 import com.ntt.language_center_management.dto.request.LoginRequest;
 import com.ntt.language_center_management.dto.request.UserRegisterRequest;
+import com.ntt.language_center_management.dto.request.TeacherRegisterRequest;
 import com.ntt.language_center_management.dto.response.ApiResponse;
 import com.ntt.language_center_management.dto.response.LoginResponse;
 import com.ntt.language_center_management.dto.response.UserResponse;
@@ -60,6 +61,18 @@ public class ApiUserController {
         return new ResponseEntity<>(
             new ApiResponse<>(HttpStatus.CREATED.value(), "Đăng ký thành công", user),
             HttpStatus.CREATED);
+    }
+
+    @PostMapping("/teacher/register")
+    public ResponseEntity<ApiResponse<UserResponse>> registerTeacher(
+            @Valid @RequestBody TeacherRegisterRequest request) {
+        UserResponse user = userService.registerTeacher(request);
+        return new ResponseEntity<>(
+                new ApiResponse<>(
+                        HttpStatus.CREATED.value(),
+                        "Đăng ký giáo viên thành công. Vui lòng chờ quản trị viên kích hoạt tài khoản.",
+                        user),
+                HttpStatus.CREATED);
     }
 
     @GetMapping("/me")
