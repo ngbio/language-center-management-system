@@ -22,6 +22,8 @@ import com.ntt.language_center_management.repository.UserRepository;
 import com.ntt.language_center_management.service.LessonService;
 import java.security.Principal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
@@ -29,6 +31,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
@@ -44,6 +47,7 @@ public class LessonServiceImpl implements LessonService {
   private final StudentRepository studentRepository;
   private final UserRepository userRepository;
   private final LessonMapper lessonMapper;
+  private final ZoneId applicationZone;
 
   public LessonServiceImpl(
       LessonRepository lessonRepository,
@@ -53,7 +57,8 @@ public class LessonServiceImpl implements LessonService {
       EnrollmentRepository enrollmentRepository,
       StudentRepository studentRepository,
       UserRepository userRepository,
-      LessonMapper lessonMapper) {
+      LessonMapper lessonMapper,
+      @Value("${app.time-zone:Asia/Ho_Chi_Minh}") String applicationTimeZone) {
     this.lessonRepository = lessonRepository;
     this.classScheduleRepository = classScheduleRepository;
     this.courseClassRepository = courseClassRepository;
@@ -62,11 +67,18 @@ public class LessonServiceImpl implements LessonService {
     this.studentRepository = studentRepository;
     this.userRepository = userRepository;
     this.lessonMapper = lessonMapper;
+    this.applicationZone = ZoneId.of(applicationTimeZone);
   }
 
   @Override
-  public List<LessonResponse> generate(Integer classId) {
+  public List<LessonResponse> generate(Integer classId, Principal principal) {
     Courseclass courseClass = findClass(classId);
+    User editor = ensureCanEditContent(courseClass, principal);
+    if ("TEACHER".equals(editor.getRoleId().getRoleCode())
+        && LocalDate.now().isBefore(toLocalDate(courseClass.getStartDate()))) {
+      throw new IllegalArgumentException(
+          "Giảng viên chỉ được sinh buổi học từ ngày khai giảng của lớp");
+    }
     ensureClassAllowsLessonChanges(courseClass);
     List<Classschedule> schedules =
         classScheduleRepository.findByCourseClassId_IdOrderByDayOfWeekAscStartTimeAsc(classId);
@@ -139,8 +151,8 @@ public class LessonServiceImpl implements LessonService {
   public LessonResponse update(Integer id, LessonUpdateRequest request, Principal principal) {
     Lesson lesson = findLesson(id);
     ensureCanEditContent(lesson.getClassScheduleId().getCourseClassId(), principal);
-    if ("CANCELLED".equals(lesson.getStatus())) {
-      throw new IllegalArgumentException("Không thể sửa nội dung buổi học đã hủy");
+    if (Set.of("COMPLETED", "CANCELLED").contains(lesson.getStatus())) {
+      throw new IllegalArgumentException("Không thể sửa nội dung buổi học đã hoàn thành hoặc đã hủy");
     }
     lesson.setTopic(StringUtils.hasText(request.topic()) ? request.topic().trim() : null);
     lesson.setMeetingUrl(
@@ -149,11 +161,23 @@ public class LessonServiceImpl implements LessonService {
   }
 
   @Override
-  public LessonResponse reschedule(Integer id, LessonRescheduleRequest request) {
+  public LessonResponse reschedule(
+      Integer id, LessonRescheduleRequest request, Principal principal) {
     Lesson lesson = findLesson(id);
-    ensureNoAttendance(lesson);
     Courseclass courseClass = lesson.getClassScheduleId().getCourseClassId();
+    User editor = ensureCanManageSchedule(courseClass, principal);
+    if (Set.of("COMPLETED", "CANCELLED").contains(lesson.getStatus())) {
+      throw new IllegalArgumentException("Không thể dời buổi học đã hoàn thành hoặc đã hủy");
+    }
+    ensureNoAttendance(lesson);
     ensureClassAllowsLessonChanges(courseClass);
+
+    LocalDateTime now = LocalDateTime.now(applicationZone);
+    LocalDate currentLessonDate = toLocalDate(lesson.getLessonDate());
+    LocalTime lessonStartTime = toLocalTime(lesson.getClassScheduleId().getStartTime());
+    if (!now.isBefore(LocalDateTime.of(currentLessonDate, lessonStartTime))) {
+      throw new IllegalArgumentException("Chỉ được dời buổi học chưa bắt đầu");
+    }
 
     LocalDate lessonDate = request.lessonDate();
     LocalDate startDate = toLocalDate(courseClass.getStartDate());
@@ -161,19 +185,35 @@ public class LessonServiceImpl implements LessonService {
     if (lessonDate.isBefore(startDate) || lessonDate.isAfter(endDate)) {
       throw new IllegalArgumentException("Ngày học mới phải nằm trong khoảng thời gian của lớp");
     }
+    if (lessonDate.equals(currentLessonDate)) {
+      throw new IllegalArgumentException("Ngày học mới phải khác ngày học hiện tại");
+    }
+    if (!LocalDateTime.of(lessonDate, lessonStartTime).isAfter(now)) {
+      throw new IllegalArgumentException("Ngày học mới phải là một thời điểm chưa diễn ra");
+    }
     Date newDate = toDate(lessonDate);
     if (lessonRepository.existsByClassScheduleId_IdAndLessonDateAndIdNot(
         lesson.getClassScheduleId().getId(), newDate, lesson.getId())) {
       throw new DuplicateResourceException("Lịch này đã có buổi học trong ngày được chọn");
     }
     validateActualConflict(lesson.getId(), courseClass, lesson.getClassScheduleId(), lessonDate);
+    if (lesson.getOriginalLessonDate() == null) {
+      lesson.setOriginalLessonDate(lesson.getLessonDate());
+    }
     lesson.setLessonDate(newDate);
+    lesson.setRescheduleReason(request.reason().trim());
+    lesson.setRescheduledAt(Date.from(now.atZone(applicationZone).toInstant()));
+    lesson.setRescheduledBy(editor);
+    // TODO(notification): notify the assigned teacher and enrolled students after commit.
     return lessonMapper.toResponse(lessonRepository.save(lesson));
   }
 
   @Override
   public LessonResponse cancel(Integer id) {
     Lesson lesson = findLesson(id);
+    if ("COMPLETED".equals(lesson.getStatus())) {
+      throw new IllegalArgumentException("Không thể hủy buổi học đã hoàn thành");
+    }
     ensureNoAttendance(lesson);
     ensureClassAllowsLessonChanges(lesson.getClassScheduleId().getCourseClassId());
     if ("CANCELLED".equals(lesson.getStatus())) {
@@ -224,18 +264,26 @@ public class LessonServiceImpl implements LessonService {
     throw new ForbiddenException("Bạn không phải thành viên của lớp học này");
   }
 
-  private void ensureCanEditContent(Courseclass courseClass, Principal principal) {
+  private User ensureCanEditContent(Courseclass courseClass, Principal principal) {
     User user = findUser(principal);
     String role = user.getRoleId().getRoleCode();
     if (Set.of("ADMIN", "CONSULTANT").contains(role)) {
-      return;
+      return user;
     }
     if ("TEACHER".equals(role)
         && courseClass.getTeacherId() != null
         && courseClass.getTeacherId().getUserId().getId().equals(user.getId())) {
-      return;
+      return user;
     }
     throw new ForbiddenException("Bạn không được sửa nội dung buổi học này");
+  }
+
+  private User ensureCanManageSchedule(Courseclass courseClass, Principal principal) {
+    User user = findUser(principal);
+    if (!Set.of("ADMIN", "CONSULTANT").contains(user.getRoleId().getRoleCode())) {
+      throw new ForbiddenException("Chỉ Admin hoặc Consultant được dời buổi học");
+    }
+    return user;
   }
 
   private User findUser(Principal principal) {
@@ -276,10 +324,20 @@ public class LessonServiceImpl implements LessonService {
   }
 
   private Date toDate(LocalDate value) {
-    return Date.from(value.atStartOfDay(ZoneId.systemDefault()).toInstant());
+    return java.sql.Date.valueOf(value);
   }
 
   private LocalDate toLocalDate(Date value) {
-    return value.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+    if (value instanceof java.sql.Date sqlDate) {
+      return sqlDate.toLocalDate();
+    }
+    return value.toInstant().atZone(applicationZone).toLocalDate();
+  }
+
+  private LocalTime toLocalTime(Date value) {
+    if (value instanceof java.sql.Time sqlTime) {
+      return sqlTime.toLocalTime();
+    }
+    return value.toInstant().atZone(applicationZone).toLocalTime();
   }
 }

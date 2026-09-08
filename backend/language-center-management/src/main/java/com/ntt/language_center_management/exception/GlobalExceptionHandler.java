@@ -2,14 +2,22 @@ package com.ntt.language_center_management.exception;
 
 import com.ntt.language_center_management.dto.response.ApiResponse;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 @RestControllerAdvice(basePackages = "com.ntt.language_center_management.controller")
 public class GlobalExceptionHandler {
+  private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
   @ExceptionHandler(DuplicateResourceException.class)
   public ResponseEntity<ApiResponse<Void>> handleDuplicateResource(
@@ -47,6 +55,37 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(IllegalArgumentException.class)
   public ResponseEntity<ApiResponse<Void>> handleBadRequest(IllegalArgumentException exception) {
     return error(HttpStatus.BAD_REQUEST, exception.getMessage());
+  }
+
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ResponseEntity<ApiResponse<Void>> handleUnreadableRequest(
+      HttpMessageNotReadableException exception) {
+    return error(
+        HttpStatus.BAD_REQUEST,
+        "Dữ liệu JSON không hợp lệ hoặc có giá trị không được hỗ trợ");
+  }
+
+  @ExceptionHandler({
+      MissingServletRequestPartException.class,
+      MissingServletRequestParameterException.class,
+      MethodArgumentTypeMismatchException.class
+  })
+  public ResponseEntity<ApiResponse<Void>> handleMalformedRequest(Exception exception) {
+    return error(HttpStatus.BAD_REQUEST, "Yêu cầu thiếu hoặc sai tham số bắt buộc");
+  }
+
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  public ResponseEntity<ApiResponse<Void>> handleUploadTooLarge(
+      MaxUploadSizeExceededException exception) {
+    return error(HttpStatus.PAYLOAD_TOO_LARGE, "Tệp tải lên vượt quá dung lượng cho phép");
+  }
+
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<ApiResponse<Void>> handleUnexpected(Exception exception) {
+    LOGGER.error("Unexpected API error", exception);
+    return error(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        "Hệ thống gặp lỗi khi xử lý yêu cầu. Vui lòng thử lại hoặc kiểm tra log backend.");
   }
 
   private ResponseEntity<ApiResponse<Void>> error(HttpStatus status, String message) {

@@ -26,6 +26,17 @@ const initialForm = {
   teacherId: "",
 };
 
+const initialScheduleForm = {
+  dayOfWeek: "1",
+  startTime: "",
+  endTime: "",
+  deliveryMode: "IN_PERSON",
+  roomId: "",
+  meetingUrl: "",
+};
+
+const dayLabels = ["", "Thứ hai", "Thứ ba", "Thứ tư", "Thứ năm", "Thứ sáu", "Thứ bảy", "Chủ nhật"];
+
 const classStatusTransitions = {
   DRAFT: ["OPEN", "CANCELLED"],
   OPEN: ["FULL", "IN_PROGRESS", "CANCELLED"],
@@ -40,6 +51,13 @@ export default function ClassListScreen() {
   const [courses, setCourses] = useState([]);
   const [levels, setLevels] = useState([]);
   const [teachers, setTeachers] = useState([]);
+  const [rooms, setRooms] = useState([]);
+  const [schedules, setSchedules] = useState([]);
+  const [lessons, setLessons] = useState([]);
+  const [scheduleForm, setScheduleForm] = useState(null);
+  const [lessonForm, setLessonForm] = useState(null);
+  const [rescheduleForm, setRescheduleForm] = useState(null);
+  const [scheduleLoading, setScheduleLoading] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [courseFilter, setCourseFilter] = useState("");
@@ -57,7 +75,7 @@ export default function ClassListScreen() {
       try {
         const api = authApis();
         const [sort, direction] = sorting.split(":");
-        const [classesResponse, coursesResponse, teachersResponse, levelsResponse] =
+        const [classesResponse, coursesResponse, teachersResponse, levelsResponse, roomsResponse] =
           await Promise.all([
             api.get(endpoints["admin-classes"], {
               params: {
@@ -76,11 +94,13 @@ export default function ClassListScreen() {
             }),
             api.get(endpoints["admin-teachers"]),
             api.get(endpoints["admin-levels"]),
+            api.get(endpoints["admin-rooms"], { params: { status: "ACTIVE" } }),
           ]);
         setResult(apiData(classesResponse));
         setCourses(apiData(coursesResponse).content);
         setTeachers(apiData(teachersResponse));
         setLevels(apiData(levelsResponse) || []);
+        setRooms(apiData(roomsResponse) || []);
       } catch (requestError) {
         setError(apiError(requestError));
       } finally {
@@ -134,6 +154,127 @@ export default function ClassListScreen() {
       });
       setSelected(null);
       load();
+    } catch (requestError) {
+      setError(apiError(requestError));
+    }
+  };
+
+  const loadSchedules = async (classId) => {
+    setScheduleLoading(true);
+    try {
+      const response = await authApis().get(endpoints["class-schedules"](classId));
+      setSchedules(apiData(response) || []);
+    } catch (requestError) {
+      setSchedules([]);
+      setError(apiError(requestError));
+    } finally {
+      setScheduleLoading(false);
+    }
+  };
+
+  const manageClass = (item) => {
+    setSelected({ ...item });
+    setScheduleForm(null);
+    setLessonForm(null);
+    setRescheduleForm(null);
+    setError("");
+    loadSchedules(item.id);
+    loadLessons(item.id);
+  };
+
+  const loadLessons = async (classId) => {
+    try {
+      const response = await authApis().get(endpoints["class-lessons"](classId));
+      setLessons(apiData(response) || []);
+    } catch (requestError) {
+      setLessons([]);
+      setError(apiError(requestError));
+    }
+  };
+
+  const editSchedule = (schedule) => {
+    setScheduleForm({
+      id: schedule.id,
+      dayOfWeek: String(schedule.dayOfWeek),
+      startTime: String(schedule.startTime).slice(0, 5),
+      endTime: String(schedule.endTime).slice(0, 5),
+      deliveryMode: schedule.deliveryMode,
+      roomId: schedule.roomId ? String(schedule.roomId) : "",
+      meetingUrl: schedule.meetingUrl || "",
+    });
+  };
+
+  const saveSchedule = async (event) => {
+    event.preventDefault();
+    setError("");
+    const payload = {
+      dayOfWeek: Number(scheduleForm.dayOfWeek),
+      startTime: scheduleForm.startTime,
+      endTime: scheduleForm.endTime,
+      deliveryMode: scheduleForm.deliveryMode,
+      roomId: scheduleForm.deliveryMode === "IN_PERSON" ? Number(scheduleForm.roomId) : null,
+      meetingUrl: scheduleForm.deliveryMode === "ONLINE" ? scheduleForm.meetingUrl : null,
+    };
+    try {
+      if (scheduleForm.id) {
+        await authApis().put(endpoints["schedule-details"](scheduleForm.id), payload);
+      } else {
+        await authApis().post(endpoints["class-schedules"](selected.id), payload);
+      }
+      setScheduleForm(null);
+      await loadSchedules(selected.id);
+    } catch (requestError) {
+      setError(apiError(requestError));
+    }
+  };
+
+  const deleteSchedule = async (schedule) => {
+    if (!window.confirm(`Xóa lịch ${dayLabels[schedule.dayOfWeek]} ${String(schedule.startTime).slice(0, 5)}?`)) return;
+    setError("");
+    try {
+      await authApis().delete(endpoints["schedule-details"](schedule.id));
+      await loadSchedules(selected.id);
+    } catch (requestError) {
+      setError(apiError(requestError));
+    }
+  };
+
+  const saveLesson = async (event) => {
+    event.preventDefault();
+    setError("");
+    try {
+      await authApis().put(endpoints["lesson-details"](lessonForm.id), {
+        topic: lessonForm.topic,
+        meetingUrl: lessonForm.meetingUrl,
+      });
+      setLessonForm(null);
+      await loadLessons(selected.id);
+    } catch (requestError) {
+      setError(apiError(requestError));
+    }
+  };
+
+  const rescheduleLesson = async (event) => {
+    event.preventDefault();
+    setError("");
+    try {
+      await authApis().patch(endpoints["reschedule-lesson"](rescheduleForm.id), {
+        lessonDate: rescheduleForm.lessonDate,
+        reason: rescheduleForm.reason,
+      });
+      setRescheduleForm(null);
+      await loadLessons(selected.id);
+    } catch (requestError) {
+      setError(apiError(requestError));
+    }
+  };
+
+  const cancelLesson = async (lesson) => {
+    if (!window.confirm(`Hủy buổi học ngày ${formatDate(lesson.lessonDate)}?`)) return;
+    setError("");
+    try {
+      await authApis().patch(endpoints["cancel-lesson"](lesson.id));
+      await loadLessons(selected.id);
     } catch (requestError) {
       setError(apiError(requestError));
     }
@@ -228,7 +369,7 @@ export default function ClassListScreen() {
                     <td>
                       <button
                         className="link-button"
-                        onClick={() => setSelected({ ...item })}
+                        onClick={() => manageClass(item)}
                       >
                         Quản lý →
                       </button>
@@ -427,6 +568,14 @@ export default function ClassListScreen() {
               Gán giảng viên
             </button>
           </div>
+          <div className="section-label schedule-section-heading"><span>Lịch học cố định</span><button type="button" className="link-button" onClick={() => setScheduleForm({ ...initialScheduleForm })}>＋ Thêm lịch</button></div>
+          <ErrorAlert message={error} />
+          {scheduleLoading ? <div className="schedule-admin-empty">Đang tải lịch học...</div> : schedules.length ? <div className="schedule-admin-list">{schedules.map((schedule) => <article key={schedule.id}><div><strong>{dayLabels[schedule.dayOfWeek]}</strong><small>{String(schedule.startTime).slice(0, 5)} – {String(schedule.endTime).slice(0, 5)}</small></div><div><strong>{schedule.deliveryMode === "ONLINE" ? "Trực tuyến" : schedule.roomName || schedule.roomCode}</strong><small>{schedule.deliveryMode === "ONLINE" ? schedule.meetingUrl : schedule.roomLocation || "Chưa có vị trí"}</small></div><div><button type="button" onClick={() => editSchedule(schedule)}>Sửa</button><button type="button" className="danger-link" onClick={() => deleteSchedule(schedule)}>Xóa</button></div></article>)}</div> : <div className="schedule-admin-empty">Lớp chưa có lịch học cố định.</div>}
+          {scheduleForm && <form className="schedule-admin-form" onSubmit={saveSchedule}><div className="form-grid"><label>Thứ<select required value={scheduleForm.dayOfWeek} onChange={(event) => setScheduleForm({ ...scheduleForm, dayOfWeek: event.target.value })}>{dayLabels.slice(1).map((label, index) => <option value={index + 1} key={label}>{label}</option>)}</select></label><label>Hình thức<select value={scheduleForm.deliveryMode} onChange={(event) => setScheduleForm({ ...scheduleForm, deliveryMode: event.target.value, roomId: "", meetingUrl: "" })}><option value="IN_PERSON">Tại trung tâm</option><option value="ONLINE">Trực tuyến</option></select></label><label>Giờ bắt đầu<input required type="time" value={scheduleForm.startTime} onChange={(event) => setScheduleForm({ ...scheduleForm, startTime: event.target.value })} /></label><label>Giờ kết thúc<input required type="time" value={scheduleForm.endTime} onChange={(event) => setScheduleForm({ ...scheduleForm, endTime: event.target.value })} /></label>{scheduleForm.deliveryMode === "IN_PERSON" ? <label>Phòng học<select required value={scheduleForm.roomId} onChange={(event) => setScheduleForm({ ...scheduleForm, roomId: event.target.value })}><option value="">Chọn phòng</option>{rooms.map((room) => <option value={room.id} key={room.id}>{room.roomCode} — {room.roomName}</option>)}</select></label> : <label>Link phòng học<input required type="url" maxLength="500" value={scheduleForm.meetingUrl} onChange={(event) => setScheduleForm({ ...scheduleForm, meetingUrl: event.target.value })} placeholder="https://..." /></label>}</div><div className="modal-actions"><button type="button" className="secondary-button" onClick={() => setScheduleForm(null)}>Hủy</button><button className="primary-button">{scheduleForm.id ? "Lưu lịch" : "Thêm lịch"}</button></div></form>}
+          <div className="section-label">Danh sách buổi học</div>
+          {lessons.length ? <div className="lesson-admin-list">{lessons.map((lesson, index) => <article key={lesson.id}><span>{String(index + 1).padStart(2, "0")}</span><div><strong>{lesson.topic || `Buổi học ${index + 1}`}</strong><small>{formatDate(lesson.lessonDate)} · {String(lesson.startTime).slice(0, 5)}–{String(lesson.endTime).slice(0, 5)} · {lesson.status}</small>{lesson.originalLessonDate && <small>Đã dời từ {formatDate(lesson.originalLessonDate)} · {lesson.rescheduleReason}</small>}</div><div><button type="button" disabled={lesson.status === "COMPLETED" || lesson.status === "CANCELLED"} onClick={() => setLessonForm({ id: lesson.id, topic: lesson.topic || "", meetingUrl: lesson.meetingUrl || "" })}>Sửa</button><button type="button" disabled={lesson.status === "COMPLETED" || lesson.status === "CANCELLED"} onClick={() => setRescheduleForm({ id: lesson.id, lessonDate: String(lesson.lessonDate).slice(0, 10), reason: "" })}>Dời ngày</button><button type="button" className="danger-link" disabled={lesson.status === "COMPLETED" || lesson.status === "CANCELLED"} onClick={() => cancelLesson(lesson)}>Hủy buổi</button></div></article>)}</div> : <div className="schedule-admin-empty">Lớp chưa có buổi học được sinh.</div>}
+          {lessonForm && <form className="schedule-admin-form" onSubmit={saveLesson}><div className="form-grid"><label>Chủ đề buổi học<input maxLength="255" value={lessonForm.topic} onChange={(event) => setLessonForm({ ...lessonForm, topic: event.target.value })} /></label><label>Link học trực tuyến<input type="url" maxLength="500" value={lessonForm.meetingUrl} onChange={(event) => setLessonForm({ ...lessonForm, meetingUrl: event.target.value })} placeholder="https://..." /></label></div><div className="modal-actions"><button type="button" className="secondary-button" onClick={() => setLessonForm(null)}>Hủy</button><button className="primary-button">Lưu nội dung</button></div></form>}
+          {rescheduleForm && <form className="schedule-admin-form" onSubmit={rescheduleLesson}><div className="form-grid"><label>Ngày học mới<input required type="date" min={String(selected.startDate).slice(0, 10)} max={String(selected.endDate).slice(0, 10)} value={rescheduleForm.lessonDate} onChange={(event) => setRescheduleForm({ ...rescheduleForm, lessonDate: event.target.value })} /></label><label>Lý do dời lịch<textarea required maxLength="500" value={rescheduleForm.reason} onChange={(event) => setRescheduleForm({ ...rescheduleForm, reason: event.target.value })} placeholder="Ví dụ: Nghỉ lễ, giáo viên xin nghỉ, phòng học gặp sự cố..." /></label></div><p className="form-note">Thông báo tự động cho giảng viên và học viên sẽ được bổ sung trong module Notification.</p><div className="modal-actions"><button type="button" className="secondary-button" onClick={() => setRescheduleForm(null)}>Hủy</button><button className="primary-button">Xác nhận dời ngày</button></div></form>}
           <div className="section-label">Chuyển trạng thái</div>
           <div className="status-actions">
             {(classStatusTransitions[selected.status] || []).map((status) => (

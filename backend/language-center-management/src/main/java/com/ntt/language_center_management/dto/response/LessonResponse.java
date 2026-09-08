@@ -3,6 +3,7 @@ package com.ntt.language_center_management.dto.response;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.LocalDateTime;
 
 public record LessonResponse(
     Integer id,
@@ -19,4 +20,8 @@ public record LessonResponse(
     Integer roomId,
     String roomCode,
     String roomName,
-    String meetingUrl) {}
+    String meetingUrl,
+    @JsonFormat(pattern = "yyyy-MM-dd") LocalDate originalLessonDate,
+    String rescheduleReason,
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss") LocalDateTime rescheduledAt,
+    String rescheduledBy) {}

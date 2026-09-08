@@ -9,6 +9,7 @@ import {
   StatusBadge,
 } from "../AdminUi";
 import { apiData, apiError, formatMoney } from "../../utils/api";
+import ImageUploadField from "../ImageUploadField";
 
 const definitions = {
   languages: {
@@ -272,6 +273,17 @@ export default function AdminCatalogScreen({ type }) {
           "featured",
         ].includes(key),
     };
+    if (key === "thumbnailUrl" || key === "bannerUrl")
+      return (
+        <ImageUploadField
+          key={key}
+          label={label}
+          value={form[key]}
+          purpose={key === "thumbnailUrl" ? "COURSE_THUMBNAIL" : "COURSE_BANNER"}
+          onChange={(url) => setForm({ ...form, [key]: url })}
+          wide
+        />
+      );
     if (kind === "textarea")
       return (
         <label className="field-wide" key={key}>
@@ -313,7 +325,7 @@ export default function AdminCatalogScreen({ type }) {
       );
     if (kind === "checkbox")
       return (
-        <label key={key}>
+        <label className={`featured-toggle ${form[key] ? "is-checked" : ""}`} key={key}>
           <input
             type="checkbox"
             checked={Boolean(form[key])}
@@ -321,7 +333,8 @@ export default function AdminCatalogScreen({ type }) {
               setForm({ ...form, [key]: event.target.checked })
             }
           />
-          {label}
+          <span className="featured-toggle-box" aria-hidden="true">✓</span>
+          <span><strong>{label}</strong><small>{form[key] ? "Đang hiển thị trong nhóm khóa học nổi bật" : "Bật để ưu tiên khóa học trên trang Public"}</small></span>
         </label>
       );
     if (kind === "language")

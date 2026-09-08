@@ -21,6 +21,14 @@ public interface LessonRepository extends JpaRepository<Lesson, Integer> {
 
   long countByClassScheduleId_CourseClassId_Id(Integer courseClassId);
 
+  long countByClassScheduleId_CourseClassId_IdAndStatusNot(
+      Integer courseClassId, String status);
+
+  long countByClassScheduleId_CourseClassId_IdAndStatus(
+      Integer courseClassId, String status);
+
+  List<Lesson> findByStatusAndLessonDateLessThanEqual(String status, Date lessonDate);
+
   @Query(
       """
       select count(l) > 0 from Lesson l

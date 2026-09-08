@@ -26,6 +26,8 @@ import StudentProfileScreen from "./screens/public/StudentProfileScreen";
 import TeacherCoursesScreen from "./screens/teacher/TeacherCoursesScreen";
 import TeacherClassesScreen from "./screens/teacher/TeacherClassesScreen";
 import TeacherProfileScreen from "./screens/teacher/TeacherProfileScreen";
+import StudentAttendanceScreen from "./screens/public/StudentAttendanceScreen";
+import TeacherAttendanceScreen from "./screens/teacher/TeacherAttendanceScreen";
 import StaffLoginScreen from "./screens/staff/StaffLoginScreen";
 import CoursesScreen from "./screens/public/CoursesScreen";
 import LanguagesScreen from "./screens/public/LanguagesScreen";
@@ -45,10 +47,12 @@ function App() {
         <Route path="/lop-hoc-cua-toi" element={<MyClassesScreen />} />
         <Route path="/lich-su-dang-ky" element={<EnrollmentHistoryScreen />} />
         <Route path="/thong-tin-ca-nhan" element={<StudentProfileScreen />} />
+        <Route path="/diem-danh" element={<StudentAttendanceScreen />} />
         <Route path="/thanh-toan/ket-qua" element={<PaymentResultScreen />} />
         <Route path="/giao-vien/khoa-hoc" element={<TeacherCoursesScreen />} />
         <Route path="/giao-vien/lop-hoc" element={<TeacherClassesScreen />} />
         <Route path="/giao-vien/thong-tin-ca-nhan" element={<TeacherProfileScreen />} />
+        <Route path="/giao-vien/diem-danh" element={<TeacherAttendanceScreen />} />
       </Route>
       <Route path="/login" element={<StudentLoginScreen />} />
       <Route path="/register" element={<RegisterScreen />} />

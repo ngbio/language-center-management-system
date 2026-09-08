@@ -99,6 +99,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/payments")
                     .hasRole("STUDENT")
+                    .requestMatchers(HttpMethod.POST, "/api/uploads/images")
+                    .hasAnyRole("ADMIN", "STUDENT")
                     .requestMatchers(HttpMethod.POST, "/api/enrollments/*/payments")
                     .hasRole("STUDENT")
                     .requestMatchers("/api/students/me/**")
@@ -113,15 +115,21 @@ public class SecurityConfig {
                     .hasAnyRole("ADMIN", "CONSULTANT", "TEACHER")
                     .requestMatchers(
                         HttpMethod.POST,
-                        "/api/classes/*/schedules",
-                        "/api/classes/*/lessons/generate")
+                        "/api/classes/*/schedules")
                     .hasAnyRole("ADMIN", "CONSULTANT")
+                    .requestMatchers(HttpMethod.POST, "/api/classes/*/lessons/generate")
+                    .hasAnyRole("ADMIN", "CONSULTANT", "TEACHER")
                     .requestMatchers(HttpMethod.PUT, "/api/schedules/**")
                     .hasAnyRole("ADMIN", "CONSULTANT")
                     .requestMatchers(HttpMethod.DELETE, "/api/schedules/**")
                     .hasAnyRole("ADMIN", "CONSULTANT")
                     .requestMatchers(HttpMethod.GET, "/api/classes/*/lessons")
                     .authenticated()
+                    .requestMatchers(
+                        "/api/lessons/*/attendance",
+                        "/api/attendance/*",
+                        "/api/classes/*/attendance-summary")
+                    .hasRole("TEACHER")
                     .requestMatchers(HttpMethod.PUT, "/api/lessons/*")
                     .hasAnyRole("ADMIN", "CONSULTANT", "TEACHER")
                     .requestMatchers(
@@ -154,7 +162,7 @@ public class SecurityConfig {
                         "/api/rooms/**")
                     .permitAll()
                     .requestMatchers(
-                        "/api/courses/**", "/api/languages/**", "/api/levels/**", "/api/rooms/**")
+                        "/api/courses/**", "/api/languages/**", "/api/levels/**")
                     .hasRole("ADMIN")
                     .requestMatchers(
                         "/api/secure", "/api/secure/**",

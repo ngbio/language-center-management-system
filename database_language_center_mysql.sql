@@ -270,10 +270,16 @@ CREATE TABLE lesson (
     topic               VARCHAR(255) NULL,
     lesson_date         DATE NOT NULL,
     meeting_url         VARCHAR(500) NULL,
+    original_lesson_date DATE NULL,
+    reschedule_reason   VARCHAR(500) NULL,
+    rescheduled_at      DATETIME NULL,
+    rescheduled_by      INT NULL,
     status              VARCHAR(20) NOT NULL DEFAULT 'SCHEDULED',
     PRIMARY KEY (id),
     CONSTRAINT fk_lesson_classschedule
         FOREIGN KEY (class_schedule_id) REFERENCES classschedule(id),
+    CONSTRAINT fk_lesson_rescheduled_by
+        FOREIGN KEY (rescheduled_by) REFERENCES `user`(id),
     CONSTRAINT uq_lesson_schedule_date
         UNIQUE (class_schedule_id, lesson_date),
     CONSTRAINT ck_lesson_status
@@ -363,6 +369,7 @@ CREATE TABLE attendance (
     status              VARCHAR(20) NOT NULL,
     note                VARCHAR(500) NULL,
     attendance_time     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          DATETIME NULL,
     PRIMARY KEY (id),
     CONSTRAINT fk_attendance_lesson FOREIGN KEY (lesson_id) REFERENCES lesson(id),
     CONSTRAINT fk_attendance_enrollment

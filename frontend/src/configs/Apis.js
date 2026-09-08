@@ -48,6 +48,7 @@ export const endpoints = {
   classes: "/classes",
   "class-details": (classId) => `/classes/${classId}`,
   "class-schedules": (classId) => `/classes/${classId}/schedules`,
+  "schedule-details": (scheduleId) => `/schedules/${scheduleId}`,
   enrollments: "/enrollments",
   payments: "/payments",
   "my-payments": "/students/me/payments",
@@ -77,6 +78,16 @@ export const endpoints = {
   "my-schedules": "/students/me/schedules",
   "my-enrollments": "/students/me/enrollments",
   "student-profile": "/students/me/profile",
+  "my-attendance": "/students/me/attendance",
+  "class-lessons": (classId) => `/classes/${classId}/lessons`,
+  "generate-class-lessons": (classId) => `/classes/${classId}/lessons/generate`,
+  "lesson-details": (lessonId) => `/lessons/${lessonId}`,
+  "reschedule-lesson": (lessonId) => `/lessons/${lessonId}/reschedule`,
+  "cancel-lesson": (lessonId) => `/lessons/${lessonId}/cancel`,
+  "lesson-attendance": (lessonId) => `/lessons/${lessonId}/attendance`,
+  "attendance-details": (attendanceId) => `/attendance/${attendanceId}`,
+  "upload-image": "/uploads/images",
+  "class-attendance-summary": (classId) => `/classes/${classId}/attendance-summary`,
 };
 
 export const authApis = () => {

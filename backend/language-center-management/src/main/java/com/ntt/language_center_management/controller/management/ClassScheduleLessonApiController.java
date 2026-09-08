@@ -13,6 +13,7 @@ import java.security.Principal;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -37,9 +38,27 @@ public class ClassScheduleLessonApiController {
 
   @GetMapping("/classes/{classId}/schedules")
   public ApiResponse<List<ClassScheduleResponse>> getSchedules(
-      @PathVariable Integer classId) {
+      @PathVariable Integer classId, Authentication authentication) {
+    boolean canManageSchedules =
+        authentication != null
+            && authentication.getAuthorities().stream()
+                .anyMatch(
+                    authority ->
+                        "ROLE_ADMIN".equals(authority.getAuthority())
+                            || "ROLE_CONSULTANT".equals(authority.getAuthority()));
+    List<ClassScheduleResponse> visibleSchedules =
+        classScheduleService.getByClassId(classId).stream()
+            .map(schedule -> canManageSchedules ? schedule : withoutMeetingUrl(schedule))
+            .toList();
     return new ApiResponse<>(
-        200, "Lấy lịch học thành công", classScheduleService.getByClassId(classId));
+        200, "Lấy lịch học thành công", visibleSchedules);
+  }
+
+  private ClassScheduleResponse withoutMeetingUrl(ClassScheduleResponse schedule) {
+    return new ClassScheduleResponse(
+        schedule.id(), schedule.courseClassId(), schedule.classCode(), schedule.className(),
+        schedule.dayOfWeek(), schedule.startTime(), schedule.endTime(), schedule.deliveryMode(),
+        schedule.roomId(), schedule.roomCode(), schedule.roomName(), schedule.roomLocation(), null);
   }
 
   @PostMapping("/classes/{classId}/schedules")
@@ -68,11 +87,13 @@ public class ClassScheduleLessonApiController {
 
   @PostMapping("/classes/{classId}/lessons/generate")
   public ResponseEntity<ApiResponse<List<LessonResponse>>> generateLessons(
-      @PathVariable Integer classId) {
+      @PathVariable Integer classId, Principal principal) {
     return ResponseEntity.status(HttpStatus.CREATED)
         .body(
             new ApiResponse<>(
-                201, "Sinh danh sách buổi học thành công", lessonService.generate(classId)));
+                201,
+                "Sinh danh sách buổi học thành công",
+                lessonService.generate(classId, principal)));
   }
 
   @GetMapping("/classes/{classId}/lessons")
@@ -93,9 +114,11 @@ public class ClassScheduleLessonApiController {
 
   @PatchMapping("/lessons/{id}/reschedule")
   public ApiResponse<LessonResponse> rescheduleLesson(
-      @PathVariable Integer id, @Valid @RequestBody LessonRescheduleRequest request) {
+      @PathVariable Integer id,
+      @Valid @RequestBody LessonRescheduleRequest request,
+      Principal principal) {
     return new ApiResponse<>(
-        200, "Dời buổi học thành công", lessonService.reschedule(id, request));
+        200, "Dời buổi học thành công", lessonService.reschedule(id, request, principal));
   }
 
   @PatchMapping("/lessons/{id}/cancel")
