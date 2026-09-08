@@ -10,4 +10,4 @@ public record RefundRequest(
     @NotBlank(message = "Lý do hoàn tiền không được để trống")
         @Size(max = 500, message = "Lý do hoàn tiền tối đa 500 ký tự") String reason,
     @NotBlank(message = "Idempotency key không được để trống")
-        @Size(max = 100, message = "Idempotency key tối đa 100 ký tự") String idempotencyKey) {}
+        @Size(max = 50, message = "Idempotency key tối đa 50 ký tự") String idempotencyKey) {}

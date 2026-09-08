@@ -32,6 +32,10 @@ public class Refund {
   private BigDecimal amount;
   @Column(nullable = false, length = 20)
   private String status;
+  @Column(name = "gateway_refund_id", length = 150)
+  private String gatewayRefundId;
+  @Column(name = "error_message", length = 500)
+  private String errorMessage;
   @Column(nullable = false, length = 500)
   private String reason;
   @Column(name = "created_at", nullable = false) @Temporal(TemporalType.TIMESTAMP)
@@ -54,6 +58,10 @@ public class Refund {
   public void setAmount(BigDecimal amount) { this.amount = amount; }
   public String getStatus() { return status; }
   public void setStatus(String status) { this.status = status; }
+  public String getGatewayRefundId() { return gatewayRefundId; }
+  public void setGatewayRefundId(String gatewayRefundId) { this.gatewayRefundId = gatewayRefundId; }
+  public String getErrorMessage() { return errorMessage; }
+  public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
   public String getReason() { return reason; }
   public void setReason(String reason) { this.reason = reason; }
   public Date getCreatedAt() { return createdAt; }

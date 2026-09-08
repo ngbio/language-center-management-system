@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import java.security.Principal;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -47,10 +48,24 @@ public class BillingApiController {
     return new ApiResponse<>(200, "Lấy lịch sử hoàn tiền thành công", billingService.getRefunds(id, principal));
   }
 
+  @GetMapping("/staff/refunds")
+  public ApiResponse<List<RefundResponse>> staffRefunds(
+      @RequestParam(required = false) String status, Principal principal) {
+    return new ApiResponse<>(200, "Lấy danh sách hoàn tiền thành công",
+        billingService.getStaffRefunds(status, principal));
+  }
+
   @PostMapping("/staff/enrollments/{id}/refunds")
   public ApiResponse<RefundResponse> refund(@PathVariable Integer id,
       @Valid @RequestBody RefundRequest request, Principal principal) {
-    return new ApiResponse<>(201, "Hoàn tiền thành công", billingService.createRefund(id, request, principal));
+    return new ApiResponse<>(201, "Đã tiếp nhận yêu cầu hoàn tiền",
+        billingService.createRefund(id, request, principal));
+  }
+
+  @PostMapping("/staff/refunds/{id}/refresh")
+  public ApiResponse<RefundResponse> refreshRefund(@PathVariable Integer id, Principal principal) {
+    return new ApiResponse<>(200, "Đồng bộ trạng thái hoàn tiền thành công",
+        billingService.refreshRefund(id, principal));
   }
 
   @GetMapping("/enrollments/{id}/invoice")

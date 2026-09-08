@@ -52,6 +52,18 @@ public class Lesson implements Serializable {
     @Size(max = 500)
     @Column(name = "meeting_url")
     private String meetingUrl;
+    @Column(name = "original_lesson_date")
+    @Temporal(TemporalType.DATE)
+    private Date originalLessonDate;
+    @Size(max = 500)
+    @Column(name = "reschedule_reason")
+    private String rescheduleReason;
+    @Column(name = "rescheduled_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date rescheduledAt;
+    @JoinColumn(name = "rescheduled_by", referencedColumnName = "id")
+    @ManyToOne
+    private User rescheduledBy;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 20)
@@ -106,6 +118,38 @@ public class Lesson implements Serializable {
 
     public void setMeetingUrl(String meetingUrl) {
         this.meetingUrl = meetingUrl;
+    }
+
+    public Date getOriginalLessonDate() {
+        return originalLessonDate;
+    }
+
+    public void setOriginalLessonDate(Date originalLessonDate) {
+        this.originalLessonDate = originalLessonDate;
+    }
+
+    public String getRescheduleReason() {
+        return rescheduleReason;
+    }
+
+    public void setRescheduleReason(String rescheduleReason) {
+        this.rescheduleReason = rescheduleReason;
+    }
+
+    public Date getRescheduledAt() {
+        return rescheduledAt;
+    }
+
+    public void setRescheduledAt(Date rescheduledAt) {
+        this.rescheduledAt = rescheduledAt;
+    }
+
+    public User getRescheduledBy() {
+        return rescheduledBy;
+    }
+
+    public void setRescheduledBy(User rescheduledBy) {
+        this.rescheduledBy = rescheduledBy;
     }
 
     public String getStatus() {

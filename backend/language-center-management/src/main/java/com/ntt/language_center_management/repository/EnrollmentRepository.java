@@ -76,6 +76,10 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Integer>
 
   List<Enrollment> findByCourseClassId_IdOrderByEnrollmentDateDesc(Integer courseClassId);
 
+  List<Enrollment>
+      findByCourseClassId_IdAndEnrollmentStatusAndPaymentStatusOrderByStudentId_UserId_FullNameAsc(
+          Integer courseClassId, String enrollmentStatus, String paymentStatus);
+
   @Query(
       """
       select count(e) > 0 from Enrollment e

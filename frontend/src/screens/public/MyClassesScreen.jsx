@@ -15,6 +15,8 @@ export default function MyClassesScreen() {
   const [activeTab, setActiveTab] = useState("classes");
   const [classes, setClasses] = useState([]);
   const [schedules, setSchedules] = useState([]);
+  const [lessonsByClass, setLessonsByClass] = useState({});
+  const [attendance, setAttendance] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -25,11 +27,19 @@ export default function MyClassesScreen() {
     Promise.all([
       api.get(endpoints["my-classes"]),
       api.get(endpoints["my-schedules"]),
+      api.get(endpoints["my-attendance"]),
     ])
-      .then(([classResponse, scheduleResponse]) => {
+      .then(async ([classResponse, scheduleResponse, attendanceResponse]) => {
         if (!active) return;
-        setClasses(apiData(classResponse) || []);
+        const classList = apiData(classResponse) || [];
+        const lessonResponses = await Promise.all(
+          classList.map((item) => api.get(endpoints["class-lessons"](item.id))),
+        );
+        if (!active) return;
+        setClasses(classList);
         setSchedules(apiData(scheduleResponse) || []);
+        setAttendance(apiData(attendanceResponse) || []);
+        setLessonsByClass(Object.fromEntries(classList.map((item, index) => [item.id, apiData(lessonResponses[index]) || []])));
       })
       .catch((requestError) => { if (active) setError(apiError(requestError)); })
       .finally(() => { if (active) setLoading(false); });
@@ -70,8 +80,8 @@ export default function MyClassesScreen() {
             <article className="my-class-card" key={item.id}>
               <div className="my-class-card-top"><span>{item.levelCode}</span><em>{item.status}</em></div>
               <small>{item.courseName}</small><h2>{item.className}</h2><b>{item.classCode}</b>
-              <dl><div><dt>Khai giảng</dt><dd>{formatDate(item.startDate)}</dd></div><div><dt>Kết thúc</dt><dd>{formatDate(item.endDate)}</dd></div><div><dt>Giảng viên</dt><dd>{item.teacherName || "Đang cập nhật"}</dd></div><div><dt>Địa điểm học</dt><dd>{formatClassLocations(schedules, item.id)}</dd></div></dl>
-              <button type="button" onClick={() => setActiveTab("schedule")}>Xem thời khóa biểu →</button>
+              <dl><div><dt>Khai giảng</dt><dd>{formatDate(item.startDate)}</dd></div><div><dt>Kết thúc</dt><dd>{formatDate(item.endDate)}</dd></div><div><dt>Giảng viên</dt><dd>{item.teacherName || "Đang cập nhật"}</dd></div><div><dt>Địa điểm học</dt><dd>{formatClassLocations(schedules, item.id)}</dd></div><div><dt>Tỷ lệ điểm danh</dt><dd>{attendanceRate(item.id, lessonsByClass, attendance)}%</dd></div></dl>
+              <button type="button" onClick={() => setActiveTab("schedule")}>Xem thời khóa biểu →</button> <Link to={`/diem-danh?classId=${item.id}`}>Xem điểm danh →</Link>
             </article>
           ))}</div> : <EmptyLearning title="Chưa có lớp học đã kích hoạt" text="Lớp sẽ xuất hiện sau khi đăng ký được xác nhận và thanh toán thành công." />
         )}
@@ -111,4 +121,12 @@ const formatClassLocations = (schedules, classId) => {
     .filter((item) => item.courseClassId === classId)
     .map((item) => item.deliveryMode === "ONLINE" ? "Trực tuyến" : `${formatRoom(item)}${item.roomLocation ? ` · ${item.roomLocation}` : ""}`);
   return [...new Set(places)].join("; ") || "Đang cập nhật";
+};
+
+const attendanceRate = (classId, lessonsByClass, attendance) => {
+  const completed = (lessonsByClass[classId] || []).filter((lesson) => lesson.status === "COMPLETED");
+  if (!completed.length) return 0;
+  const records = new Map(attendance.map((item) => [item.lessonId, item.status]));
+  const attended = completed.filter((lesson) => ["PRESENT", "LATE"].includes(records.get(lesson.id))).length;
+  return Math.round((attended * 100) / completed.length);
 };

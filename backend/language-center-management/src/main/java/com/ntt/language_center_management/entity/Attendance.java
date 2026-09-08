@@ -51,6 +51,9 @@ public class Attendance implements Serializable {
     @Column(name = "attendance_time")
     @Temporal(TemporalType.TIMESTAMP)
     private Date attendanceTime;
+    @Column(name = "updated_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date updatedAt;
     @JoinColumn(name = "enrollment_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private Enrollment enrollmentId;
@@ -101,6 +104,14 @@ public class Attendance implements Serializable {
 
     public void setAttendanceTime(Date attendanceTime) {
         this.attendanceTime = attendanceTime;
+    }
+
+    public Date getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
     public Enrollment getEnrollmentId() {

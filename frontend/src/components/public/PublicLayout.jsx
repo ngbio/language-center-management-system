@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import "../../styles/PublicSite.css";
 import {
   SESSION_KEYS,
@@ -9,7 +9,6 @@ import {
 
 export default function PublicLayout() {
   const navigate = useNavigate();
-  const location = useLocation();
   const accountMenuRef = useRef(null);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
@@ -17,11 +16,11 @@ export default function PublicLayout() {
     if (savedTheme) return savedTheme === "dark";
     return window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
   });
-  const [session, setSession] = useState(() => ({
+  const session = {
     token: localStorage.getItem(SESSION_KEYS.token),
     role: localStorage.getItem(SESSION_KEYS.role),
     email: localStorage.getItem(SESSION_KEYS.email) || "",
-  }));
+  };
 
   const toggleTheme = () => {
     setDarkMode((current) => {
@@ -33,18 +32,9 @@ export default function PublicLayout() {
 
   const logout = () => {
     clearSession();
-    setSession({ token: null, role: null, email: "" });
     setAccountMenuOpen(false);
     navigate("/");
   };
-
-  useEffect(() => {
-    setSession({
-      token: localStorage.getItem(SESSION_KEYS.token),
-      role: localStorage.getItem(SESSION_KEYS.role),
-      email: localStorage.getItem(SESSION_KEYS.email) || "",
-    });
-  }, [location.pathname]);
 
   const sessionAuthenticated =
     isTokenActive(session.token) && ["STUDENT", "TEACHER", "ADMIN", "CONSULTANT"].includes(session.role);
@@ -113,9 +103,11 @@ export default function PublicLayout() {
                     <div className="account-menu-heading"><strong>Xin chào, {accountLabel}</strong><span>{session.email}</span></div>
                     {session.role === "STUDENT" && <Link role="menuitem" to="/khoa-hoc-cua-toi" onClick={() => setAccountMenuOpen(false)}><span aria-hidden="true">▣</span> Khóa học của tôi</Link>}
                     {session.role === "STUDENT" && <Link role="menuitem" to="/lop-hoc-cua-toi" onClick={() => setAccountMenuOpen(false)}><span aria-hidden="true">▤</span> Lớp học & thời khóa biểu</Link>}
+                    {session.role === "STUDENT" && <Link role="menuitem" to="/diem-danh" onClick={() => setAccountMenuOpen(false)}><span aria-hidden="true">✓</span> Kết quả điểm danh</Link>}
                     {session.role === "STUDENT" && <Link role="menuitem" to="/lich-su-dang-ky" onClick={() => setAccountMenuOpen(false)}><span aria-hidden="true">↻</span> Lịch sử đăng ký & thanh toán</Link>}
                     {session.role === "TEACHER" && <Link role="menuitem" to="/giao-vien/khoa-hoc" onClick={() => setAccountMenuOpen(false)}><span aria-hidden="true">▣</span> Khóa học phụ trách</Link>}
                     {session.role === "TEACHER" && <Link role="menuitem" to="/giao-vien/lop-hoc" onClick={() => setAccountMenuOpen(false)}><span aria-hidden="true">▤</span> Lớp học & thời khóa biểu</Link>}
+                    {session.role === "TEACHER" && <Link role="menuitem" to="/giao-vien/diem-danh" onClick={() => setAccountMenuOpen(false)}><span aria-hidden="true">✓</span> Quản lý buổi học & điểm danh</Link>}
                     {session.role === "TEACHER" && <Link role="menuitem" to="/giao-vien/thong-tin-ca-nhan" onClick={() => setAccountMenuOpen(false)}><span aria-hidden="true">◎</span> Thông tin cá nhân</Link>}
                     {session.role === "ADMIN" && <Link role="menuitem" to="/admin" onClick={() => setAccountMenuOpen(false)}><span aria-hidden="true">▦</span> Trang quản trị</Link>}
                     {session.role === "STUDENT" && <Link role="menuitem" to="/thong-tin-ca-nhan" onClick={() => setAccountMenuOpen(false)}><span aria-hidden="true">◎</span> Thông tin cá nhân</Link>}

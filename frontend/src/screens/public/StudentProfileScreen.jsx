@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import { authApis, endpoints } from "../../configs/Apis";
 import { apiData, apiError } from "../../utils/api";
 import { SESSION_KEYS, isTokenActive } from "../../utils/authSession";
+import ImageUploadField from "../../components/ImageUploadField";
 
 const emptyForm = {
   fullName: "",
@@ -103,7 +104,7 @@ export default function StudentProfileScreen() {
               <label>Ngày sinh<input type="date" name="dateOfBirth" value={form.dateOfBirth} onChange={changeField} /></label>
               <label>Giới tính<select name="gender" value={form.gender} onChange={changeField}><option value="">Chưa cập nhật</option><option value="MALE">Nam</option><option value="FEMALE">Nữ</option><option value="OTHER">Khác</option></select></label>
               <label className="profile-wide">Địa chỉ<input name="address" value={form.address} onChange={changeField} maxLength={255} /></label>
-              <label className="profile-wide">URL ảnh đại diện<input type="url" name="avatar" value={form.avatar} onChange={changeField} maxLength={500} placeholder="https://..." /></label>
+              <ImageUploadField label="Ảnh đại diện" value={form.avatar} purpose="STUDENT_AVATAR" onChange={(url) => setForm((current) => ({ ...current, avatar: url }))} wide />
               <div className="profile-actions"><button type="submit" disabled={saving}>{saving ? "Đang lưu..." : "Lưu thay đổi"}</button></div>
             </div>
           </form>

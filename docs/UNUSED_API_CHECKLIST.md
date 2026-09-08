@@ -1,6 +1,6 @@
 # API chưa được tích hợp vào giao diện
 
-Cập nhật: **05/09/2026**
+Cập nhật: **06/09/2026**
 
 Tài liệu này đối chiếu controller backend với các lời gọi API trong `frontend/src`.
 
@@ -9,6 +9,12 @@ Tài liệu này đối chiếu controller backend với các lời gọi API tr
 | ⬜ | Chưa có giao diện gọi API |
 | 🟡 | Mới dùng một phần hoặc chỉ dùng để lấy số liệu |
 | ✅ | Đã được giao diện sử dụng đầy đủ |
+
+## Upload hình ảnh
+
+| Trạng thái | Method | API | Hiện trạng / giao diện còn thiếu |
+|:---:|---|---|---|
+| ✅ | POST | `/api/uploads/images` | Admin upload thumbnail/banner khóa học và Student upload avatar lên Cloudinary |
 
 ## 1. Authentication và tài khoản
 
@@ -34,17 +40,14 @@ Tài liệu này đối chiếu controller backend với các lời gọi API tr
 
 | Trạng thái | Method | API | Hiện trạng / giao diện còn thiếu |
 |:---:|---|---|---|
-| ✅ | GET | `/api/languages` | Trang `/ngon-ngu`, bộ lọc khóa học và Admin đang dùng |
+| ✅ | GET | `/api/languages` | Trang chủ, trang `/ngon-ngu`, bộ lọc khóa học và Admin đang dùng |
 | ⬜ | GET | `/api/languages/{id}` | Chưa có trang chi tiết ngôn ngữ Public |
 | ✅ | GET | `/api/languages/{id}/levels` | Bộ lọc khóa học Public gọi khi người dùng chọn ngôn ngữ |
 | ✅ | GET | `/api/levels` | Dashboard và form khóa học đang dùng |
 | ✅ | GET | `/api/teachers` | Đã dùng ở khu vực “Đội ngũ giảng viên” trên trang chủ |
 | ⬜ | GET | `/api/levels/{id}` | Chưa có trang chi tiết trình độ Public |
 | ✅ | GET | `/api/rooms` | Dashboard đang dùng để lấy tổng số phòng |
-| ⬜ | GET | `/api/rooms/{id}` | Chưa có giao diện chi tiết phòng Public |
-| ⬜ | POST | `/api/rooms` | Chưa dùng; giao diện Admin dùng `/api/admin/rooms` |
-| ⬜ | PUT | `/api/rooms/{id}` | Chưa dùng; giao diện Admin dùng `/api/admin/rooms/{id}` |
-| ⬜ | DELETE | `/api/rooms/{id}` | Chưa dùng; giao diện Admin dùng endpoint Admin |
+| ⬜ | GET | `/api/rooms/{id}` | Chủ động giữ làm API tra cứu phòng Public; thời khóa biểu hiện đã nhận thông tin phòng trực tiếp nên chưa cần gọi riêng |
 
 ## 4. Lớp học Public
 
@@ -71,14 +74,17 @@ Tài liệu này đối chiếu controller backend với các lời gọi API tr
 | ⬜ | GET | `/api/payments/{transactionCode}` | Backend đã có; chưa có ô tra cứu giao dịch |
 | ✅ | POST | `/api/staff/enrollments/{id}/refunds` | Đã có nút hoàn toàn bộ học phí trong màn quản lý enrollment |
 | ⬜ | GET | `/api/enrollments/{id}/refunds` | Backend đã có; chưa hiển thị lịch sử hoàn tiền chi tiết |
+| ✅ | GET | `/api/staff/refunds` | Đã dùng tại màn quản lý hoàn tiền của Staff/Admin |
+| ✅ | POST | `/api/staff/refunds/{id}/refresh` | Đã có nút đồng bộ refund đang PENDING |
 | ⬜ | GET | `/api/enrollments/{id}/invoice` | Backend đã có JSON; frontend hiện dùng endpoint PDF |
 | ✅ | GET | `/api/enrollments/{id}/invoice.pdf` | Nút “Tải hóa đơn PDF” đã tích hợp trong lịch sử đăng ký và thanh toán của Student |
 | ✅ | POST | `/api/enrollments/{id}/cancel-request` | Đã có nút yêu cầu hủy tại trang lịch sử riêng |
-| ⬜ | GET | `/api/classes/{classId}/lessons` | Chưa có màn hình danh sách buổi học cho Student |
+| ✅ | GET | `/api/classes/{classId}/lessons` | Đã dùng tại trang điểm danh để Student xem từng buổi học |
+| ✅ | GET | `/api/students/me/attendance` | Đã có trang kết quả và tỷ lệ chuyên cần theo lớp |
 
 ## 6. Teacher
 
-Hiện frontend chưa có workspace hoặc route riêng dành cho Teacher.
+Frontend đã có workspace riêng cho lớp, khóa học, hồ sơ và quản lý điểm danh của Teacher.
 
 | Trạng thái | Method | API | Giao diện cần bổ sung |
 |:---:|---|---|---|
@@ -86,9 +92,13 @@ Hiện frontend chưa có workspace hoặc route riêng dành cho Teacher.
 | ✅ | GET | `/api/teachers/me/courses` | Đã dùng tại trang khóa học phụ trách của Teacher |
 | ✅ | GET | `/api/teachers/me/profile` | Đã dùng tại trang thông tin cá nhân Teacher |
 | ✅ | PUT | `/api/teachers/me/profile` | Đã dùng để cập nhật hồ sơ chuyên môn Teacher |
-| ⬜ | GET | `/api/classes/{id}/enrollments` | Danh sách học viên trong lớp của Teacher |
-| ⬜ | GET | `/api/classes/{classId}/lessons` | Lịch và danh sách buổi dạy |
-| ⬜ | PUT | `/api/lessons/{id}` | Form cập nhật chủ đề và meeting URL |
+| ✅ | GET | `/api/classes/{id}/enrollments` | Teacher xem danh sách học viên trong từng lớp phụ trách |
+| ✅ | GET | `/api/classes/{classId}/lessons` | Đã có danh sách buổi dạy theo lớp phụ trách |
+| ✅ | PUT | `/api/lessons/{id}` | Đã có form cập nhật chủ đề và meeting URL |
+| ✅ | GET | `/api/lessons/{id}/attendance` | Đã có bảng điểm danh theo từng buổi |
+| ✅ | PUT | `/api/lessons/{id}/attendance` | Đã có form lưu/cập nhật điểm danh hàng loạt |
+| ✅ | PATCH | `/api/attendance/{id}` | Teacher có nút cập nhật riêng từng bản ghi điểm danh đã lưu |
+| ✅ | GET | `/api/classes/{id}/attendance-summary` | Teacher xem số buổi và tỷ lệ chuyên cần cùng danh sách lớp |
 
 ## 7. Staff quản lý enrollment
 
@@ -107,15 +117,15 @@ Backend đã có toàn bộ API cơ bản nhưng giao diện Admin/Consultant ch
 
 | Trạng thái | Method | API | Giao diện cần bổ sung |
 |:---:|---|---|---|
-| ⬜ | GET | `/api/classes/{classId}/schedules` | Danh sách lịch trong màn hình quản lý lớp |
-| ⬜ | POST | `/api/classes/{classId}/schedules` | Form tạo lịch học |
-| ⬜ | PUT | `/api/schedules/{id}` | Form sửa lịch học |
-| ⬜ | DELETE | `/api/schedules/{id}` | Nút xóa lịch chưa sinh buổi |
-| ⬜ | POST | `/api/classes/{classId}/lessons/generate` | Nút sinh danh sách buổi học |
-| ⬜ | GET | `/api/classes/{classId}/lessons` | Danh sách buổi học trong quản lý lớp |
-| ⬜ | PUT | `/api/lessons/{id}` | Sửa nội dung buổi học |
-| ⬜ | PATCH | `/api/lessons/{id}/reschedule` | Dời ngày học |
-| ⬜ | PATCH | `/api/lessons/{id}/cancel` | Hủy buổi học |
+| ✅ | GET | `/api/classes/{classId}/schedules` | Danh sách lịch Public; meeting URL được che để tránh lộ link học online |
+| ✅ | POST | `/api/classes/{classId}/schedules` | Form tạo lịch học tại trung tâm hoặc trực tuyến |
+| ✅ | PUT | `/api/schedules/{id}` | Form sửa lịch học |
+| ✅ | DELETE | `/api/schedules/{id}` | Nút xóa lịch; backend từ chối nếu đã sinh buổi |
+| ✅ | POST | `/api/classes/{classId}/lessons/generate` | Teacher đã có nút sinh buổi học cho lớp mình phụ trách |
+| ✅ | GET | `/api/classes/{classId}/lessons` | Danh sách buổi học trong quản lý lớp |
+| ✅ | PUT | `/api/lessons/{id}` | Admin có form sửa nội dung buổi học |
+| ✅ | PATCH | `/api/lessons/{id}/reschedule` | Admin/Consultant có form dời lesson chưa bắt đầu, nhập lý do và lưu dấu vết; Notification làm sau |
+| ✅ | PATCH | `/api/lessons/{id}/cancel` | Admin có nút hủy buổi học chưa điểm danh |
 
 ## 9. Admin quản lý người dùng
 

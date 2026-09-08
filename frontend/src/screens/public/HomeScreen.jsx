@@ -5,6 +5,7 @@ import { apiData } from "../../utils/api";
 
 export default function HomeScreen() {
   const [teachers, setTeachers] = useState([]);
+  const [languages, setLanguages] = useState([]);
 
   useEffect(() => {
     let active = true;
@@ -14,6 +15,13 @@ export default function HomeScreen() {
       })
       .catch(() => {
         if (active) setTeachers([]);
+      });
+    APIs.get(endpoints.languages)
+      .then((response) => {
+        if (active) setLanguages(apiData(response) || []);
+      })
+      .catch(() => {
+        if (active) setLanguages([]);
       });
     return () => { active = false; };
   }, []);
@@ -27,7 +35,7 @@ export default function HomeScreen() {
             <h1>Chạm gần hơn đến thế giới bằng một ngôn ngữ mới.</h1>
             <p>Khóa học có cấu trúc rõ ràng, nội dung theo từng bài và lịch học linh hoạt dành cho mọi trình độ.</p>
             <div className="hero-actions"><Link className="primary-cta" to="/khoa-hoc">Khám phá khóa học</Link><Link className="text-cta" to="/ngon-ngu">Xem các ngôn ngữ <span>→</span></Link></div>
-            <div className="hero-stats"><div><strong>25+</strong><span>Bài học chọn lọc</span></div><div><strong>3</strong><span>Ngôn ngữ</span></div><div><strong>4.9/5</strong><span>Đánh giá học viên</span></div></div>
+            <div className="hero-stats"><div><strong>25+</strong><span>Bài học chọn lọc</span></div><div><strong>{languages.length || "—"}</strong><span>Ngôn ngữ</span></div><div><strong>4.9/5</strong><span>Đánh giá học viên</span></div></div>
           </div>
           <div className="hero-visual" aria-label="Minh họa học ngoại ngữ">
             <div className="sun-disc" />
@@ -41,6 +49,27 @@ export default function HomeScreen() {
       <section className="benefits-section" id="benefits">
         <div className="public-container"><div className="section-heading centered"><div><span className="section-kicker">HỌC CÓ ĐỊNH HƯỚNG</span><h2>Một hành trình vừa sức, dễ theo dõi</h2></div></div><div className="benefit-grid"><article><span>01</span><h3>Nội dung theo từng bài</h3><p>Mở section và chỉ tải nội dung khi bạn cần xem.</p></article><article><span>02</span><h3>Lộ trình rõ ràng</h3><p>Biết mình sẽ học gì và đang tiến tới đâu.</p></article><article><span>03</span><h3>Linh hoạt mọi thiết bị</h3><p>Giao diện tối ưu cho máy tính, máy tính bảng và điện thoại.</p></article></div></div>
       </section>
+
+      {languages.length > 0 && (
+        <section className="home-languages-section">
+          <div className="public-container">
+            <div className="section-heading">
+              <div><span className="section-kicker">NGÔN NGỮ ĐÀO TẠO</span><h2>Các ngôn ngữ trung tâm đang giảng dạy</h2></div>
+              <p>Chọn ngôn ngữ bạn quan tâm để xem các khóa học và trình độ đang mở.</p>
+            </div>
+            <div className="language-card-grid">
+              {languages.map((language) => (
+                <Link className="language-card" to={`/khoa-hoc?languageId=${language.id}`} key={language.id}>
+                  <span>{language.languageCode}</span>
+                  <h2>{language.languageName}</h2>
+                  <p>{language.description || "Khám phá các chương trình đào tạo và lộ trình phù hợp."}</p>
+                  <strong>Xem khóa học →</strong>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {teachers.length > 0 && (
         <section className="teacher-showcase">

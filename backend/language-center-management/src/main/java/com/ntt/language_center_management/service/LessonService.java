@@ -8,13 +8,13 @@ import java.util.List;
 
 public interface LessonService {
 
-  List<LessonResponse> generate(Integer classId);
+  List<LessonResponse> generate(Integer classId, Principal principal);
 
   List<LessonResponse> getByClassId(Integer classId, Principal principal);
 
   LessonResponse update(Integer id, LessonUpdateRequest request, Principal principal);
 
-  LessonResponse reschedule(Integer id, LessonRescheduleRequest request);
+  LessonResponse reschedule(Integer id, LessonRescheduleRequest request, Principal principal);
 
   LessonResponse cancel(Integer id);
 }

@@ -19,6 +19,9 @@ export default function StaffLayout() {
           <NavLink to="/staff/enrollments">
             <span className="nav-icon">✓</span>Đăng ký học
           </NavLink>
+          <NavLink to="/staff/refunds">
+            <span className="nav-icon">↩</span>Hoàn tiền
+          </NavLink>
         </nav>
         <div className="sidebar-foot">
           <span className="avatar">S</span>

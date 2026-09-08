@@ -9,4 +9,6 @@ public interface RefundRepository extends JpaRepository<Refund, Integer> {
   Optional<Refund> findByIdempotencyKey(String idempotencyKey);
   List<Refund> findByEnrollment_IdOrderByCreatedAtDesc(Integer enrollmentId);
   List<Refund> findByEnrollment_StudentId_IdOrderByCreatedAtDesc(Integer studentId);
+  List<Refund> findAllByOrderByCreatedAtDesc();
+  List<Refund> findByStatusOrderByCreatedAtDesc(String status);
 }

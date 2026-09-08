@@ -1,6 +1,6 @@
 # API Development Checklist
 
-Cập nhật: **05/09/2026**
+Cập nhật: **06/09/2026**
 
 | Ký hiệu | Trạng thái |
 |---|---|
@@ -9,6 +9,12 @@ Cập nhật: **05/09/2026**
 | ⬜ | API chưa có hoặc mới được đề xuất |
 
 > Trạng thái trong file này đánh giá theo code hiện tại. Chi tiết request và response xem tại [API_DOCUMENTATION.md](API_DOCUMENTATION.md).
+
+## Upload hình ảnh
+
+| Trạng thái | Method | Endpoint | Ghi chú |
+|:---:|---|---|---|
+| ✅ | POST | `/api/uploads/images` | Upload Cloudinary theo quyền: avatar Student hoặc thumbnail/banner khóa học Admin |
 
 ## Authentication
 
@@ -49,9 +55,6 @@ Cập nhật: **05/09/2026**
 | ✅ | GET | `/api/rooms` | Danh sách phòng |
 | ✅ | GET | `/api/rooms/{id}` | Chi tiết phòng |
 | ✅ | GET | `/api/teachers` | Danh sách giảng viên `ACTIVE` hiển thị trên trang chủ |
-| ✅ | POST | `/api/rooms` | Tạo phòng, yêu cầu Admin |
-| ✅ | PUT | `/api/rooms/{id}` | Cập nhật phòng, yêu cầu Admin |
-| ✅ | DELETE | `/api/rooms/{id}` | Xóa phòng, yêu cầu Admin |
 
 ## Lớp học Public
 
@@ -59,7 +62,7 @@ Cập nhật: **05/09/2026**
 |:---:|---|---|---|
 | ✅ | GET | `/api/classes` | Chỉ trả lớp `OPEN` thuộc Course `ACTIVE + PUBLISHED` |
 | ✅ | GET | `/api/classes/{id}` | Chỉ trả lớp `OPEN` thuộc Course `ACTIVE + PUBLISHED` |
-| ✅ | GET | `/api/classes/{classId}/schedules` | Lấy lịch cố định của lớp |
+| ✅ | GET | `/api/classes/{classId}/schedules` | Lấy lịch cố định Public; không trả link phòng học online |
 
 ## Student
 
@@ -77,6 +80,7 @@ Cập nhật: **05/09/2026**
 | ⬜ | GET | `/api/students/me/courses/{courseId}/progress` | Chưa theo dõi tiến độ học |
 | ⬜ | PATCH | `/api/students/me/contents/{contentId}/complete` | Chưa đánh dấu bài đã học |
 | ✅ | GET | `/api/students/me/payments` | Lịch sử giao dịch MoMo/ZaloPay của Student |
+| ✅ | GET | `/api/students/me/attendance` | Đã tích hợp trang kết quả từng buổi và tỷ lệ chuyên cần theo lớp |
 | ⬜ | GET | `/api/students/me/certificates` | Chưa có chứng chỉ của Student |
 
 ## Teacher
@@ -90,8 +94,10 @@ Cập nhật: **05/09/2026**
 | ✅ | PUT | `/api/lessons/{id}` | Cập nhật chủ đề và link học |
 | ✅ | GET | `/api/teachers/me/profile` | Lấy thông tin tài khoản và hồ sơ chuyên môn của Teacher hiện tại |
 | ✅ | PUT | `/api/teachers/me/profile` | Đã tích hợp màn hình cập nhật hồ sơ Teacher |
-| ⬜ | POST | `/api/lessons/{id}/attendance` | Chưa có API điểm danh |
-| ⬜ | PUT | `/api/lessons/{id}/attendance` | Chưa có cập nhật điểm danh |
+| ✅ | GET | `/api/lessons/{id}/attendance` | Teacher phụ trách lấy bảng điểm danh, gồm cả học viên hợp lệ chưa được đánh dấu |
+| ✅ | PUT | `/api/lessons/{id}/attendance` | Điểm danh sau giờ bắt đầu; được bổ sung và sửa trong 7 ngày |
+| ✅ | PATCH | `/api/attendance/{id}` | Teacher phụ trách sửa một bản ghi trong thời hạn cho phép |
+| ✅ | GET | `/api/classes/{id}/attendance-summary` | Teacher phụ trách xem tổng hợp điểm danh theo học viên |
 
 ## Staff quản lý Enrollment
 
@@ -111,10 +117,10 @@ Cập nhật: **05/09/2026**
 | ✅ | POST | `/api/classes/{classId}/schedules` | Tạo lịch học |
 | ✅ | PUT | `/api/schedules/{id}` | Cập nhật lịch học |
 | ✅ | DELETE | `/api/schedules/{id}` | Xóa lịch chưa sinh buổi học |
-| ✅ | POST | `/api/classes/{classId}/lessons/generate` | Sinh buổi học từ schedule |
+| ✅ | POST | `/api/classes/{classId}/lessons/generate` | Teacher phụ trách chỉ được sinh từ ngày khai giảng; Admin/Consultant có thể chủ động sinh |
 | ✅ | GET | `/api/classes/{classId}/lessons` | API dùng chung; Student yêu cầu `CONFIRMED + PAID` |
 | ✅ | PUT | `/api/lessons/{id}` | Cập nhật nội dung buổi học |
-| ✅ | PATCH | `/api/lessons/{id}/reschedule` | Dời ngày học |
+| ✅ | PATCH | `/api/lessons/{id}/reschedule` | Dời lesson chưa bắt đầu; kiểm tra xung đột và lưu lịch sử/lý do. Chờ tích hợp Notification |
 | ✅ | PATCH | `/api/lessons/{id}/cancel` | Hủy buổi học |
 | ⬜ | GET | `/api/lessons/{id}` | Chưa có API lấy riêng chi tiết một buổi học |
 | ⬜ | PATCH | `/api/lessons/{id}/status` | Chưa quản lý đầy đủ trạng thái buổi học |
@@ -207,6 +213,8 @@ Cập nhật: **05/09/2026**
 | ✅ | POST | `/api/payments/zalopay/callback` | Nhận và xác minh MAC callback ZaloPay |
 | ✅ | POST | `/api/staff/enrollments/{id}/refunds` | Staff/Admin hoàn tiền, chống lặp và chặn hoàn vượt thực thu |
 | ✅ | GET | `/api/enrollments/{id}/refunds` | Chủ sở hữu/Staff xem lịch sử hoàn tiền |
+| ✅ | GET | `/api/staff/refunds` | Staff xem và lọc toàn bộ yêu cầu hoàn tiền |
+| ✅ | POST | `/api/staff/refunds/{id}/refresh` | Đồng bộ trạng thái hoàn tiền từ cổng thanh toán |
 | ✅ | GET | `/api/enrollments/{id}/invoice` | Dữ liệu hóa đơn gồm tổng thu, hoàn và thực thu |
 | ✅ | GET | `/api/enrollments/{id}/invoice.pdf` | Xuất file PDF; Student tải hóa đơn của mình từ lịch sử đăng ký và thanh toán |
 
@@ -220,4 +228,4 @@ Cập nhật: **05/09/2026**
 | 4 | ⬜ | Thêm CRUD cho `course_section` và `course_content` |
 | 5 | ✅ | Đã tích hợp sandbox MoMo/ZaloPay, hoàn tiền, truy vấn trạng thái và dữ liệu hóa đơn |
 | 6 | ✅ | Đã có API và giao diện profile riêng cho Student và Teacher |
-| 7 | ⬜ | Thêm API điểm danh và tiến độ học tập |
+| 7 | 🟡 | Đã có API điểm danh; chưa có API tiến độ hoàn thành nội dung khóa học |
