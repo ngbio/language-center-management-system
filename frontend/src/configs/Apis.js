@@ -69,6 +69,12 @@ export const endpoints = {
   "admin-class-details": (classId) => `/admin/classes/${classId}`,
   "assign-class-teacher": (classId) => `/admin/classes/${classId}/teacher`,
   "change-class-status": (classId) => `/admin/classes/${classId}/status`,
+  "admin-dashboard-summary": "/admin/dashboard/summary",
+  "admin-report-revenue": "/admin/reports/revenue",
+  "admin-report-enrollments": "/admin/reports/enrollments",
+  "admin-report-popular-courses": "/admin/reports/popular-courses",
+  "admin-report-teacher-load": "/admin/reports/teacher-load",
+  "admin-report-upcoming-classes": "/admin/reports/upcoming-classes",
 
   "teacher-classes": "/teachers/me/classes",
   "teacher-courses": "/teachers/me/courses",
