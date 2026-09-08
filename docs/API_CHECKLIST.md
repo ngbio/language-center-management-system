@@ -229,3 +229,15 @@ Cập nhật: **06/09/2026**
 | 5 | ✅ | Đã tích hợp sandbox MoMo/ZaloPay, hoàn tiền, truy vấn trạng thái và dữ liệu hóa đơn |
 | 6 | ✅ | Đã có API và giao diện profile riêng cho Student và Teacher |
 | 7 | 🟡 | Đã có API điểm danh; chưa có API tiến độ hoàn thành nội dung khóa học |
+
+## Dashboard và báo cáo quản trị
+
+| Trạng thái | Method | API | Chức năng/Ghi chú |
+|:---:|---|---|---|
+| ✅ | GET | `/api/admin/dashboard/summary` | Tổng học viên, giảng viên, khóa học, lớp hoạt động, đăng ký và doanh thu thuần |
+| ✅ | GET | `/api/admin/reports/revenue?from&to` | Theo tháng; chỉ tính payment `PAID` và trừ refund `COMPLETED` |
+| ✅ | GET | `/api/admin/reports/enrollments?from&to` | Đăng ký, xác nhận, thanh toán và hủy theo tháng |
+| ✅ | GET | `/api/admin/reports/popular-courses?from&to&limit` | Xếp hạng khóa học theo đăng ký đã thanh toán |
+| ✅ | GET | `/api/admin/reports/teacher-load?from&to` | Số lớp, buổi học và buổi hoàn thành của giảng viên |
+| ✅ | GET | `/api/admin/reports/upcoming-classes?from&to` | Lớp sắp khai giảng, giảng viên và số chỗ còn lại |
+| ⬜ | GET | `/api/admin/system-logs` | Chưa triển khai; thực hiện ở giai đoạn SystemLog riêng |

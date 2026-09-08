@@ -54,4 +54,27 @@ public interface LessonRepository extends JpaRepository<Lesson, Integer> {
       @Param("lessonDate") Date lessonDate,
       @Param("startTime") Date startTime,
       @Param("endTime") Date endTime);
+
+  @Query(value = """
+      SELECT t.id, t.teacher_code, u.full_name,
+             COUNT(DISTINCT CASE WHEN cc.status <> 'CANCELLED'
+                                      AND cc.start_date <= :toDate
+                                      AND cc.end_date >= :fromDate THEN cc.id END),
+             COUNT(DISTINCT CASE WHEN l.lesson_date >= :fromDate
+                                      AND l.lesson_date <= :toDate
+                                      AND l.status <> 'CANCELLED' THEN l.id END),
+             COUNT(DISTINCT CASE WHEN l.lesson_date >= :fromDate
+                                      AND l.lesson_date <= :toDate
+                                      AND l.status = 'COMPLETED' THEN l.id END)
+      FROM teacher t
+      JOIN `user` u ON u.id = t.user_id
+      LEFT JOIN courseclass cc ON cc.teacher_id = t.id
+      LEFT JOIN classschedule cs ON cs.course_class_id = cc.id
+      LEFT JOIN lesson l ON l.class_schedule_id = cs.id
+      WHERE u.status = 'ACTIVE'
+      GROUP BY t.id, t.teacher_code, u.full_name
+      ORDER BY 5 DESC, u.full_name ASC
+      """, nativeQuery = true)
+  List<Object[]> aggregateTeacherLoad(
+      @Param("fromDate") Date fromDate, @Param("toDate") Date toDate);
 }

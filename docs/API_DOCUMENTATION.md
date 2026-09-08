@@ -1014,3 +1014,18 @@ Staff đăng ký giúp cũng giữ chỗ ngay với `CONFIRMED + PENDING`; khôn
 - Staff có thể đăng ký giúp, hủy, chuyển lớp hoặc hoàn tiền. `PAID` chỉ được cập nhật sau callback MoMo/ZaloPay có chữ ký hợp lệ.
 - API CRUD cho `course_section` và `course_content` chưa có; hiện backend mới cung cấp API đọc public cho curriculum.
 - Student và Teacher đã có API cùng giao diện đọc/cập nhật hồ sơ riêng.
+
+## 19. Dashboard và báo cáo Admin
+
+Các endpoint yêu cầu quyền `ADMIN`, riêng báo cáo lớp sắp khai giảng cho phép thêm `CONSULTANT`:
+
+| Method | Endpoint | Tham số | Dữ liệu trả về |
+|---|---|---|---|
+| GET | `/api/admin/dashboard/summary` | Không | Tổng quan học viên, giảng viên, khóa học, lớp, đăng ký và doanh thu |
+| GET | `/api/admin/reports/revenue` | `from`, `to` | Doanh thu gộp, tiền hoàn và doanh thu thuần theo tháng |
+| GET | `/api/admin/reports/enrollments` | `from`, `to` | Tổng đăng ký, xác nhận, thanh toán và hủy theo tháng |
+| GET | `/api/admin/reports/popular-courses` | `from`, `to`, `limit` | Khóa học phổ biến, số đăng ký và doanh thu |
+| GET | `/api/admin/reports/teacher-load` | `from`, `to` | Số lớp và lesson của từng giảng viên trong kỳ |
+| GET | `/api/admin/reports/upcoming-classes` | `from`, `to` | Lớp sắp khai giảng và số chỗ còn lại |
+
+Quy tắc: `from <= to`, tối đa 366 ngày; doanh thu chỉ cộng payment `PAID` và trừ refund `COMPLETED`. Các giao dịch chưa thành công không được tính. Mốc ngày dùng `app.time-zone`, mặc định `Asia/Ho_Chi_Minh`. SystemLog chưa triển khai trong giai đoạn này.

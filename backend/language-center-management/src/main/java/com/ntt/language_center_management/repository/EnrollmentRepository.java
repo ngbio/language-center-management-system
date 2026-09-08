@@ -15,6 +15,8 @@ import java.util.Date;
 
 public interface EnrollmentRepository extends JpaRepository<Enrollment, Integer> {
 
+  long countByEnrollmentStatusAndPaymentStatus(String enrollmentStatus, String paymentStatus);
+
   long countByCourseClassId_IdAndEnrollmentStatusIn(
       Integer courseClassId, Collection<String> statuses);
 
@@ -110,4 +112,36 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Integer>
 
   @Query("select e.id from Enrollment e where e.enrollmentStatus = 'CONFIRMED' and e.paymentStatus = 'PENDING' and e.paymentDeadline < :now")
   List<Integer> findExpiredPendingIds(@Param("now") Date now);
+
+  @Query(value = """
+      SELECT YEAR(enrollment_date), MONTH(enrollment_date), COUNT(*),
+             SUM(enrollment_status = 'CONFIRMED'),
+             SUM(payment_status = 'PAID'),
+             SUM(enrollment_status = 'CANCELLED')
+      FROM enrollment
+      WHERE enrollment_date >= :from AND enrollment_date < :toExclusive
+      GROUP BY YEAR(enrollment_date), MONTH(enrollment_date)
+      ORDER BY YEAR(enrollment_date), MONTH(enrollment_date)
+      """, nativeQuery = true)
+  List<Object[]> aggregateByMonth(
+      @Param("from") Date from, @Param("toExclusive") Date toExclusive);
+
+  @Query(value = """
+      SELECT c.id, c.course_code, c.course_name, COUNT(e.id),
+             SUM(e.enrollment_status = 'CONFIRMED' AND e.payment_status = 'PAID'),
+             COALESCE(SUM(CASE WHEN e.enrollment_status = 'CONFIRMED'
+                                   AND e.payment_status = 'PAID'
+                               THEN e.amount_due ELSE 0 END), 0)
+      FROM enrollment e
+      JOIN courseclass cc ON cc.id = e.course_class_id
+      JOIN course c ON c.id = cc.course_id
+      WHERE e.enrollment_date >= :from AND e.enrollment_date < :toExclusive
+      GROUP BY c.id, c.course_code, c.course_name
+      ORDER BY 5 DESC, 4 DESC, c.course_name ASC
+      LIMIT :limit
+      """, nativeQuery = true)
+  List<Object[]> findPopularCourses(
+      @Param("from") Date from,
+      @Param("toExclusive") Date toExclusive,
+      @Param("limit") int limit);
 }

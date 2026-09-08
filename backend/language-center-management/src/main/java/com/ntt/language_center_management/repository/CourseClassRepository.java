@@ -2,7 +2,11 @@ package com.ntt.language_center_management.repository;
 
 import com.ntt.language_center_management.entity.Courseclass;
 import jakarta.persistence.LockModeType;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
 import java.util.Optional;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
@@ -21,4 +25,13 @@ public interface CourseClassRepository
   Optional<Courseclass> lockById(@Param("id") Integer id);
 
   java.util.List<Courseclass> findByTeacherId_IdOrderByStartDateDesc(Integer teacherId);
+
+  long countByStatusIn(Collection<String> statuses);
+
+  long countByStartDateBetweenAndStatusIn(
+      Date from, Date to, Collection<String> statuses);
+
+  @EntityGraph(attributePaths = {"courseId", "teacherId", "teacherId.userId"})
+  List<Courseclass> findByStartDateBetweenAndStatusInOrderByStartDateAsc(
+      Date from, Date to, Collection<String> statuses);
 }

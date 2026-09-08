@@ -209,3 +209,15 @@ Backend đã có toàn bộ API cơ bản nhưng giao diện Admin/Consultant ch
 | Chưa tích hợp | 39 |
 
 Một endpoint có thể xuất hiện ở nhiều nhóm quyền hoặc chức năng, vì vậy bảng tổng kết đếm theo **dòng chức năng giao diện**, không phải số endpoint URL duy nhất.
+
+## Dashboard và báo cáo
+
+| Trạng thái | Method | API | Hiện trạng |
+|:---:|---|---|---|
+| ✅ | GET | `/api/admin/dashboard/summary` | Đã dùng tại Dashboard Admin |
+| ✅ | GET | `/api/admin/reports/revenue` | Đã dùng biểu đồ doanh thu theo tháng |
+| ✅ | GET | `/api/admin/reports/enrollments` | Đã dùng bảng đăng ký theo tháng |
+| ✅ | GET | `/api/admin/reports/popular-courses` | Đã dùng bảng xếp hạng khóa học |
+| ✅ | GET | `/api/admin/reports/teacher-load` | Đã dùng bảng tải giảng viên |
+| ✅ | GET | `/api/admin/reports/upcoming-classes` | Đã dùng danh sách lớp trong 30 ngày tới |
+| ⬜ | GET | `/api/admin/system-logs` | Chưa xây dựng backend và giao diện |

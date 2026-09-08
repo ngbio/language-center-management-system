@@ -139,6 +139,8 @@ public class SecurityConfig {
                     .hasAnyRole("ADMIN", "CONSULTANT")
                     .requestMatchers(HttpMethod.PATCH, "/api/admin/classes/*/status")
                     .hasRole("ADMIN")
+                    .requestMatchers(HttpMethod.GET, "/api/admin/reports/upcoming-classes")
+                    .hasAnyRole("ADMIN", "CONSULTANT")
                     .requestMatchers("/api/admin/classes/**")
                     .hasAnyRole("ADMIN", "CONSULTANT")
                     .requestMatchers("/api/admin/**")
