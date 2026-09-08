@@ -1,6 +1,6 @@
 # Language Center Management API
 
-Tài liệu này mô tả các API hiện có trong backend tại thời điểm cập nhật **05/09/2026**.
+Tài liệu này mô tả các API hiện có trong backend tại thời điểm cập nhật **06/09/2026**.
 
 ## 1. Thông tin chung
 
@@ -16,6 +16,15 @@ Header dành cho API yêu cầu đăng nhập:
 Authorization: Bearer <token>
 Content-Type: application/json
 ```
+
+### Upload ảnh lên Cloudinary
+
+`POST /uploads/images?purpose={purpose}` sử dụng `multipart/form-data` với trường file tên `file`.
+
+- `STUDENT_AVATAR`: chỉ Student được upload.
+- `COURSE_THUMBNAIL`, `COURSE_BANNER`: chỉ Admin được upload.
+- Hỗ trợ JPG, PNG, WebP, GIF; tối đa 5 MB.
+- Response trả `url`, `publicId`, định dạng, kích thước ảnh và số byte. URL được gán vào form hồ sơ hoặc khóa học trước khi lưu dữ liệu.
 
 ### Cấu trúc response chung
 
@@ -219,22 +228,7 @@ Response `data`:
 - Quyền: Public
 - Công dụng: lấy chi tiết phòng học.
 
-### POST `/rooms`
-
-- Quyền: ADMIN
-- Request: xem `RoomRequest` ở phần schema.
-
-### PUT `/rooms/{id}`
-
-- Quyền: ADMIN
-- Request: `RoomRequest`.
-
-### DELETE `/rooms/{id}`
-
-- Quyền: ADMIN
-- Không thể xóa phòng đã có lịch học.
-
-> Các API ghi `/rooms` được giữ để tương thích. Phần Admin cũng có nhóm `/admin/rooms` bên dưới.
+> Public chỉ được đọc thông tin phòng phục vụ lịch học. Tạo, sửa và xóa phòng chỉ sử dụng nhóm `/admin/rooms`.
 
 ---
 
@@ -265,8 +259,8 @@ Response `data`:
 
 ### GET `/classes/{classId}/schedules`
 
-- Quyền hiện tại: Public
-- Công dụng: lấy lịch học cố định của lớp.
+- Quyền hiện tại: Public.
+- Công dụng: lấy lịch học cố định của lớp gồm thứ, giờ, hình thức và phòng học. Với Public và tài khoản không quản lý, `meetingUrl` được che (`null`). ADMIN/CONSULTANT nhận link đầy đủ để quản lý; Student/Teacher lấy link học từ API lịch/buổi học đã xác thực của mình.
 - Trả về: `ClassScheduleResponse[]`.
 
 ---
@@ -528,6 +522,51 @@ Chỉ hủy trước ngày khai giảng và khi chưa phát sinh thanh toán.
 }
 ```
 
+### GET `/lessons/{id}/attendance`
+
+- Quyền: TEACHER phụ trách lớp chứa buổi học.
+- Trả bảng điểm danh gồm toàn bộ Student có enrollment `CONFIRMED + PAID`; học viên chưa được điểm danh có `attendanceId` và `status` bằng `null`.
+
+### PUT `/lessons/{id}/attendance`
+
+- Quyền: TEACHER phụ trách lớp chứa buổi học.
+- Lưu hoặc cập nhật nhiều bản ghi trong một transaction. Request bị từ chối toàn bộ nếu trùng `studentId`, có Student không thuộc lớp, buổi học bị hủy hoặc vi phạm thời gian điểm danh.
+- Có thể tạo mới, bổ sung học viên bị sót hoặc cập nhật điểm danh từ sau thời gian bắt đầu buổi học đến hết 7 ngày sau ngày học; có thể đổi thời hạn bằng cấu hình `attendance.edit-window-days`.
+- Lesson ban đầu ở trạng thái `SCHEDULED`. Sau thời gian kết thúc, tác vụ nền tự chuyển Lesson sang `COMPLETED`; trạng thái này không ngăn việc sửa điểm danh trong thời hạn cho phép.
+
+```json
+{
+  "attendances": [
+    { "studentId": 1, "status": "PRESENT", "note": null },
+    { "studentId": 2, "status": "LATE", "note": "Đến muộn 10 phút" }
+  ]
+}
+```
+
+### PATCH `/attendance/{id}`
+
+- Quyền: TEACHER phụ trách lớp chứa bản ghi.
+- Sửa trạng thái và ghi chú của một bản ghi trong thời hạn cho phép.
+
+```json
+{
+  "status": "EXCUSED",
+  "note": "Có giấy xin phép"
+}
+```
+
+### GET `/classes/{id}/attendance-summary`
+
+- Quyền: TEACHER phụ trách lớp.
+- `totalLessons`: tổng số buổi không bị hủy; `completedLessons`: số buổi đã hoàn thành.
+- Trả số lần `PRESENT`, `ABSENT`, `LATE`, `EXCUSED` của từng học viên; `attendanceRate` tính `PRESENT + LATE` trên tổng số bản ghi đã điểm danh.
+
+### GET `/students/me/attendance`
+
+- Quyền: STUDENT.
+- Trả lịch sử điểm danh của chính học viên hiện tại, mới nhất trước.
+- Student không thể truyền student ID khác để xem dữ liệu người khác.
+
 ---
 
 ## 8. Quản lý enrollment — Staff
@@ -608,8 +647,9 @@ Staff đăng ký giúp cũng giữ chỗ ngay với `CONFIRMED + PENDING`; khôn
 
 ### POST `/classes/{classId}/lessons/generate`
 
-- Quyền: ADMIN, CONSULTANT
+- Quyền: ADMIN, CONSULTANT hoặc TEACHER đang phụ trách đúng lớp.
 - Công dụng: sinh danh sách buổi học từ schedule và tổng số buổi của khóa học.
+- Teacher chỉ được sinh từ ngày khai giảng trở đi; Admin/Consultant vẫn có thể sinh sớm khi cần vận hành.
 - HTTP thành công: `201`.
 
 ### PATCH `/lessons/{id}/reschedule`
@@ -618,9 +658,16 @@ Staff đăng ký giúp cũng giữ chỗ ngay với `CONFIRMED + PENDING`; khôn
 
 ```json
 {
-  "lessonDate": "2026-09-20"
+  "lessonDate": "2026-09-20",
+  "reason": "Giáo viên xin nghỉ và trung tâm bố trí lịch học bù"
 }
 ```
+
+- Chỉ dời lesson `SCHEDULED` chưa đến giờ bắt đầu và chưa có điểm danh.
+- Ngày mới phải khác ngày hiện tại, chưa diễn ra và nằm trong khoảng ngày của lớp.
+- Backend kiểm tra trùng lesson, phòng học và giáo viên tại ngày mới.
+- Lưu ngày ban đầu, lý do, thời điểm và ADMIN/CONSULTANT thực hiện dời lịch.
+- TODO Notification: sau khi module thông báo hoàn thiện, gửi lịch mới cho Teacher và các Student của lớp sau khi transaction commit thành công.
 
 ### PATCH `/lessons/{id}/cancel`
 
