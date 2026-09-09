@@ -12,7 +12,6 @@ export const endpoints = {
   "teacher-register": "/auth/teacher/register",
   teachers: "/teachers",
   profile: "/auth/me",
-  "register-teacher": "/admin/teachers",
   "admin-teachers": "/admin/teachers",
   "admin-users": "/admin/users",
   "admin-user-details": (userId) => `/admin/users/${userId}`,
@@ -41,7 +40,6 @@ export const endpoints = {
   "admin-course-details": (courseId) => `/admin/courses/${courseId}`,
 
   rooms: "/rooms",
-  "room-details": (roomId) => `/rooms/${roomId}`,
   "admin-rooms": "/admin/rooms",
   "admin-room-details": (roomId) => `/admin/rooms/${roomId}`,
 
