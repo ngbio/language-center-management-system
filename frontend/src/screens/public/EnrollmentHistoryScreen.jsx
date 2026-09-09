@@ -17,6 +17,8 @@ export default function EnrollmentHistoryScreen() {
   const [payingId, setPayingId] = useState(null);
   const [downloadingId, setDownloadingId] = useState(null);
   const [methods, setMethods] = useState({});
+  const [detail, setDetail] = useState(null);
+  const [detailLoadingId, setDetailLoadingId] = useState(null);
 
   const loadHistory = async () => {
     setLoading(true); setError("");
@@ -31,6 +33,7 @@ export default function EnrollmentHistoryScreen() {
     finally { setLoading(false); }
   };
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { if (role === "STUDENT" && isTokenActive(token)) loadHistory(); }, [role, token]);
 
   const latestPayment = useMemo(() => {
@@ -43,7 +46,10 @@ export default function EnrollmentHistoryScreen() {
   const pay = async (enrollment) => {
     setPayingId(enrollment.id); setError(""); setNotice("");
     try {
-      const response = await authApis().post(endpoints.payments, { enrollmentId: enrollment.id, method: methods[enrollment.id] || "MOMO" });
+      const response = await authApis().post(
+        endpoints["enrollment-payments"](enrollment.id),
+        { method: methods[enrollment.id] || "MOMO" },
+      );
       const payment = apiData(response);
       if (!payment?.paymentUrl) throw new Error("Cổng thanh toán chưa trả về đường dẫn thanh toán");
       window.location.assign(payment.paymentUrl);
@@ -90,6 +96,25 @@ export default function EnrollmentHistoryScreen() {
     }
   };
 
+  const viewDetail = async (enrollment) => {
+    setDetailLoadingId(enrollment.id); setError("");
+    try {
+      const api = authApis();
+      const [paymentResponse, refundResponse, invoiceResponse] = await Promise.all([
+        api.get(endpoints["enrollment-payments"](enrollment.id)),
+        api.get(endpoints["enrollment-refunds"](enrollment.id)),
+        api.get(endpoints["enrollment-invoice"](enrollment.id)),
+      ]);
+      setDetail({
+        enrollment,
+        payments: apiData(paymentResponse) || [],
+        refunds: apiData(refundResponse) || [],
+        invoice: apiData(invoiceResponse),
+      });
+    } catch (requestError) { setError(apiError(requestError)); }
+    finally { setDetailLoadingId(null); }
+  };
+
   if (!isTokenActive(token)) return <Navigate to="/login" replace />;
   if (role !== "STUDENT") return <Navigate to="/" replace />;
 
@@ -107,6 +132,7 @@ export default function EnrollmentHistoryScreen() {
               return <tr key={item.id}><td>{formatDate(item.enrollmentDate)}{item.paymentStatus === "PENDING" && <small>Hạn: {formatDateTime(item.paymentDeadline)}</small>}</td><td><strong>{item.className}</strong><small>{item.classCode} · {item.courseName}</small></td><td>{formatMoney(item.amountDue)}</td><td><Status value={item.enrollmentStatus} /></td><td><Status value={item.paymentStatus} /></td><td>{transaction ? <><strong>{transaction.method}</strong><small>{transaction.transactionCode}<br />{labels[transaction.status] || transaction.status}</small></> : "Chưa có"}</td><td><div className="student-enrollment-actions">
                 {canPay && <><select value={methods[item.id] || "MOMO"} onChange={(event) => setMethods((current) => ({ ...current, [item.id]: event.target.value }))}><option value="MOMO">MoMo</option><option value="ZALOPAY">ZaloPay</option></select><button className="pay-enrollment-button" disabled={payingId === item.id} onClick={() => pay(item)}>{payingId === item.id ? "Đang tạo..." : "Thanh toán"}</button></>}
                 {canCancel && <button type="button" onClick={() => cancel(item)}>Hủy đăng ký</button>}
+                <button type="button" disabled={detailLoadingId === item.id} onClick={() => viewDetail(item)}>{detailLoadingId === item.id ? "Đang tải..." : "Xem chi tiết"}</button>
                 {["PAID", "REFUNDED"].includes(item.paymentStatus) && <button type="button" className="pay-enrollment-button" disabled={downloadingId === item.id} onClick={() => downloadInvoice(item)}>{downloadingId === item.id ? "Đang xuất..." : "Tải hóa đơn PDF"}</button>}
               </div></td></tr>;
             }) : <tr><td colSpan="7">Bạn chưa có đăng ký lớp học nào.</td></tr>}
@@ -119,6 +145,7 @@ export default function EnrollmentHistoryScreen() {
         </HistorySection>
       </>}
     </div>
+    {detail && <BillingDetail detail={detail} onClose={() => setDetail(null)} />}
   </section>;
 }
 
@@ -127,3 +154,18 @@ function HistorySection({ kicker, title, count, children }) {
 }
 
 function Status({ value }) { return <span className={`learning-status status-${String(value).toLowerCase()}`}>{labels[value] || value}</span>; }
+
+function BillingDetail({ detail, onClose }) {
+  const { enrollment, invoice, payments: attempts, refunds } = detail;
+  return <div className="public-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+    <section className="public-enrollment-modal billing-detail-modal" role="dialog" aria-modal="true" aria-labelledby="billing-detail-title">
+      <button className="public-modal-close" type="button" onClick={onClose}>×</button>
+      <span className="section-kicker">CHI TIẾT TÀI CHÍNH</span><h2 id="billing-detail-title">{enrollment.className}</h2>
+      {invoice ? <dl className="billing-summary"><div><dt>Số hóa đơn</dt><dd>{invoice.invoiceNumber}</dd></div><div><dt>Học phí</dt><dd>{formatMoney(invoice.tuitionAmount)}</dd></div><div><dt>Đã thanh toán</dt><dd>{formatMoney(invoice.paidAmount)}</dd></div><div><dt>Đã hoàn</dt><dd>{formatMoney(invoice.refundedAmount)}</dd></div><div><dt>Thực thu</dt><dd>{formatMoney(invoice.netPaidAmount)}</dd></div><div><dt>Trạng thái</dt><dd><Status value={invoice.paymentStatus} /></dd></div></dl> : <div className="public-empty">Dữ liệu hóa đơn đang được cập nhật.</div>}
+      <h3>Các lần thử thanh toán</h3>
+      <div className="history-table-wrap"><table><thead><tr><th>Mã giao dịch</th><th>Phương thức</th><th>Số tiền</th><th>Trạng thái</th><th>Thời gian</th></tr></thead><tbody>{attempts.length ? attempts.map((payment) => <tr key={payment.id}><td>{payment.transactionCode}</td><td>{payment.method}</td><td>{formatMoney(payment.amount)}</td><td><Status value={payment.status} /></td><td>{formatDateTime(payment.completedAt || payment.createdAt)}</td></tr>) : <tr><td colSpan="5">Chưa có lần thử thanh toán.</td></tr>}</tbody></table></div>
+      <h3>Lịch sử hoàn tiền</h3>
+      <div className="history-table-wrap"><table><thead><tr><th>Mã hoàn tiền</th><th>Số tiền</th><th>Lý do</th><th>Trạng thái</th><th>Thời gian</th></tr></thead><tbody>{refunds.length ? refunds.map((refund) => <tr key={refund.id}><td>{refund.refundCode}</td><td>{formatMoney(refund.amount)}</td><td>{refund.reason}</td><td><Status value={refund.status} /></td><td>{formatDateTime(refund.completedAt || refund.createdAt)}</td></tr>) : <tr><td colSpan="5">Chưa có yêu cầu hoàn tiền.</td></tr>}</tbody></table></div>
+    </section>
+  </div>;
+}
