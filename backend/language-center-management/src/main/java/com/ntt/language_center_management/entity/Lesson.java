@@ -4,6 +4,10 @@
  */
 package com.ntt.language_center_management.entity;
 
+import com.ntt.language_center_management.enums.LessonStatus;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
+
 import jakarta.persistence.Basic;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -66,9 +70,9 @@ public class Lesson implements Serializable {
     private User rescheduledBy;
     @Basic(optional = false)
     @NotNull
-    @Size(min = 1, max = 20)
     @Column(name = "status")
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private LessonStatus status;
     @JoinColumn(name = "class_schedule_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private Classschedule classScheduleId;
@@ -82,10 +86,10 @@ public class Lesson implements Serializable {
         this.id = id;
     }
 
-    public Lesson(Integer id, Date lessonDate, String status) {
+    public Lesson(Integer id, Date lessonDate, LessonStatus status) {
         this.id = id;
         this.lessonDate = lessonDate;
-        this.status = status;
+        setStatus(status);
     }
 
     public Integer getId() {
@@ -152,11 +156,11 @@ public class Lesson implements Serializable {
         this.rescheduledBy = rescheduledBy;
     }
 
-    public String getStatus() {
+    public LessonStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(LessonStatus status) {
         this.status = status;
     }
 

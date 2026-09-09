@@ -4,6 +4,10 @@
  */
 package com.ntt.language_center_management.entity;
 
+import com.ntt.language_center_management.enums.CatalogStatus;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
+
 import jakarta.persistence.Basic;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -57,9 +61,9 @@ public class Level implements Serializable {
     private int displayOrder;
     @Basic(optional = false)
     @NotNull
-    @Size(min = 1, max = 20)
     @Column(name = "status")
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private CatalogStatus status;
     @JoinColumn(name = "language_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private Language languageId;
@@ -73,12 +77,12 @@ public class Level implements Serializable {
         this.id = id;
     }
 
-    public Level(Integer id, String levelCode, String levelName, int displayOrder, String status) {
+    public Level(Integer id, String levelCode, String levelName, int displayOrder, CatalogStatus status) {
         this.id = id;
         this.levelCode = levelCode;
         this.levelName = levelName;
         this.displayOrder = displayOrder;
-        this.status = status;
+        setStatus(status);
     }
 
     public Integer getId() {
@@ -121,11 +125,11 @@ public class Level implements Serializable {
         this.displayOrder = displayOrder;
     }
 
-    public String getStatus() {
+    public CatalogStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(CatalogStatus status) {
         this.status = status;
     }
 

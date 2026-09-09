@@ -1,5 +1,10 @@
 package com.ntt.language_center_management.service.impl;
 
+import com.ntt.language_center_management.enums.ClassStatus;
+import com.ntt.language_center_management.enums.EnrollmentPaymentStatus;
+import com.ntt.language_center_management.enums.EnrollmentStatus;
+import com.ntt.language_center_management.enums.AccountStatus;
+
 import com.ntt.language_center_management.dto.request.CancelEnrollmentRequest;
 import com.ntt.language_center_management.dto.request.CreateEnrollmentRequest;
 import com.ntt.language_center_management.dto.request.TransferEnrollmentRequest;
@@ -39,12 +44,8 @@ import org.springframework.util.StringUtils;
 @Transactional
 public class EnrollmentServiceImpl implements EnrollmentService {
 
-  private static final String PENDING = "PENDING";
-  private static final String CONFIRMED = "CONFIRMED";
-  private static final String CANCELLED = "CANCELLED";
-  private static final Set<String> ACTIVE_STATUSES = Set.of(PENDING, CONFIRMED);
-  private static final Set<String> ENROLLMENT_STATUSES =
-      Set.of(PENDING, CONFIRMED, CANCELLED);
+  private static final Set<EnrollmentStatus> ACTIVE_STATUSES =
+      Set.of(EnrollmentStatus.PENDING, EnrollmentStatus.CONFIRMED);
 
   private final EnrollmentRepository enrollmentRepository;
   private final CourseClassRepository courseClassRepository;
@@ -170,26 +171,23 @@ public class EnrollmentServiceImpl implements EnrollmentService {
   }
 
   @Override
-  public EnrollmentResponse changeStatus(Integer enrollmentId, String status) {
-    if (!ENROLLMENT_STATUSES.contains(status)) {
-      throw new IllegalArgumentException(
-          "Trạng thái đăng ký phải là PENDING, CONFIRMED hoặc CANCELLED");
-    }
+  public EnrollmentResponse changeStatus(Integer enrollmentId, EnrollmentStatus requestedStatus) {
 
     Enrollment enrollment = lockEnrollment(enrollmentId);
-    String currentStatus = enrollment.getEnrollmentStatus();
-    if (currentStatus.equals(status)) {
+    EnrollmentStatus currentStatus = enrollment.getEnrollmentStatus();
+    if (currentStatus == requestedStatus) {
       return enrollmentMapper.toResponse(enrollment);
     }
-    if (CANCELLED.equals(currentStatus)) {
+    if (currentStatus == EnrollmentStatus.CANCELLED) {
       throw new IllegalArgumentException("Không thể thay đổi đăng ký đã hủy");
     }
-    if (CONFIRMED.equals(currentStatus) && PENDING.equals(status)) {
+    if (currentStatus == EnrollmentStatus.CONFIRMED
+        && requestedStatus == EnrollmentStatus.PENDING) {
       throw new IllegalArgumentException("Không thể chuyển đăng ký đã xác nhận về chờ xử lý");
     }
 
     Courseclass courseClass = lockClass(enrollment.getCourseClassId().getId());
-    if (CANCELLED.equals(status)) {
+    if (requestedStatus == EnrollmentStatus.CANCELLED) {
       validateCancellationPolicy(enrollment);
       cancel(enrollment, "Hủy bởi nhân viên");
       reopenClassIfNeeded(courseClass);
@@ -197,8 +195,8 @@ public class EnrollmentServiceImpl implements EnrollmentService {
       if (!Set.of("OPEN", "FULL").contains(courseClass.getStatus())) {
         throw new IllegalArgumentException("Lớp học không còn nhận xử lý đăng ký");
       }
-      enrollment.setEnrollmentStatus(status);
-      if (CONFIRMED.equals(status)) {
+      enrollment.setEnrollmentStatus(requestedStatus);
+      if (requestedStatus == EnrollmentStatus.CONFIRMED) {
         enrollment.setConfirmedAt(new Date());
       }
     }
@@ -209,8 +207,8 @@ public class EnrollmentServiceImpl implements EnrollmentService {
   public EnrollmentResponse transfer(Integer enrollmentId, TransferEnrollmentRequest request) {
     Enrollment enrollment = lockEnrollment(enrollmentId);
     validateActiveStudent(enrollment.getStudentId());
-    if (!CONFIRMED.equals(enrollment.getEnrollmentStatus())
-        || !PENDING.equals(enrollment.getPaymentStatus())) {
+    if (enrollment.getEnrollmentStatus() != EnrollmentStatus.CONFIRMED
+        || enrollment.getPaymentStatus() != EnrollmentPaymentStatus.PENDING) {
       throw new IllegalArgumentException(
           "Chỉ được chuyển lớp cho đăng ký đã xác nhận và chưa thanh toán");
     }
@@ -266,10 +264,10 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     enrollment.setEnrollmentDate(now);
     enrollment.setPaymentDeadline(Date.from(now.toInstant().plusSeconds(2 * 24 * 60 * 60L)));
     enrollment.setAmountDue(courseClass.getAppliedTuitionFee());
-    enrollment.setEnrollmentStatus(CONFIRMED);
+    enrollment.setEnrollmentStatus(EnrollmentStatus.CONFIRMED);
     enrollment.setPaymentStatus(
         courseClass.getAppliedTuitionFee().compareTo(java.math.BigDecimal.ZERO) == 0
-            ? "PAID" : PENDING);
+            ? EnrollmentPaymentStatus.PAID : EnrollmentPaymentStatus.PENDING);
     enrollment.setConfirmedAt(now);
 
     try {
@@ -282,7 +280,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
   }
 
   private void validateOpenClassAndCapacity(Courseclass courseClass) {
-    if (!"OPEN".equals(courseClass.getStatus())) {
+    if (courseClass.getStatus() != ClassStatus.OPEN) {
       throw new IllegalArgumentException("Lớp học hiện không mở đăng ký");
     }
     if (countActiveEnrollments(courseClass.getId()) >= courseClass.getMaxStudents()) {
@@ -305,7 +303,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     if (!courseClass.getStartDate().after(new Date())) {
       throw new IllegalArgumentException("Đã quá thời hạn hủy đăng ký trước ngày khai giảng");
     }
-    if (!PENDING.equals(enrollment.getPaymentStatus())) {
+    if (enrollment.getPaymentStatus() != EnrollmentPaymentStatus.PENDING) {
       throw new IllegalArgumentException(
           "Đăng ký đã phát sinh thanh toán, cần xử lý hoàn tiền trước khi hủy");
     }
@@ -321,33 +319,33 @@ public class EnrollmentServiceImpl implements EnrollmentService {
   }
 
   private void validateActiveStudent(Student student) {
-    if (student.getUserId() == null || !"ACTIVE".equals(student.getUserId().getStatus())) {
+    if (student.getUserId() == null || student.getUserId().getStatus() != AccountStatus.ACTIVE) {
       throw new IllegalArgumentException("Tài khoản học viên không ở trạng thái ACTIVE");
     }
   }
 
   private void markFullIfNeeded(Courseclass courseClass) {
     if (countActiveEnrollments(courseClass.getId()) >= courseClass.getMaxStudents()) {
-      courseClass.setStatus("FULL");
+      courseClass.setStatus(ClassStatus.FULL);
     }
   }
 
   private void reopenClassIfNeeded(Courseclass courseClass) {
-    if ("FULL".equals(courseClass.getStatus())
+    if (courseClass.getStatus() == ClassStatus.FULL
         && countActiveEnrollments(courseClass.getId()) < courseClass.getMaxStudents()) {
-      courseClass.setStatus("OPEN");
+      courseClass.setStatus(ClassStatus.OPEN);
     }
   }
 
   private void cancel(Enrollment enrollment, String reason) {
-    if (CANCELLED.equals(enrollment.getEnrollmentStatus())) {
+    if (enrollment.getEnrollmentStatus() == EnrollmentStatus.CANCELLED) {
       throw new IllegalArgumentException("Đăng ký đã được hủy trước đó");
     }
-    enrollment.setEnrollmentStatus(CANCELLED);
+    enrollment.setEnrollmentStatus(EnrollmentStatus.CANCELLED);
     enrollment.setCancelledAt(new Date());
     enrollment.setCancellationReason(reason.trim());
-    if (PENDING.equals(enrollment.getPaymentStatus())) {
-      enrollment.setPaymentStatus(CANCELLED);
+    if (enrollment.getPaymentStatus() == EnrollmentPaymentStatus.PENDING) {
+      enrollment.setPaymentStatus(EnrollmentPaymentStatus.CANCELLED);
     }
   }
 
@@ -380,7 +378,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
   private Student findCurrentStudent(Principal principal) {
     User user = findCurrentUser(principal);
-    if (!"ACTIVE".equals(user.getStatus())) {
+    if (user.getStatus() != AccountStatus.ACTIVE) {
       throw new ForbiddenException("Tài khoản học viên không ở trạng thái ACTIVE");
     }
     Student student =

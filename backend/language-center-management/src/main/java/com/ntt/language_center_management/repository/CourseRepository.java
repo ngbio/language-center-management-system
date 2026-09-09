@@ -1,5 +1,8 @@
 package com.ntt.language_center_management.repository;
 
+import com.ntt.language_center_management.enums.CatalogStatus;
+import com.ntt.language_center_management.enums.PublicationStatus;
+
 import com.ntt.language_center_management.entity.Course;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,9 +14,11 @@ public interface CourseRepository
   Optional<Course> findByCourseCodeIgnoreCase(String courseCode);
 
   Optional<Course> findBySlugAndStatusAndPublicationStatus(
-      String slug, String status, String publicationStatus);
+      String slug, CatalogStatus status,
+      PublicationStatus publicationStatus);
 
-  Optional<Course> findByIdAndStatus(Integer id, String status);
+  Optional<Course> findByIdAndStatus(
+      Integer id, CatalogStatus status);
 
   boolean existsByCourseCodeIgnoreCase(String courseCode);
 

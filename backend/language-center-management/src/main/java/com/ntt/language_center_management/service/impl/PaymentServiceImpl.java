@@ -1,11 +1,18 @@
 package com.ntt.language_center_management.service.impl;
 
+import com.ntt.language_center_management.enums.PaymentMethod;
+
+import com.ntt.language_center_management.enums.EnrollmentPaymentStatus;
+import com.ntt.language_center_management.enums.EnrollmentStatus;
+import com.ntt.language_center_management.enums.PaymentTransactionStatus;
+
 import com.ntt.language_center_management.dto.request.CreatePaymentRequest;
 import com.ntt.language_center_management.dto.response.PaymentResponse;
 import com.ntt.language_center_management.entity.Enrollment;
 import com.ntt.language_center_management.entity.Payment;
 import com.ntt.language_center_management.entity.Student;
 import com.ntt.language_center_management.exception.ResourceNotFoundException;
+import com.ntt.language_center_management.exception.PaymentGatewayException;
 import com.ntt.language_center_management.exception.UnauthorizedException;
 import com.ntt.language_center_management.repository.EnrollmentRepository;
 import com.ntt.language_center_management.repository.PaymentRepository;
@@ -15,6 +22,7 @@ import com.ntt.language_center_management.service.EnrollmentExpirationService;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
+import java.net.URI;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -34,6 +42,8 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
+import org.springframework.web.client.ResourceAccessException;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -88,21 +98,21 @@ public class PaymentServiceImpl implements PaymentService {
     if (!enrollment.getStudentId().getId().equals(student.getId())) {
       throw new UnauthorizedException("Bạn không được thanh toán đăng ký của học viên khác");
     }
-    if ("CANCELLED".equals(enrollment.getEnrollmentStatus())) {
+    if (enrollment.getEnrollmentStatus() == EnrollmentStatus.CANCELLED) {
       throw new IllegalArgumentException("Đăng ký đã bị hủy");
     }
-    if (!"CONFIRMED".equals(enrollment.getEnrollmentStatus())) {
+    if (enrollment.getEnrollmentStatus() != EnrollmentStatus.CONFIRMED) {
       throw new IllegalArgumentException("Đăng ký không ở trạng thái được phép thanh toán");
     }
-    if ("PAID".equals(enrollment.getPaymentStatus())) {
+    if (enrollment.getPaymentStatus() == EnrollmentPaymentStatus.PAID) {
       throw new IllegalArgumentException("Đăng ký đã được thanh toán");
     }
     if (enrollment.getAmountDue() == null || enrollment.getAmountDue().compareTo(BigDecimal.ZERO) <= 0) {
       throw new IllegalArgumentException("Đăng ký miễn phí không cần tạo giao dịch thanh toán");
     }
 
-    String method = request.method().toUpperCase();
-    return "MOMO".equals(method)
+    PaymentMethod method = request.method();
+    return method == PaymentMethod.MOMO
         ? createMomo(enrollment, student)
         : createZaloPay(enrollment, student);
   }
@@ -119,6 +129,7 @@ public class PaymentServiceImpl implements PaymentService {
     requireConfig(momoPartnerCode, "MOMO_PARTNER_CODE");
     requireConfig(momoAccessKey, "MOMO_ACCESS_KEY");
     requireConfig(momoSecretKey, "MOMO_SECRET_KEY");
+    requirePublicCallback(momoIpnUrl, "MOMO_IPN_URL");
     long amount = amount(enrollment);
     String suffix = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
     String orderId = "LCMOMO" + enrollment.getId() + suffix;
@@ -145,20 +156,29 @@ public class PaymentServiceImpl implements PaymentService {
     body.put("lang", "vi");
     body.put("signature", hmac(raw, momoSecretKey));
 
-    JsonNode response = restClient.post().uri(momoEndpoint).contentType(MediaType.APPLICATION_JSON)
-        .body(body).retrieve().body(JsonNode.class);
+    JsonNode response;
+    try {
+      response = restClient.post().uri(momoEndpoint).contentType(MediaType.APPLICATION_JSON)
+          .body(body).retrieve().body(JsonNode.class);
+    } catch (RestClientResponseException exception) {
+      throw gatewayRejected("MoMo", exception);
+    } catch (ResourceAccessException exception) {
+      throw new PaymentGatewayException(
+          "Không kết nối được MoMo sandbox. Vui lòng kiểm tra mạng và MOMO_ENDPOINT.", exception);
+    }
     if (response == null || response.path("resultCode").asInt(-1) != 0
         || !StringUtils.hasText(response.path("payUrl").asText())) {
       throw new IllegalArgumentException("Không tạo được giao dịch MoMo: "
           + (response == null ? "không có phản hồi" : response.path("message").asText()));
     }
-    Payment payment = savePending(enrollment, orderId, "MOMO");
+    Payment payment = savePending(enrollment, orderId, PaymentMethod.MOMO);
     return toResponse(payment, response.path("payUrl").asText());
   }
 
   private PaymentResponse createZaloPay(Enrollment enrollment, Student student) {
     requireConfig(zaloPayAppId, "ZALOPAY_APP_ID");
     requireConfig(zaloPayKey1, "ZALOPAY_KEY1");
+    requirePublicCallback(zaloPayCallbackUrl, "ZALOPAY_CALLBACK_URL");
     long now = System.currentTimeMillis();
     long amount = amount(enrollment);
     String prefix = LocalDate.now(VIETNAM_ZONE).format(DateTimeFormatter.ofPattern("yyMMdd"));
@@ -182,15 +202,23 @@ public class PaymentServiceImpl implements PaymentService {
     form.add("callback_url", zaloPayCallbackUrl);
     form.add("mac", hmac(macInput, zaloPayKey1));
 
-    JsonNode response = restClient.post().uri(zaloPayEndpoint)
-        .contentType(MediaType.APPLICATION_FORM_URLENCODED).body(form)
-        .retrieve().body(JsonNode.class);
+    JsonNode response;
+    try {
+      response = restClient.post().uri(zaloPayEndpoint)
+          .contentType(MediaType.APPLICATION_FORM_URLENCODED).body(form)
+          .retrieve().body(JsonNode.class);
+    } catch (RestClientResponseException exception) {
+      throw gatewayRejected("ZaloPay", exception);
+    } catch (ResourceAccessException exception) {
+      throw new PaymentGatewayException(
+          "Không kết nối được ZaloPay sandbox. Vui lòng kiểm tra mạng và ZALOPAY_ENDPOINT.", exception);
+    }
     if (response == null || response.path("return_code").asInt(-1) != 1
         || !StringUtils.hasText(response.path("order_url").asText())) {
       throw new IllegalArgumentException("Không tạo được giao dịch ZaloPay: "
           + (response == null ? "không có phản hồi" : response.path("return_message").asText()));
     }
-    Payment payment = savePending(enrollment, transactionId, "ZALOPAY");
+    Payment payment = savePending(enrollment, transactionId, PaymentMethod.ZALOPAY);
     return toResponse(payment, response.path("order_url").asText());
   }
 
@@ -209,7 +237,7 @@ public class PaymentServiceImpl implements PaymentService {
     if (!constantEquals(signature, hmac(raw, momoSecretKey))) {
       throw new IllegalArgumentException("Chữ ký callback MoMo không hợp lệ");
     }
-    Payment payment = findPayment(text(payload.get("orderId")), "MOMO");
+    Payment payment = findPayment(text(payload.get("orderId")), PaymentMethod.MOMO);
     int resultCode = Integer.parseInt(text(payload.get("resultCode")));
     if (resultCode == 0) complete(payment, Long.parseLong(text(payload.get("amount"))), text(payload.get("transId")));
     else fail(payment, text(payload.get("message")));
@@ -225,7 +253,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
     try {
       Map<String, Object> callback = objectMapper.readValue(data, new TypeReference<>() {});
-      Payment payment = findPayment(text(callback.get("app_trans_id")), "ZALOPAY");
+      Payment payment = findPayment(text(callback.get("app_trans_id")), PaymentMethod.ZALOPAY);
       complete(payment, Long.parseLong(text(callback.get("amount"))), text(callback.get("zp_trans_id")));
       return Map.of("return_code", 1, "return_message", "success");
     } catch (Exception exception) {
@@ -233,42 +261,42 @@ public class PaymentServiceImpl implements PaymentService {
     }
   }
 
-  private Payment savePending(Enrollment enrollment, String code, String method) {
+  private Payment savePending(Enrollment enrollment, String code, PaymentMethod method) {
     Payment payment = new Payment();
     payment.setEnrollmentId(enrollment);
     payment.setTransactionCode(code);
     payment.setMethod(method);
     payment.setAmount(enrollment.getAmountDue());
-    payment.setStatus("PENDING");
+    payment.setStatus(PaymentTransactionStatus.PENDING);
     payment.setCreatedAt(new Date());
     return paymentRepository.save(payment);
   }
 
   private void complete(Payment payment, long paidAmount, String reference) {
-    if ("PAID".equals(payment.getStatus())) return;
+    if (payment.getStatus() == PaymentTransactionStatus.PAID) return;
     if (paidAmount != amount(payment.getEnrollmentId())) throw new IllegalArgumentException("Số tiền thanh toán không khớp");
     Enrollment enrollment = payment.getEnrollmentId();
-    if ("CANCELLED".equals(enrollment.getEnrollmentStatus())) throw new IllegalArgumentException("Đăng ký đã hủy");
-    if (!"CONFIRMED".equals(enrollment.getEnrollmentStatus())) throw new IllegalArgumentException("Đăng ký không còn hiệu lực");
+    if (enrollment.getEnrollmentStatus() == EnrollmentStatus.CANCELLED) throw new IllegalArgumentException("Đăng ký đã hủy");
+    if (enrollment.getEnrollmentStatus() != EnrollmentStatus.CONFIRMED) throw new IllegalArgumentException("Đăng ký không còn hiệu lực");
     Date now = new Date();
-    payment.setStatus("PAID");
+    payment.setStatus(PaymentTransactionStatus.PAID);
     payment.setCompletedAt(now);
     payment.setReferenceCode(reference);
-    enrollment.setPaymentStatus("PAID");
+    enrollment.setPaymentStatus(EnrollmentPaymentStatus.PAID);
     if (enrollment.getConfirmedAt() == null) enrollment.setConfirmedAt(now);
     paymentRepository.save(payment);
     enrollmentRepository.save(enrollment);
   }
 
   private void fail(Payment payment, String message) {
-    if (!"PAID".equals(payment.getStatus())) {
-      payment.setStatus("FAILED");
+    if (payment.getStatus() != PaymentTransactionStatus.PAID) {
+      payment.setStatus(PaymentTransactionStatus.FAILED);
       payment.setErrorMessage(message);
       paymentRepository.save(payment);
     }
   }
 
-  private Payment findPayment(String code, String method) {
+  private Payment findPayment(String code, PaymentMethod method) {
     return paymentRepository.findByTransactionCodeAndMethod(code, method)
         .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giao dịch"));
   }
@@ -281,7 +309,7 @@ public class PaymentServiceImpl implements PaymentService {
 
   private PaymentResponse toResponse(Payment payment, String url) {
     return new PaymentResponse(payment.getId(), payment.getEnrollmentId().getId(),
-        payment.getTransactionCode(), payment.getMethod(), payment.getAmount(), payment.getStatus(),
+        payment.getTransactionCode(), payment.getMethod().name(), payment.getAmount(), payment.getStatus().name(),
         url, payment.getCreatedAt(), payment.getCompletedAt());
   }
 
@@ -291,6 +319,46 @@ public class PaymentServiceImpl implements PaymentService {
 
   private void requireConfig(String value, String name) {
     if (!StringUtils.hasText(value) || value.startsWith("CHANGE_ME")) throw new IllegalArgumentException("Thiếu cấu hình " + name);
+  }
+
+  private void requirePublicCallback(String value, String name) {
+    requireConfig(value, name);
+    try {
+      URI uri = URI.create(value);
+      String host = uri.getHost();
+      if (!"https".equalsIgnoreCase(uri.getScheme()) || !StringUtils.hasText(host)
+          || "localhost".equalsIgnoreCase(host) || "127.0.0.1".equals(host)
+          || host.toLowerCase().contains("your_public_backend")) {
+        throw new IllegalArgumentException(
+            name + " phải là URL HTTPS public trỏ tới backend (dùng ngrok hoặc URL deploy), không dùng localhost/YOUR_PUBLIC_BACKEND");
+      }
+    } catch (IllegalArgumentException exception) {
+      if (exception.getMessage() != null && exception.getMessage().startsWith(name)) throw exception;
+      throw new IllegalArgumentException(name + " không phải URL hợp lệ");
+    }
+  }
+
+  private PaymentGatewayException gatewayRejected(
+      String gateway, RestClientResponseException exception) {
+    String detail = gatewayMessage(exception.getResponseBodyAsString());
+    String message = gateway + " sandbox từ chối yêu cầu (HTTP "
+        + exception.getStatusCode().value() + ")";
+    if (StringUtils.hasText(detail)) message += ": " + detail;
+    return new PaymentGatewayException(message, exception);
+  }
+
+  private String gatewayMessage(String responseBody) {
+    if (!StringUtils.hasText(responseBody)) return null;
+    try {
+      JsonNode body = objectMapper.readTree(responseBody);
+      for (String field : List.of("message", "return_message", "sub_return_message")) {
+        String value = body.path(field).asText();
+        if (StringUtils.hasText(value)) return value;
+      }
+    } catch (Exception ignored) {
+      // A non-JSON gateway body is intentionally not returned to the client.
+    }
+    return null;
   }
 
   private String hmac(String value, String key) {

@@ -4,6 +4,11 @@
  */
 package com.ntt.language_center_management.entity;
 
+import com.ntt.language_center_management.enums.CourseContentType;
+import com.ntt.language_center_management.enums.PublicationStatus;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
+
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -60,9 +65,10 @@ public class CourseContent implements Serializable {
     private String documentUrl;
     @Basic(optional = false)
     @NotNull
-    @Size(min = 1, max = 30)
     @Column(name = "content_type")
-    private String contentType = "LESSON";
+    @Enumerated(EnumType.STRING)
+    private CourseContentType contentType =
+        CourseContentType.LESSON;
     @Basic(optional = false)
     @NotNull
     @Column(name = "display_order")
@@ -73,9 +79,10 @@ public class CourseContent implements Serializable {
     private boolean isPreview;
     @Basic(optional = false)
     @NotNull
-    @Size(min = 1, max = 20)
     @Column(name = "publication_status")
-    private String publicationStatus = "DRAFT";
+    @Enumerated(EnumType.STRING)
+    private PublicationStatus publicationStatus =
+        PublicationStatus.DRAFT;
     @JoinColumn(name = "section_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private CourseSection sectionId;
@@ -87,13 +94,14 @@ public class CourseContent implements Serializable {
         this.id = id;
     }
 
-    public CourseContent(Integer id, String title, String contentType, int displayOrder, boolean isPreview, String publicationStatus) {
+    public CourseContent(Integer id, String title, CourseContentType contentType, int displayOrder,
+            boolean isPreview, PublicationStatus publicationStatus) {
         this.id = id;
         this.title = title;
-        this.contentType = contentType;
+        setContentType(contentType);
         this.displayOrder = displayOrder;
         this.isPreview = isPreview;
-        this.publicationStatus = publicationStatus;
+        setPublicationStatus(publicationStatus);
     }
 
     public Integer getId() {
@@ -152,11 +160,11 @@ public class CourseContent implements Serializable {
         this.documentUrl = documentUrl;
     }
 
-    public String getContentType() {
+    public CourseContentType getContentType() {
         return contentType;
     }
 
-    public void setContentType(String contentType) {
+    public void setContentType(CourseContentType contentType) {
         this.contentType = contentType;
     }
 
@@ -176,11 +184,11 @@ public class CourseContent implements Serializable {
         this.isPreview = isPreview;
     }
 
-    public String getPublicationStatus() {
+    public PublicationStatus getPublicationStatus() {
         return publicationStatus;
     }
 
-    public void setPublicationStatus(String publicationStatus) {
+    public void setPublicationStatus(PublicationStatus publicationStatus) {
         this.publicationStatus = publicationStatus;
     }
 

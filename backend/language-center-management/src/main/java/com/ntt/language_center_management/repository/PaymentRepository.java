@@ -1,5 +1,8 @@
 package com.ntt.language_center_management.repository;
 
+import com.ntt.language_center_management.enums.PaymentMethod;
+import com.ntt.language_center_management.enums.PaymentTransactionStatus;
+
 import com.ntt.language_center_management.entity.Payment;
 import java.math.BigDecimal;
 import java.util.Date;
@@ -10,11 +13,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface PaymentRepository extends JpaRepository<Payment, Integer> {
-  Optional<Payment> findByTransactionCodeAndMethod(String transactionCode, String method);
+  Optional<Payment> findByTransactionCodeAndMethod(
+      String transactionCode, PaymentMethod method);
   Optional<Payment> findByTransactionCode(String transactionCode);
   List<Payment> findByEnrollmentId_StudentId_IdOrderByCreatedAtDesc(Integer studentId);
   List<Payment> findByEnrollmentId_IdOrderByCreatedAtDesc(Integer enrollmentId);
-  List<Payment> findByEnrollmentId_IdAndStatusOrderByCompletedAtDesc(Integer enrollmentId, String status);
+  List<Payment> findByEnrollmentId_IdAndStatusOrderByCompletedAtDesc(Integer enrollmentId,
+      PaymentTransactionStatus status);
 
   @Query("select coalesce(sum(p.amount), 0) from Payment p where p.status = 'PAID'")
   BigDecimal sumPaidAmount();

@@ -2,6 +2,7 @@ package com.ntt.language_center_management.service;
 
 import com.ntt.language_center_management.dto.request.LevelRequest;
 import com.ntt.language_center_management.dto.response.LevelResponse;
+import com.ntt.language_center_management.enums.CatalogStatus;
 import java.util.List;
 
 public interface LevelService {
@@ -19,7 +20,7 @@ public interface LevelService {
 
   LevelResponse save(LevelRequest request);
 
-  LevelResponse changeStatus(Integer id, String status);
+  LevelResponse changeStatus(Integer id, CatalogStatus status);
 
   void delete(Integer id);
 }

@@ -1,5 +1,7 @@
 package com.ntt.language_center_management.dto.response;
 
+import com.ntt.language_center_management.enums.AccountStatus;
+
 import java.util.Date;
 
 public record UserResponse(
@@ -11,6 +13,6 @@ public record UserResponse(
     String address,
     String roleName,
     String roleCode,
-    String status,
+    AccountStatus status,
     Date createdAt,
     Date updatedAt) {}

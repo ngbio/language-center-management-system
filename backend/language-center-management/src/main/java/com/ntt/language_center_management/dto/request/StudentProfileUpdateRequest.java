@@ -1,8 +1,8 @@
 package com.ntt.language_center_management.dto.request;
 
+import com.ntt.language_center_management.enums.Gender;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Past;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.util.Date;
 
@@ -13,8 +13,5 @@ public record StudentProfileUpdateRequest(
     @Size(max = 20, message = "Số điện thoại không được vượt quá 20 ký tự") String phoneNumber,
     @Size(max = 255, message = "Địa chỉ không được vượt quá 255 ký tự") String address,
     @Past(message = "Ngày sinh phải là ngày trong quá khứ") Date dateOfBirth,
-    @Pattern(
-            regexp = "^(MALE|FEMALE|OTHER)?$",
-            message = "Giới tính phải là MALE, FEMALE hoặc OTHER")
-        String gender,
+    Gender gender,
     @Size(max = 500, message = "Đường dẫn ảnh không được vượt quá 500 ký tự") String avatar) {}

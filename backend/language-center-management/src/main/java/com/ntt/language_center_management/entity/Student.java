@@ -4,6 +4,10 @@
  */
 package com.ntt.language_center_management.entity;
 
+import com.ntt.language_center_management.enums.Gender;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
+
 import jakarta.persistence.Basic;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -49,9 +53,9 @@ public class Student implements Serializable {
     @Column(name = "date_of_birth")
     @Temporal(TemporalType.DATE)
     private Date dateOfBirth;
-    @Size(max = 10)
     @Column(name = "gender")
-    private String gender;
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
     @Size(max = 500)
     @Column(name = "avatar")
     private String avatar;
@@ -97,11 +101,11 @@ public class Student implements Serializable {
         this.dateOfBirth = dateOfBirth;
     }
 
-    public String getGender() {
+    public Gender getGender() {
         return gender;
     }
 
-    public void setGender(String gender) {
+    public void setGender(Gender gender) {
         this.gender = gender;
     }
 

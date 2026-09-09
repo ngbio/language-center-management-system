@@ -1,5 +1,7 @@
 package com.ntt.language_center_management.service.impl;
 
+import com.ntt.language_center_management.enums.CatalogStatus;
+
 import com.ntt.language_center_management.dto.request.LanguageRequest;
 import com.ntt.language_center_management.dto.response.LanguageResponse;
 import com.ntt.language_center_management.entity.Language;
@@ -43,7 +45,7 @@ public class LanguageServiceImpl implements LanguageService {
       return getLanguages();
     }
     validateStatus(status);
-    return languageRepository.findByStatusOrderByLanguageNameAsc(status).stream()
+    return languageRepository.findByStatusOrderByLanguageNameAsc(CatalogStatus.valueOf(status)).stream()
         .map(languageMapper::toResponse)
         .toList();
   }
@@ -51,7 +53,7 @@ public class LanguageServiceImpl implements LanguageService {
   @Override
   @Transactional(readOnly = true)
   public List<LanguageResponse> getActiveLanguages() {
-    return languageRepository.findByStatusOrderByLanguageNameAsc("ACTIVE").stream()
+    return languageRepository.findByStatusOrderByLanguageNameAsc(CatalogStatus.ACTIVE).stream()
         .map(languageMapper::toResponse)
         .toList();
   }
@@ -67,7 +69,7 @@ public class LanguageServiceImpl implements LanguageService {
   public LanguageResponse getActiveById(int id) {
     Language language =
         languageRepository
-            .findByIdAndStatus(id, "ACTIVE")
+            .findByIdAndStatus(id, CatalogStatus.ACTIVE)
             .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy ngôn ngữ hoạt động"));
     return languageMapper.toResponse(language);
   }
@@ -84,9 +86,9 @@ public class LanguageServiceImpl implements LanguageService {
     String languageName = request.getLanguageName().trim();
     String description =
         StringUtils.hasText(request.getDescription()) ? request.getDescription().trim() : null;
-    String status = StringUtils.hasText(request.getStatus()) ? request.getStatus() : "ACTIVE";
+    CatalogStatus status = request.getStatus();
 
-    validateRequest(request.getId(), languageCode, languageName, description, status);
+    validateRequest(request.getId(), languageCode, languageName, description, status.name());
 
     Language language = request.getId() == null ? new Language() : findById(request.getId());
     language.setLanguageCode(languageCode);
@@ -97,8 +99,7 @@ public class LanguageServiceImpl implements LanguageService {
   }
 
   @Override
-  public LanguageResponse changeStatus(int id, String status) {
-    validateStatus(status);
+  public LanguageResponse changeStatus(int id, CatalogStatus status) {
     Language language = findById(id);
     language.setStatus(status);
     return languageMapper.toResponse(languageRepository.save(language));

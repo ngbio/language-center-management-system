@@ -7,6 +7,9 @@ import com.ntt.language_center_management.dto.response.RevenueReportResponse;
 import com.ntt.language_center_management.dto.response.TeacherLoadReportResponse;
 import com.ntt.language_center_management.dto.response.UpcomingClassReportResponse;
 import com.ntt.language_center_management.entity.Courseclass;
+import com.ntt.language_center_management.enums.ClassStatus;
+import com.ntt.language_center_management.enums.EnrollmentPaymentStatus;
+import com.ntt.language_center_management.enums.EnrollmentStatus;
 import com.ntt.language_center_management.repository.CourseClassRepository;
 import com.ntt.language_center_management.repository.CourseRepository;
 import com.ntt.language_center_management.repository.EnrollmentRepository;
@@ -35,9 +38,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class DashboardServiceImpl implements DashboardService {
   private static final int MAX_REPORT_DAYS = 366;
-  private static final Set<String> ACTIVE_CLASS_STATUSES = Set.of("OPEN", "IN_PROGRESS");
-  private static final Set<String> UPCOMING_CLASS_STATUSES = Set.of("DRAFT", "OPEN");
-  private static final Set<String> RESERVED_STATUSES = Set.of("PENDING", "CONFIRMED");
+  private static final Set<ClassStatus> ACTIVE_CLASS_STATUSES =
+      Set.of(ClassStatus.OPEN, ClassStatus.IN_PROGRESS);
+  private static final Set<ClassStatus> UPCOMING_CLASS_STATUSES =
+      Set.of(ClassStatus.DRAFT, ClassStatus.OPEN);
+  private static final Set<EnrollmentStatus> RESERVED_STATUSES =
+      Set.of(EnrollmentStatus.PENDING, EnrollmentStatus.CONFIRMED);
 
   private final StudentRepository students;
   private final TeacherRepository teachers;
@@ -73,8 +79,10 @@ public class DashboardServiceImpl implements DashboardService {
         classes.countByStatusIn(ACTIVE_CLASS_STATUSES),
         classes.countByStartDateBetweenAndStatusIn(dateOnly(today), dateOnly(today.plusDays(30)),
             UPCOMING_CLASS_STATUSES),
-        enrollments.countByEnrollmentStatusAndPaymentStatus("CONFIRMED", "PENDING"),
-        enrollments.countByEnrollmentStatusAndPaymentStatus("CONFIRMED", "PAID"),
+        enrollments.countByEnrollmentStatusAndPaymentStatus(
+            EnrollmentStatus.CONFIRMED, EnrollmentPaymentStatus.PENDING),
+        enrollments.countByEnrollmentStatusAndPaymentStatus(
+            EnrollmentStatus.CONFIRMED, EnrollmentPaymentStatus.PAID),
         gross, refunded, gross.subtract(refunded));
   }
 
@@ -154,7 +162,7 @@ public class DashboardServiceImpl implements DashboardService {
         value.getCourseId().getId(), value.getCourseId().getCourseName(), teacher,
         toLocalDate(value.getStartDate()), toLocalDate(value.getEndDate()), value.getMaxStudents(),
         reserved, Math.max(0, value.getMaxStudents() - reserved), value.getAppliedTuitionFee(),
-        value.getStatus());
+        value.getStatus().name());
   }
 
   private DateRange validateRange(LocalDate from, LocalDate to) {

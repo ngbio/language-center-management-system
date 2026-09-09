@@ -1,9 +1,9 @@
 package com.ntt.language_center_management.dto.request;
 
+import com.ntt.language_center_management.enums.Gender;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Past;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.util.Date;
 
@@ -15,6 +15,6 @@ public record UserRegisterRequest(
         @Size(max = 20) String phoneNumber,
         @Size(max = 255) String address,
         @Past Date dateOfBirth,
-        @Pattern(regexp = "MALE|FEMALE|OTHER", message = "gender phải là MALE, FEMALE hoặc OTHER") String gender,
+        Gender gender,
         @Size(max = 500) String avatar) {
 }

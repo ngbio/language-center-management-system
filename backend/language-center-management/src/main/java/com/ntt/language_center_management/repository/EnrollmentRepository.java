@@ -1,5 +1,9 @@
 package com.ntt.language_center_management.repository;
 
+
+import com.ntt.language_center_management.enums.EnrollmentPaymentStatus;
+import com.ntt.language_center_management.enums.EnrollmentStatus;
+
 import com.ntt.language_center_management.entity.Enrollment;
 import com.ntt.language_center_management.entity.Course;
 import com.ntt.language_center_management.entity.Courseclass;
@@ -7,6 +11,7 @@ import jakarta.persistence.LockModeType;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -15,19 +20,23 @@ import java.util.Date;
 
 public interface EnrollmentRepository extends JpaRepository<Enrollment, Integer> {
 
-  long countByEnrollmentStatusAndPaymentStatus(String enrollmentStatus, String paymentStatus);
+  long countByEnrollmentStatusAndPaymentStatus(
+      EnrollmentStatus enrollmentStatus,
+      EnrollmentPaymentStatus paymentStatus);
 
   long countByCourseClassId_IdAndEnrollmentStatusIn(
-      Integer courseClassId, Collection<String> statuses);
+      Integer courseClassId,
+      Collection<EnrollmentStatus> statuses);
 
   boolean existsByStudentId_IdAndCourseClassId_IdAndEnrollmentStatusIn(
-      Integer studentId, Integer courseClassId, Collection<String> statuses);
+      Integer studentId, Integer courseClassId,
+      Collection<EnrollmentStatus> statuses);
 
   boolean existsByStudentId_IdAndCourseClassId_IdAndEnrollmentStatusAndPaymentStatus(
       Integer studentId,
       Integer courseClassId,
-      String enrollmentStatus,
-      String paymentStatus);
+      EnrollmentStatus enrollmentStatus,
+      EnrollmentPaymentStatus paymentStatus);
 
   boolean existsByStudentId_IdAndCourseClassId_Id(Integer studentId, Integer courseClassId);
 
@@ -80,7 +89,9 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Integer>
 
   List<Enrollment>
       findByCourseClassId_IdAndEnrollmentStatusAndPaymentStatusOrderByStudentId_UserId_FullNameAsc(
-          Integer courseClassId, String enrollmentStatus, String paymentStatus);
+          Integer courseClassId,
+          EnrollmentStatus enrollmentStatus,
+          EnrollmentPaymentStatus paymentStatus);
 
   @Query(
       """
@@ -104,7 +115,7 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Integer>
   boolean existsScheduleConflict(
       @Param("studentId") Integer studentId,
       @Param("targetClassId") Integer targetClassId,
-      @Param("statuses") Collection<String> statuses);
+      @Param("statuses") Collection<EnrollmentStatus> statuses);
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select e from Enrollment e where e.id = :id")

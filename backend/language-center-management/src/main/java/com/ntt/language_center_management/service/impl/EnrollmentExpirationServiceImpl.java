@@ -1,5 +1,9 @@
 package com.ntt.language_center_management.service.impl;
 
+import com.ntt.language_center_management.enums.ClassStatus;
+import com.ntt.language_center_management.enums.EnrollmentPaymentStatus;
+import com.ntt.language_center_management.enums.EnrollmentStatus;
+
 import com.ntt.language_center_management.entity.Courseclass;
 import com.ntt.language_center_management.entity.Enrollment;
 import com.ntt.language_center_management.repository.CourseClassRepository;
@@ -14,7 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class EnrollmentExpirationServiceImpl implements EnrollmentExpirationService {
-  private static final Set<String> ACTIVE_STATUSES = Set.of("PENDING", "CONFIRMED");
+  private static final Set<EnrollmentStatus> ACTIVE_STATUSES =
+      Set.of(EnrollmentStatus.PENDING, EnrollmentStatus.CONFIRMED);
   private final EnrollmentRepository enrollmentRepository;
   private final CourseClassRepository courseClassRepository;
 
@@ -42,20 +47,20 @@ public class EnrollmentExpirationServiceImpl implements EnrollmentExpirationServ
   }
 
   private boolean expire(Enrollment enrollment, Date now) {
-    if (!"CONFIRMED".equals(enrollment.getEnrollmentStatus())
-        || !"PENDING".equals(enrollment.getPaymentStatus())
+    if (enrollment.getEnrollmentStatus() != EnrollmentStatus.CONFIRMED
+        || enrollment.getPaymentStatus() != EnrollmentPaymentStatus.PENDING
         || enrollment.getPaymentDeadline() == null
         || !enrollment.getPaymentDeadline().before(now)) return false;
-    enrollment.setEnrollmentStatus("CANCELLED");
-    enrollment.setPaymentStatus("CANCELLED");
+    enrollment.setEnrollmentStatus(EnrollmentStatus.CANCELLED);
+    enrollment.setPaymentStatus(EnrollmentPaymentStatus.CANCELLED);
     enrollment.setCancelledAt(now);
     enrollment.setCancellationReason("Tự động hủy do quá hạn thanh toán 48 giờ");
     enrollmentRepository.saveAndFlush(enrollment);
     Courseclass courseClass = enrollment.getCourseClassId();
     long occupied = enrollmentRepository.countByCourseClassId_IdAndEnrollmentStatusIn(
         courseClass.getId(), ACTIVE_STATUSES);
-    if ("FULL".equals(courseClass.getStatus()) && occupied < courseClass.getMaxStudents()) {
-      courseClass.setStatus("OPEN");
+    if (courseClass.getStatus() == ClassStatus.FULL && occupied < courseClass.getMaxStudents()) {
+      courseClass.setStatus(ClassStatus.OPEN);
       courseClassRepository.save(courseClass);
     }
     return true;

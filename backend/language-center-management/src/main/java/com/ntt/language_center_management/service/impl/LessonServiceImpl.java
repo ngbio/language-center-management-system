@@ -1,5 +1,10 @@
 package com.ntt.language_center_management.service.impl;
 
+import com.ntt.language_center_management.enums.LessonStatus;
+import com.ntt.language_center_management.enums.ClassStatus;
+import com.ntt.language_center_management.enums.EnrollmentPaymentStatus;
+import com.ntt.language_center_management.enums.EnrollmentStatus;
+
 import com.ntt.language_center_management.dto.request.LessonRescheduleRequest;
 import com.ntt.language_center_management.dto.request.LessonUpdateRequest;
 import com.ntt.language_center_management.dto.response.LessonResponse;
@@ -115,7 +120,7 @@ public class LessonServiceImpl implements LessonService {
         Lesson lesson = new Lesson();
         lesson.setClassScheduleId(schedule);
         lesson.setLessonDate(toDate(date));
-        lesson.setStatus("SCHEDULED");
+        lesson.setStatus(LessonStatus.SCHEDULED);
         lessonsToCreate.add(lesson);
         existingKeys.add(key(schedule.getId(), date));
         if (lessonsToCreate.size() == remaining) {
@@ -211,15 +216,15 @@ public class LessonServiceImpl implements LessonService {
   @Override
   public LessonResponse cancel(Integer id) {
     Lesson lesson = findLesson(id);
-    if ("COMPLETED".equals(lesson.getStatus())) {
+    if (lesson.getStatus() == LessonStatus.COMPLETED) {
       throw new IllegalArgumentException("Không thể hủy buổi học đã hoàn thành");
     }
     ensureNoAttendance(lesson);
     ensureClassAllowsLessonChanges(lesson.getClassScheduleId().getCourseClassId());
-    if ("CANCELLED".equals(lesson.getStatus())) {
+    if (lesson.getStatus() == LessonStatus.CANCELLED) {
       throw new IllegalArgumentException("Buổi học đã được hủy trước đó");
     }
-    lesson.setStatus("CANCELLED");
+    lesson.setStatus(LessonStatus.CANCELLED);
     return lessonMapper.toResponse(lessonRepository.save(lesson));
   }
 
@@ -257,7 +262,8 @@ public class LessonServiceImpl implements LessonService {
               .orElseThrow(() -> new ForbiddenException("Không có hồ sơ học viên hợp lệ"));
       if (enrollmentRepository
           .existsByStudentId_IdAndCourseClassId_IdAndEnrollmentStatusAndPaymentStatus(
-              student.getId(), courseClass.getId(), "CONFIRMED", "PAID")) {
+              student.getId(), courseClass.getId(), EnrollmentStatus.CONFIRMED,
+              EnrollmentPaymentStatus.PAID)) {
         return;
       }
     }
@@ -302,7 +308,8 @@ public class LessonServiceImpl implements LessonService {
   }
 
   private void ensureClassAllowsLessonChanges(Courseclass courseClass) {
-    if ("COMPLETED".equals(courseClass.getStatus()) || "CANCELLED".equals(courseClass.getStatus())) {
+    if (courseClass.getStatus() == ClassStatus.COMPLETED
+        || courseClass.getStatus() == ClassStatus.CANCELLED) {
       throw new IllegalArgumentException("Không thể thay đổi buổi học của lớp đã kết thúc hoặc đã hủy");
     }
   }

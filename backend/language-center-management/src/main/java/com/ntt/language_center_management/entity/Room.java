@@ -4,6 +4,10 @@
  */
 package com.ntt.language_center_management.entity;
 
+import com.ntt.language_center_management.enums.RoomStatus;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
+
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -54,9 +58,9 @@ public class Room implements Serializable {
     private String location;
     @Basic(optional = false)
     @NotNull
-    @Size(min = 1, max = 20)
     @Column(name = "status")
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private RoomStatus status;
     @OneToMany(mappedBy = "roomId")
     private List<Classschedule> classscheduleList;
 
@@ -67,12 +71,12 @@ public class Room implements Serializable {
         this.id = id;
     }
 
-    public Room(Integer id, String roomCode, String roomName, int capacity, String status) {
+    public Room(Integer id, String roomCode, String roomName, int capacity, RoomStatus status) {
         this.id = id;
         this.roomCode = roomCode;
         this.roomName = roomName;
         this.capacity = capacity;
-        this.status = status;
+        setStatus(status);
     }
 
     public Integer getId() {
@@ -115,11 +119,11 @@ public class Room implements Serializable {
         this.location = location;
     }
 
-    public String getStatus() {
+    public RoomStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(RoomStatus status) {
         this.status = status;
     }
 

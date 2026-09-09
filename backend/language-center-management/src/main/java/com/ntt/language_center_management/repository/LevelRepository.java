@@ -1,5 +1,7 @@
 package com.ntt.language_center_management.repository;
 
+import com.ntt.language_center_management.enums.CatalogStatus;
+
 import com.ntt.language_center_management.entity.Level;
 import java.util.List;
 import java.util.Optional;
@@ -11,15 +13,18 @@ public interface LevelRepository extends JpaRepository<Level, Integer> {
 
   List<Level> findByLanguageId_IdOrderByDisplayOrderAsc(Integer languageId);
 
-  List<Level> findByStatusOrderByDisplayOrderAsc(String status);
+  List<Level> findByStatusOrderByDisplayOrderAsc(
+      CatalogStatus status);
 
   List<Level> findByStatusAndLanguageId_StatusOrderByDisplayOrderAsc(
-      String status, String languageStatus);
+      CatalogStatus status,
+      CatalogStatus languageStatus);
 
   List<Level> findByLanguageId_IdAndStatusOrderByDisplayOrderAsc(
-      Integer languageId, String status);
+      Integer languageId, CatalogStatus status);
 
-  Optional<Level> findByIdAndStatus(Integer id, String status);
+  Optional<Level> findByIdAndStatus(
+      Integer id, CatalogStatus status);
 
   Optional<Level> findByLanguageId_IdAndLevelCodeIgnoreCase(Integer languageId, String levelCode);
 

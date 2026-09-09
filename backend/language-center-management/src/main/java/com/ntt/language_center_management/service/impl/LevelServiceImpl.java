@@ -1,5 +1,7 @@
 package com.ntt.language_center_management.service.impl;
 
+import com.ntt.language_center_management.enums.CatalogStatus;
+
 import com.ntt.language_center_management.dto.request.LevelRequest;
 import com.ntt.language_center_management.dto.response.LevelResponse;
 import com.ntt.language_center_management.entity.Language;
@@ -53,9 +55,9 @@ public class LevelServiceImpl implements LevelService {
     validateStatus(status);
     List<Level> levels =
         languageId == null
-            ? levelRepository.findByStatusOrderByDisplayOrderAsc(status)
+            ? levelRepository.findByStatusOrderByDisplayOrderAsc(CatalogStatus.valueOf(status))
             : levelRepository.findByLanguageId_IdAndStatusOrderByDisplayOrderAsc(
-                languageId, status);
+                languageId, CatalogStatus.valueOf(status));
     return levels.stream().map(levelMapper::toResponse).toList();
   }
 
@@ -66,12 +68,12 @@ public class LevelServiceImpl implements LevelService {
     if (languageId == null) {
       levels =
           levelRepository.findByStatusAndLanguageId_StatusOrderByDisplayOrderAsc(
-              "ACTIVE", "ACTIVE");
+              CatalogStatus.ACTIVE, CatalogStatus.ACTIVE);
     } else {
       findActiveLanguage(languageId);
       levels =
           levelRepository.findByLanguageId_IdAndStatusOrderByDisplayOrderAsc(
-              languageId, "ACTIVE");
+              languageId, CatalogStatus.ACTIVE);
     }
     return levels.stream().map(levelMapper::toResponse).toList();
   }
@@ -87,8 +89,8 @@ public class LevelServiceImpl implements LevelService {
   public LevelResponse getActiveById(Integer id) {
     Level level =
         levelRepository
-            .findByIdAndStatus(id, "ACTIVE")
-            .filter(value -> "ACTIVE".equals(value.getLanguageId().getStatus()))
+            .findByIdAndStatus(id, CatalogStatus.ACTIVE)
+            .filter(value -> value.getLanguageId().getStatus() == CatalogStatus.ACTIVE)
             .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy trình độ hoạt động"));
     return levelMapper.toResponse(level);
   }
@@ -126,14 +128,14 @@ public class LevelServiceImpl implements LevelService {
     level.setDescription(
         StringUtils.hasText(request.getDescription()) ? request.getDescription().trim() : null);
     level.setDisplayOrder(request.getDisplayOrder());
-    level.setStatus(validateStatus(request.getStatus()));
+    level.setStatus(request.getStatus());
     return levelMapper.toResponse(levelRepository.save(level));
   }
 
   @Override
-  public LevelResponse changeStatus(Integer id, String status) {
+  public LevelResponse changeStatus(Integer id, CatalogStatus status) {
     Level level = find(id);
-    level.setStatus(validateStatus(status));
+    level.setStatus(status);
     return levelMapper.toResponse(levelRepository.save(level));
   }
 
@@ -154,7 +156,7 @@ public class LevelServiceImpl implements LevelService {
 
   private Language findActiveLanguage(Integer languageId) {
     return languageRepository
-        .findByIdAndStatus(languageId, "ACTIVE")
+        .findByIdAndStatus(languageId, CatalogStatus.ACTIVE)
         .orElseThrow(
             () -> new IllegalArgumentException("Chỉ được tạo trình độ cho ngôn ngữ hoạt động"));
   }

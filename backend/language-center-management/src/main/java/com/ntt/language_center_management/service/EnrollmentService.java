@@ -5,6 +5,7 @@ import com.ntt.language_center_management.dto.request.CreateEnrollmentRequest;
 import com.ntt.language_center_management.dto.request.TransferEnrollmentRequest;
 import com.ntt.language_center_management.dto.request.StaffCreateEnrollmentRequest;
 import com.ntt.language_center_management.dto.response.EnrollmentResponse;
+import com.ntt.language_center_management.enums.EnrollmentStatus;
 import com.ntt.language_center_management.dto.response.EnrollmentSummaryResponse;
 import com.ntt.language_center_management.dto.response.CourseResponse;
 import com.ntt.language_center_management.dto.response.CourseClassResponse;
@@ -31,7 +32,7 @@ public interface EnrollmentService {
   EnrollmentResponse requestCancel(
       Integer enrollmentId, CancelEnrollmentRequest request, Principal principal);
 
-  EnrollmentResponse changeStatus(Integer enrollmentId, String status);
+  EnrollmentResponse changeStatus(Integer enrollmentId, EnrollmentStatus status);
 
   EnrollmentResponse transfer(Integer enrollmentId, TransferEnrollmentRequest request);
 }

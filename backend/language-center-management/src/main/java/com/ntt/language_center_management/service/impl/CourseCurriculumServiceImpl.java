@@ -1,5 +1,8 @@
 package com.ntt.language_center_management.service.impl;
 
+import com.ntt.language_center_management.enums.CatalogStatus;
+import com.ntt.language_center_management.enums.PublicationStatus;
+
 import com.ntt.language_center_management.dto.response.CourseContentResponse;
 import com.ntt.language_center_management.dto.response.CourseSectionResponse;
 import com.ntt.language_center_management.exception.ResourceNotFoundException;
@@ -48,8 +51,8 @@ public class CourseCurriculumServiceImpl implements CourseCurriculumService {
             .findById(courseId)
             .filter(
                 course ->
-                    "ACTIVE".equals(course.getStatus())
-                        && "PUBLISHED".equals(course.getPublicationStatus()))
+                    course.getStatus() == CatalogStatus.ACTIVE
+                        && course.getPublicationStatus() == PublicationStatus.PUBLISHED)
             .isPresent();
     if (!visible) {
       throw new ResourceNotFoundException("Không tìm thấy khóa học");
@@ -65,7 +68,7 @@ public class CourseCurriculumServiceImpl implements CourseCurriculumService {
     var section =
         courseSectionRepository
         .findByIdAndCourseId_StatusAndCourseId_PublicationStatus(
-            sectionId, "ACTIVE", "PUBLISHED")
+            sectionId, CatalogStatus.ACTIVE, PublicationStatus.PUBLISHED)
         .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy phần nội dung"));
 
     var course = section.getCourseId();
@@ -78,10 +81,10 @@ public class CourseCurriculumServiceImpl implements CourseCurriculumService {
         freeCourse || purchased
             ? courseContentRepository
                 .findBySectionId_IdAndPublicationStatusOrderByDisplayOrderAsc(
-                    sectionId, "PUBLISHED")
+                    sectionId, PublicationStatus.PUBLISHED)
             : courseContentRepository
                 .findBySectionId_IdAndPublicationStatusAndIsPreviewTrueOrderByDisplayOrderAsc(
-                    sectionId, "PUBLISHED");
+                    sectionId, PublicationStatus.PUBLISHED);
 
     return contents.stream()
         .map(courseCurriculumMapper::toContentResponse)

@@ -4,6 +4,10 @@
  */
 package com.ntt.language_center_management.entity;
 
+import com.ntt.language_center_management.enums.DeliveryMode;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
+
 import jakarta.persistence.Basic;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -57,9 +61,9 @@ public class Classschedule implements Serializable {
     private Date endTime;
     @Basic(optional = false)
     @NotNull
-    @Size(min = 1, max = 20)
     @Column(name = "delivery_mode")
-    private String deliveryMode;
+    @Enumerated(EnumType.STRING)
+    private DeliveryMode deliveryMode;
     @Size(max = 500)
     @Column(name = "meeting_url")
     private String meetingUrl;
@@ -79,12 +83,12 @@ public class Classschedule implements Serializable {
         this.id = id;
     }
 
-    public Classschedule(Integer id, short dayOfWeek, Date startTime, Date endTime, String deliveryMode) {
+    public Classschedule(Integer id, short dayOfWeek, Date startTime, Date endTime, DeliveryMode deliveryMode) {
         this.id = id;
         this.dayOfWeek = dayOfWeek;
         this.startTime = startTime;
         this.endTime = endTime;
-        this.deliveryMode = deliveryMode;
+        setDeliveryMode(deliveryMode);
     }
 
     public Integer getId() {
@@ -119,11 +123,11 @@ public class Classschedule implements Serializable {
         this.endTime = endTime;
     }
 
-    public String getDeliveryMode() {
+    public DeliveryMode getDeliveryMode() {
         return deliveryMode;
     }
 
-    public void setDeliveryMode(String deliveryMode) {
+    public void setDeliveryMode(DeliveryMode deliveryMode) {
         this.deliveryMode = deliveryMode;
     }
 

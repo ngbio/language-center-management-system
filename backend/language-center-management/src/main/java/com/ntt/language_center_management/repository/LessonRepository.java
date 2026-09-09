@@ -1,5 +1,7 @@
 package com.ntt.language_center_management.repository;
 
+import com.ntt.language_center_management.enums.LessonStatus;
+
 import com.ntt.language_center_management.entity.Lesson;
 import java.util.Date;
 import java.util.List;
@@ -22,12 +24,13 @@ public interface LessonRepository extends JpaRepository<Lesson, Integer> {
   long countByClassScheduleId_CourseClassId_Id(Integer courseClassId);
 
   long countByClassScheduleId_CourseClassId_IdAndStatusNot(
-      Integer courseClassId, String status);
+      Integer courseClassId, LessonStatus status);
 
   long countByClassScheduleId_CourseClassId_IdAndStatus(
-      Integer courseClassId, String status);
+      Integer courseClassId, LessonStatus status);
 
-  List<Lesson> findByStatusAndLessonDateLessThanEqual(String status, Date lessonDate);
+  List<Lesson> findByStatusAndLessonDateLessThanEqual(
+      LessonStatus status, Date lessonDate);
 
   @Query(
       """

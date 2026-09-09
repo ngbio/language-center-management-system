@@ -1,11 +1,10 @@
 package com.ntt.language_center_management.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.ntt.language_center_management.enums.DeliveryMode;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.LocalTime;
 
@@ -20,10 +19,6 @@ public record ClassScheduleRequest(
     @NotNull(message = "Giờ kết thúc không được để trống")
         @JsonFormat(pattern = "HH:mm")
         LocalTime endTime,
-    @NotBlank(message = "Hình thức học không được để trống")
-        @Pattern(
-            regexp = "IN_PERSON|ONLINE",
-            message = "Hình thức học phải là IN_PERSON hoặc ONLINE")
-        String deliveryMode,
+    @NotNull(message = "Hình thức học không được để trống") DeliveryMode deliveryMode,
     @Size(max = 500, message = "Đường dẫn phòng học không được vượt quá 500 ký tự")
         String meetingUrl) {}

@@ -1,5 +1,7 @@
 package com.ntt.language_center_management.repository;
 
+import com.ntt.language_center_management.enums.RefundStatus;
+
 import com.ntt.language_center_management.entity.Refund;
 import java.math.BigDecimal;
 import java.util.Date;
@@ -14,7 +16,8 @@ public interface RefundRepository extends JpaRepository<Refund, Integer> {
   List<Refund> findByEnrollment_IdOrderByCreatedAtDesc(Integer enrollmentId);
   List<Refund> findByEnrollment_StudentId_IdOrderByCreatedAtDesc(Integer studentId);
   List<Refund> findAllByOrderByCreatedAtDesc();
-  List<Refund> findByStatusOrderByCreatedAtDesc(String status);
+  List<Refund> findByStatusOrderByCreatedAtDesc(
+      RefundStatus status);
 
   @Query("select coalesce(sum(r.amount), 0) from Refund r where r.status = 'COMPLETED'")
   BigDecimal sumCompletedAmount();

@@ -4,6 +4,10 @@
  */
 package com.ntt.language_center_management.entity;
 
+import com.ntt.language_center_management.enums.AttendanceStatus;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
+
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -40,9 +44,9 @@ public class Attendance implements Serializable {
     private Integer id;
     @Basic(optional = false)
     @NotNull
-    @Size(min = 1, max = 20)
     @Column(name = "status")
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private AttendanceStatus status;
     @Size(max = 500)
     @Column(name = "note")
     private String note;
@@ -68,9 +72,9 @@ public class Attendance implements Serializable {
         this.id = id;
     }
 
-    public Attendance(Integer id, String status, Date attendanceTime) {
+    public Attendance(Integer id, AttendanceStatus status, Date attendanceTime) {
         this.id = id;
-        this.status = status;
+        setStatus(status);
         this.attendanceTime = attendanceTime;
     }
 
@@ -82,11 +86,11 @@ public class Attendance implements Serializable {
         this.id = id;
     }
 
-    public String getStatus() {
+    public AttendanceStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(AttendanceStatus status) {
         this.status = status;
     }
 

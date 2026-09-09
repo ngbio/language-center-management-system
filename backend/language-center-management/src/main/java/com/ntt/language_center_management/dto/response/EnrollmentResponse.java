@@ -1,5 +1,8 @@
 package com.ntt.language_center_management.dto.response;
 
+import com.ntt.language_center_management.enums.EnrollmentPaymentStatus;
+import com.ntt.language_center_management.enums.EnrollmentStatus;
+
 import java.math.BigDecimal;
 import java.util.Date;
 
@@ -8,8 +11,8 @@ public record EnrollmentResponse(
     Date enrollmentDate,
     Date paymentDeadline,
     BigDecimal amountDue,
-    String enrollmentStatus,
-    String paymentStatus,
+    EnrollmentStatus enrollmentStatus,
+    EnrollmentPaymentStatus paymentStatus,
     Date confirmedAt,
     Date cancelledAt,
     String cancellationReason,

@@ -1,5 +1,11 @@
 package com.ntt.language_center_management.service.impl;
 
+import com.ntt.language_center_management.enums.EnrollmentPaymentStatus;
+import com.ntt.language_center_management.enums.EnrollmentStatus;
+import com.ntt.language_center_management.enums.RefundStatus;
+import com.ntt.language_center_management.enums.PaymentMethod;
+import com.ntt.language_center_management.enums.PaymentTransactionStatus;
+
 import com.ntt.language_center_management.dto.request.RefundRequest;
 import com.ntt.language_center_management.dto.response.InvoiceResponse;
 import com.ntt.language_center_management.dto.response.PaymentResponse;
@@ -97,7 +103,7 @@ public class BillingServiceImpl implements BillingService {
       if (!List.of("PENDING", "COMPLETED", "FAILED", "CANCELLED").contains(normalized)) {
         throw new IllegalArgumentException("Trạng thái hoàn tiền không hợp lệ");
       }
-      refunds = refundRepository.findByStatusOrderByCreatedAtDesc(normalized);
+      refunds = refundRepository.findByStatusOrderByCreatedAtDesc(RefundStatus.valueOf(normalized));
     } else {
       refunds = refundRepository.findAllByOrderByCreatedAtDesc();
     }
@@ -119,12 +125,13 @@ public class BillingServiceImpl implements BillingService {
       return refundResponse(previous);
     }
     List<Payment> paidPayments = paymentRepository
-        .findByEnrollmentId_IdAndStatusOrderByCompletedAtDesc(enrollmentId, "PAID");
-    if (paidPayments.isEmpty() || !"PAID".equals(enrollment.getPaymentStatus())) {
+        .findByEnrollmentId_IdAndStatusOrderByCompletedAtDesc(
+            enrollmentId, PaymentTransactionStatus.PAID);
+    if (paidPayments.isEmpty() || enrollment.getPaymentStatus() != EnrollmentPaymentStatus.PAID) {
       throw new IllegalArgumentException("Đăng ký chưa có khoản thanh toán thành công để hoàn");
     }
     if (refundRepository.findByEnrollment_IdOrderByCreatedAtDesc(enrollmentId).stream()
-        .anyMatch(value -> "PENDING".equals(value.getStatus()))) {
+        .anyMatch(value -> value.getStatus() == RefundStatus.PENDING)) {
       throw new IllegalArgumentException("Đăng ký đang có một yêu cầu hoàn tiền chờ xử lý");
     }
     BigDecimal paid = paidPayments.stream().map(Payment::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -146,12 +153,12 @@ public class BillingServiceImpl implements BillingService {
     refund.setIdempotencyKey(request.idempotencyKey().trim());
     refund.setAmount(amount);
     refund.setReason(request.reason().trim());
-    refund.setStatus("PENDING");
+    refund.setStatus(RefundStatus.PENDING);
     refund.setCreatedAt(now);
     refund = refundRepository.saveAndFlush(refund);
 
     try {
-      if ("MOMO".equals(payment.getMethod())) submitMomoRefund(refund);
+      if (payment.getMethod() == PaymentMethod.MOMO) submitMomoRefund(refund);
       else submitZaloPayRefund(refund);
     } catch (RuntimeException exception) {
       // Timeout/mất kết nối không chứng minh gateway đã từ chối. Giữ PENDING để query
@@ -167,9 +174,9 @@ public class BillingServiceImpl implements BillingService {
     requireStaff(currentUser(principal));
     Refund refund = refundRepository.findById(refundId)
         .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy yêu cầu hoàn tiền"));
-    if (!"PENDING".equals(refund.getStatus())) return refundResponse(refund);
+    if (refund.getStatus() != RefundStatus.PENDING) return refundResponse(refund);
     try {
-      if ("MOMO".equals(refund.getPayment().getMethod())) queryMomoRefund(refund);
+      if (refund.getPayment().getMethod() == PaymentMethod.MOMO) queryMomoRefund(refund);
       else queryZaloPayRefund(refund);
     } catch (RuntimeException exception) {
       refund.setErrorMessage(gatewayMessage(exception));
@@ -182,12 +189,12 @@ public class BillingServiceImpl implements BillingService {
     if (!StringUtils.hasText(payment.getReferenceCode())) {
       throw new IllegalArgumentException("Payment chưa có mã giao dịch từ cổng thanh toán");
     }
-    if ("MOMO".equals(payment.getMethod())) {
+    if (payment.getMethod() == PaymentMethod.MOMO) {
       requireConfig(momoPartnerCode, "MOMO_PARTNER_CODE");
       requireConfig(momoAccessKey, "MOMO_ACCESS_KEY");
       requireConfig(momoSecretKey, "MOMO_SECRET_KEY");
       parseLong(payment.getReferenceCode(), "Mã giao dịch MoMo không hợp lệ");
-    } else if ("ZALOPAY".equals(payment.getMethod())) {
+    } else if (payment.getMethod() == PaymentMethod.ZALOPAY) {
       requireConfig(zaloPayAppId, "ZALOPAY_APP_ID");
       requireConfig(zaloPayKey1, "ZALOPAY_KEY1");
       parseLong(payment.getReferenceCode(), "Mã giao dịch ZaloPay không hợp lệ");
@@ -297,19 +304,19 @@ public class BillingServiceImpl implements BillingService {
   }
 
   private void completeRefund(Refund refund) {
-    if ("COMPLETED".equals(refund.getStatus())) return;
+    if (refund.getStatus() == RefundStatus.COMPLETED) return;
     Date now = new Date();
-    refund.setStatus("COMPLETED");
+    refund.setStatus(RefundStatus.COMPLETED);
     refund.setErrorMessage(null);
     refund.setCompletedAt(now);
     refundRepository.save(refund);
     BigDecimal paid = paymentRepository.findByEnrollmentId_IdAndStatusOrderByCompletedAtDesc(
-        refund.getEnrollment().getId(), "PAID").stream().map(Payment::getAmount)
+        refund.getEnrollment().getId(), PaymentTransactionStatus.PAID).stream().map(Payment::getAmount)
         .reduce(BigDecimal.ZERO, BigDecimal::add);
     if (completedRefundTotal(refund.getEnrollment().getId()).compareTo(paid) >= 0) {
       Enrollment enrollment = refund.getEnrollment();
-      enrollment.setPaymentStatus("REFUNDED");
-      enrollment.setEnrollmentStatus("CANCELLED");
+      enrollment.setPaymentStatus(EnrollmentPaymentStatus.REFUNDED);
+      enrollment.setEnrollmentStatus(EnrollmentStatus.CANCELLED);
       enrollment.setCancelledAt(now);
       enrollment.setCancellationReason(refund.getReason());
       enrollmentRepository.save(enrollment);
@@ -317,7 +324,7 @@ public class BillingServiceImpl implements BillingService {
   }
 
   private void failRefund(Refund refund, String message) {
-    refund.setStatus("FAILED");
+    refund.setStatus(RefundStatus.FAILED);
     refund.setErrorMessage(message);
     refundRepository.save(refund);
   }
@@ -328,26 +335,26 @@ public class BillingServiceImpl implements BillingService {
     requireOwnerOrStaff(enrollment, currentUser(principal));
     List<Payment> payments = paymentRepository.findByEnrollmentId_IdOrderByCreatedAtDesc(enrollmentId);
     List<Refund> refunds = refundRepository.findByEnrollment_IdOrderByCreatedAtDesc(enrollmentId);
-    BigDecimal paid = payments.stream().filter(value -> "PAID".equals(value.getStatus()))
+    BigDecimal paid = payments.stream().filter(value -> value.getStatus() == PaymentTransactionStatus.PAID)
         .map(Payment::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
-    BigDecimal refunded = refunds.stream().filter(value -> "COMPLETED".equals(value.getStatus()))
+    BigDecimal refunded = refunds.stream().filter(value -> value.getStatus() == RefundStatus.COMPLETED)
         .map(Refund::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
     var student = enrollment.getStudentId();
     var courseClass = enrollment.getCourseClassId();
     var course = courseClass.getCourseId();
-    Date issuedAt = payments.stream().filter(value -> "PAID".equals(value.getStatus()))
+    Date issuedAt = payments.stream().filter(value -> value.getStatus() == PaymentTransactionStatus.PAID)
         .map(Payment::getCompletedAt).filter(value -> value != null).findFirst().orElse(enrollment.getEnrollmentDate());
     return new InvoiceResponse("INV-" + String.format("%08d", enrollmentId), enrollmentId,
         student.getStudentCode(), student.getUserId().getFullName(), student.getUserId().getEmail(),
         course.getCourseCode(), course.getCourseName(), courseClass.getClassCode(), courseClass.getClassName(),
-        enrollment.getAmountDue(), paid, refunded, paid.subtract(refunded), enrollment.getEnrollmentStatus(),
-        enrollment.getPaymentStatus(), issuedAt, payments.stream().map(this::paymentResponse).toList(),
+        enrollment.getAmountDue(), paid, refunded, paid.subtract(refunded), enrollment.getEnrollmentStatus().name(),
+        enrollment.getPaymentStatus().name(), issuedAt, payments.stream().map(this::paymentResponse).toList(),
         refunds.stream().map(this::refundResponse).toList());
   }
 
   private BigDecimal completedRefundTotal(Integer enrollmentId) {
     return refundRepository.findByEnrollment_IdOrderByCreatedAtDesc(enrollmentId).stream()
-        .filter(value -> "COMPLETED".equals(value.getStatus())).map(Refund::getAmount)
+        .filter(value -> value.getStatus() == RefundStatus.COMPLETED).map(Refund::getAmount)
         .reduce(BigDecimal.ZERO, BigDecimal::add);
   }
   private Enrollment requireEnrollment(Integer id) { return enrollmentRepository.findById(id)
@@ -366,13 +373,13 @@ public class BillingServiceImpl implements BillingService {
     if (!List.of("ADMIN", "CONSULTANT").contains(role)) throw new UnauthorizedException("Không có quyền xử lý tài chính");
   }
   private PaymentResponse paymentResponse(Payment payment) { return new PaymentResponse(payment.getId(),
-      payment.getEnrollmentId().getId(), payment.getTransactionCode(), payment.getMethod(), payment.getAmount(),
-      payment.getStatus(), null, payment.getCreatedAt(), payment.getCompletedAt()); }
+      payment.getEnrollmentId().getId(), payment.getTransactionCode(), payment.getMethod().name(), payment.getAmount(),
+      payment.getStatus().name(), null, payment.getCreatedAt(), payment.getCompletedAt()); }
   private RefundResponse refundResponse(Refund refund) { return new RefundResponse(refund.getId(),
       refund.getEnrollment().getId(), refund.getPayment().getId(), refund.getRefundCode(),
-      refund.getPayment().getMethod(), refund.getEnrollment().getStudentId().getUserId().getFullName(),
+      refund.getPayment().getMethod().name(), refund.getEnrollment().getStudentId().getUserId().getFullName(),
       refund.getEnrollment().getCourseClassId().getClassName(), refund.getAmount(),
-      refund.getStatus(), refund.getGatewayRefundId(), refund.getErrorMessage(), refund.getReason(),
+      refund.getStatus().name(), refund.getGatewayRefundId(), refund.getErrorMessage(), refund.getReason(),
       refund.getProcessedBy().getId(), refund.getProcessedBy().getFullName(),
       refund.getCreatedAt(), refund.getCompletedAt()); }
 
@@ -381,7 +388,7 @@ public class BillingServiceImpl implements BillingService {
   }
   private String createRefundCode(Payment payment, Integer enrollmentId) {
     String suffix = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
-    if ("ZALOPAY".equals(payment.getMethod())) {
+    if (payment.getMethod() == PaymentMethod.ZALOPAY) {
       return java.time.LocalDate.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"))
           .format(java.time.format.DateTimeFormatter.ofPattern("yyMMdd"))
           + "_" + zaloPayAppId + "_RF" + enrollmentId + suffix;

@@ -1,5 +1,7 @@
 package com.ntt.language_center_management.repository;
 
+import com.ntt.language_center_management.enums.AccountStatus;
+
 import com.ntt.language_center_management.entity.User;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -35,6 +37,6 @@ public interface UserRepository
     Page<User> searchAdminUsers(
         @Param("keyword") String keyword,
         @Param("roleCode") String roleCode,
-        @Param("status") String status,
+        @Param("status") AccountStatus status,
         Pageable pageable);
 }

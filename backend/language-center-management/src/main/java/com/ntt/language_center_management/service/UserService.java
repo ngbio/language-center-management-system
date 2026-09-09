@@ -7,6 +7,7 @@ import com.ntt.language_center_management.dto.request.LoginRequest;
 import com.ntt.language_center_management.dto.request.TeacherRegisterRequest;
 import com.ntt.language_center_management.dto.request.UserRegisterRequest;
 import com.ntt.language_center_management.dto.response.UserResponse;
+import com.ntt.language_center_management.enums.AccountStatus;
 import com.ntt.language_center_management.dto.response.PageResponse;
 import com.ntt.language_center_management.dto.response.StudentProfileResponse;
 import com.ntt.language_center_management.dto.request.StudentProfileUpdateRequest;
@@ -30,8 +31,6 @@ public interface UserService {
 
     UserResponse addUser(UserRegisterRequest request);
 
-    UserResponse addTeacher(TeacherRegisterRequest request);
-
     UserResponse registerTeacher(TeacherRegisterRequest request);
 
     UserResponse getCurrentUserProfile(Principal principal);
@@ -49,5 +48,5 @@ public interface UserService {
         String sort,
         String direction);
 
-    UserResponse changeStatus(Integer id, String status);
+    UserResponse changeStatus(Integer id, AccountStatus status);
 }

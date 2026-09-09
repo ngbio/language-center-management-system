@@ -1,5 +1,8 @@
 package com.ntt.language_center_management.repository;
 
+import com.ntt.language_center_management.enums.CatalogStatus;
+import com.ntt.language_center_management.enums.PublicationStatus;
+
 import com.ntt.language_center_management.entity.CourseSection;
 import java.util.List;
 import java.util.Optional;
@@ -10,5 +13,6 @@ public interface CourseSectionRepository extends JpaRepository<CourseSection, In
   List<CourseSection> findByCourseId_IdOrderByDisplayOrderAsc(Integer courseId);
 
   Optional<CourseSection> findByIdAndCourseId_StatusAndCourseId_PublicationStatus(
-      Integer id, String courseStatus, String publicationStatus);
+      Integer id, CatalogStatus courseStatus,
+      PublicationStatus publicationStatus);
 }

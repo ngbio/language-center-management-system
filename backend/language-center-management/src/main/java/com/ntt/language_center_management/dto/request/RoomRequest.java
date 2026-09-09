@@ -1,8 +1,9 @@
 package com.ntt.language_center_management.dto.request;
 
+import com.ntt.language_center_management.enums.RoomStatus;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public class RoomRequest {
@@ -22,9 +23,8 @@ public class RoomRequest {
   @Size(max = 255)
   private String location;
 
-  @NotBlank
-  @Pattern(regexp = "ACTIVE|MAINTENANCE|INACTIVE")
-  private String status = "ACTIVE";
+  @NotNull
+  private RoomStatus status = RoomStatus.ACTIVE;
 
   public Integer getId() {
     return id;
@@ -66,11 +66,11 @@ public class RoomRequest {
     this.location = location;
   }
 
-  public String getStatus() {
+  public RoomStatus getStatus() {
     return status;
   }
 
-  public void setStatus(String status) {
+  public void setStatus(RoomStatus status) {
     this.status = status;
   }
 }

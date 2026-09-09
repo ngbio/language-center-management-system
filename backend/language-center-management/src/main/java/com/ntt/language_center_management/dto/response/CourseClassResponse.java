@@ -1,5 +1,7 @@
 package com.ntt.language_center_management.dto.response;
 
+import com.ntt.language_center_management.enums.ClassStatus;
+
 import java.math.BigDecimal;
 import java.util.Date;
 
@@ -13,7 +15,7 @@ public record CourseClassResponse(
     long enrolledStudents,
     long availableSeats,
     BigDecimal appliedTuitionFee,
-    String status,
+    ClassStatus status,
     Integer courseId,
     String courseCode,
     String courseName,

@@ -1,5 +1,12 @@
 package com.ntt.language_center_management.service.impl;
 
+import com.ntt.language_center_management.enums.ClassStatus;
+import com.ntt.language_center_management.enums.EnrollmentStatus;
+import com.ntt.language_center_management.enums.AccountStatus;
+import com.ntt.language_center_management.enums.CatalogStatus;
+import com.ntt.language_center_management.enums.PublicationStatus;
+
+
 import com.ntt.language_center_management.dto.request.CourseClassRequest;
 import com.ntt.language_center_management.dto.response.CourseClassResponse;
 import com.ntt.language_center_management.dto.response.CourseResponse;
@@ -36,17 +43,19 @@ import org.springframework.util.StringUtils;
 @Transactional
 public class CourseClassServiceImpl implements CourseClassService {
 
-  private static final Set<String> ACTIVE_ENROLLMENTS = Set.of("PENDING", "CONFIRMED");
+  private static final Set<EnrollmentStatus> ACTIVE_ENROLLMENTS =
+      Set.of(EnrollmentStatus.PENDING, EnrollmentStatus.CONFIRMED);
   private static final Set<String> SORT_FIELDS =
       Set.of("classCode", "className", "startDate", "endDate", "appliedTuitionFee", "createdAt");
-  private static final Map<String, Set<String>> TRANSITIONS =
+  private static final Map<ClassStatus, Set<ClassStatus>> TRANSITIONS =
       Map.of(
-          "DRAFT", Set.of("OPEN", "CANCELLED"),
-          "OPEN", Set.of("FULL", "IN_PROGRESS", "CANCELLED"),
-          "FULL", Set.of("OPEN", "IN_PROGRESS", "COMPLETED", "CANCELLED"),
-          "IN_PROGRESS", Set.of("COMPLETED", "CANCELLED"),
-          "COMPLETED", Set.of(),
-          "CANCELLED", Set.of());
+          ClassStatus.DRAFT, Set.of(ClassStatus.OPEN, ClassStatus.CANCELLED),
+          ClassStatus.OPEN, Set.of(ClassStatus.FULL, ClassStatus.IN_PROGRESS, ClassStatus.CANCELLED),
+          ClassStatus.FULL, Set.of(ClassStatus.OPEN, ClassStatus.IN_PROGRESS,
+              ClassStatus.COMPLETED, ClassStatus.CANCELLED),
+          ClassStatus.IN_PROGRESS, Set.of(ClassStatus.COMPLETED, ClassStatus.CANCELLED),
+          ClassStatus.COMPLETED, Set.of(),
+          ClassStatus.CANCELLED, Set.of());
 
   private final CourseClassRepository courseClassRepository;
   private final CourseRepository courseRepository;
@@ -179,9 +188,9 @@ public class CourseClassServiceImpl implements CourseClassService {
   @Transactional(readOnly = true)
   public CourseClassResponse getById(Integer id) {
     Courseclass value = find(id);
-    if (!"OPEN".equals(value.getStatus())
-        || !"ACTIVE".equals(value.getCourseId().getStatus())
-        || !"PUBLISHED".equals(value.getCourseId().getPublicationStatus())) {
+    if (value.getStatus() != ClassStatus.OPEN
+        || value.getCourseId().getStatus() != CatalogStatus.ACTIVE
+        || value.getCourseId().getPublicationStatus() != PublicationStatus.PUBLISHED) {
       throw new ResourceNotFoundException("Không tìm thấy lớp học đang mở");
     }
     return toResponse(value);
@@ -193,7 +202,7 @@ public class CourseClassServiceImpl implements CourseClassService {
     validateDates(request);
     Courseclass value = new Courseclass();
     applyRequest(value, request);
-    value.setStatus("DRAFT");
+    value.setStatus(ClassStatus.DRAFT);
     Date now = new Date();
     value.setCreatedAt(now);
     value.setUpdatedAt(now);
@@ -229,17 +238,17 @@ public class CourseClassServiceImpl implements CourseClassService {
   }
 
   @Override
-  public CourseClassResponse changeStatus(Integer id, String status) {
+  public CourseClassResponse changeStatus(Integer id, ClassStatus status) {
     Courseclass value = lock(id);
     if (status == null) {
       throw new IllegalArgumentException("Trạng thái lớp không được để trống");
     }
-    String normalizedStatus = status.trim().toUpperCase();
+    ClassStatus normalizedStatus = status;
     if (!TRANSITIONS.getOrDefault(value.getStatus(), Set.of()).contains(normalizedStatus)) {
       throw new IllegalArgumentException(
           "Không thể chuyển trạng thái từ " + value.getStatus() + " sang " + normalizedStatus);
     }
-    if ("OPEN".equals(normalizedStatus)) {
+    if (normalizedStatus == ClassStatus.OPEN) {
       validateCanOpen(value);
     }
     value.setStatus(normalizedStatus);
@@ -283,7 +292,7 @@ public class CourseClassServiceImpl implements CourseClassService {
   private void applyRequest(Courseclass value, CourseClassRequest request) {
     var course =
         courseRepository
-            .findByIdAndStatus(request.getCourseId(), "ACTIVE")
+            .findByIdAndStatus(request.getCourseId(), CatalogStatus.ACTIVE)
             .orElseThrow(
                 () -> new ResourceNotFoundException("Không tìm thấy khóa học đang hoạt động"));
     Teacher teacher =
@@ -314,7 +323,7 @@ public class CourseClassServiceImpl implements CourseClassService {
   }
 
   private void validateCanOpen(Courseclass value) {
-    if (!"ACTIVE".equals(value.getCourseId().getStatus())) {
+    if (value.getCourseId().getStatus() != CatalogStatus.ACTIVE) {
       throw new IllegalArgumentException("Khóa học không hoạt động");
     }
     if (value.getTeacherId() == null) {
@@ -381,13 +390,13 @@ public class CourseClassServiceImpl implements CourseClassService {
   }
 
   private void ensureTeacherActive(Teacher teacher) {
-    if (!"ACTIVE".equals(teacher.getUserId().getStatus())) {
+    if (teacher.getUserId().getStatus() != AccountStatus.ACTIVE) {
       throw new IllegalArgumentException("Giảng viên không hoạt động");
     }
   }
 
-  private boolean isActiveClass(String status) {
-    return Set.of("OPEN", "FULL", "IN_PROGRESS").contains(status);
+  private boolean isActiveClass(ClassStatus status) {
+    return Set.of(ClassStatus.OPEN, ClassStatus.FULL, ClassStatus.IN_PROGRESS).contains(status);
   }
 
   private Courseclass find(Integer id) {

@@ -1,5 +1,9 @@
 package com.ntt.language_center_management.service.impl;
 
+import com.ntt.language_center_management.enums.AccountStatus;
+import com.ntt.language_center_management.enums.Gender;
+
+
 import com.ntt.language_center_management.dto.request.LoginRequest;
 import com.ntt.language_center_management.dto.request.TeacherRegisterRequest;
 import com.ntt.language_center_management.dto.request.UserRegisterRequest;
@@ -145,7 +149,7 @@ public class UserServiceImpl implements UserService {
   }
 
   private void validateUserCanLogin(User user) {
-    if (!"ACTIVE".equals(user.getStatus())) {
+    if (user.getStatus() != AccountStatus.ACTIVE) {
       throw new UnauthorizedException("Tài khoản không ở trạng thái hoạt động");
     }
   }
@@ -165,7 +169,7 @@ public class UserServiceImpl implements UserService {
     Date now = new Date();
     user.setCreatedAt(now);
     user.setUpdatedAt(now);
-    user.setStatus("ACTIVE");
+    user.setStatus(AccountStatus.ACTIVE);
 
     Role studentRole =
         roleRepository
@@ -188,11 +192,6 @@ public class UserServiceImpl implements UserService {
 
     // TODO: Gửi email xác nhận sau khi transaction commit khi đã cấu hình email service.
     return userMapper.toResponse(savedUser);
-  }
-
-  @Override
-  public UserResponse addTeacher(TeacherRegisterRequest request) {
-    return createTeacher(request, "ACTIVE");
   }
 
   @Override
@@ -219,7 +218,7 @@ public class UserServiceImpl implements UserService {
     Date now = new Date();
     user.setCreatedAt(now);
     user.setUpdatedAt(now);
-    user.setStatus(initialStatus);
+    user.setStatus(AccountStatus.valueOf(initialStatus));
     user.setRoleId(
         roleRepository
             .findByRoleCodeIgnoreCase(TEACHER_ROLE_CODE)
@@ -274,7 +273,7 @@ public class UserServiceImpl implements UserService {
     user.setAddress(trimToNull(request.address()));
     user.setUpdatedAt(new Date());
     student.setDateOfBirth(request.dateOfBirth());
-    student.setGender(trimToNull(request.gender()));
+    student.setGender(request.gender());
     student.setAvatar(trimToNull(request.avatar()));
     userRepository.save(user);
     return toStudentProfile(studentRepository.save(student));
@@ -293,7 +292,8 @@ public class UserServiceImpl implements UserService {
     return new StudentProfileResponse(
         student.getId(), student.getStudentCode(), user.getId(), user.getUsername(),
         user.getFullName(), user.getEmail(), user.getPhoneNumber(), user.getAddress(),
-        student.getDateOfBirth(), student.getGender(), student.getAvatar(), user.getStatus(),
+        student.getDateOfBirth(), student.getGender() == null ? null : student.getGender().name(),
+        student.getAvatar(), user.getStatus().name(),
         user.getCreatedAt(), user.getUpdatedAt());
   }
 
@@ -335,7 +335,7 @@ public class UserServiceImpl implements UserService {
             .searchAdminUsers(
                 normalizeFilter(keyword, false),
                 normalizeFilter(roleCode, true),
-                normalizeStatusFilter(status),
+                status == null ? null : AccountStatus.valueOf(normalizeStatusFilter(status)),
                 PageRequest.of(page, size, Sort.by(sortDirection, sortField)))
             .map(userMapper::toResponse);
 
@@ -343,7 +343,7 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public UserResponse changeStatus(Integer id, String status) {
+  public UserResponse changeStatus(Integer id, AccountStatus status) {
     User user =
         userRepository
             .findById(id)
@@ -351,14 +351,9 @@ public class UserServiceImpl implements UserService {
                 () -> new ResourceNotFoundException(
                     "Không tìm thấy người dùng có ID: " + id));
 
-    if (status == null || status.isBlank()) {
+    if (status == null) {
       throw new IllegalArgumentException("Trạng thái không được để trống");
     }
-    if (!USER_STATUSES.contains(status)) {
-      throw new IllegalArgumentException(
-          "Trạng thái phải là ACTIVE, INACTIVE hoặc LOCKED");
-    }
-
     user.setStatus(status);
     user.setUpdatedAt(new Date());
     return userMapper.toResponse(userRepository.save(user));
