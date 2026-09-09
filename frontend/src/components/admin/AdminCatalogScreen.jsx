@@ -160,6 +160,7 @@ export default function AdminCatalogScreen({ type }) {
   const [coursePage, setCoursePage] = useState(0);
   const [courseTotalPages, setCourseTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [actionId, setActionId] = useState(null);
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
@@ -250,6 +251,37 @@ export default function AdminCatalogScreen({ type }) {
       load();
     } catch (requestError) {
       setError(apiError(requestError));
+    }
+  };
+
+  const edit = async (item) => {
+    setActionId(item.id);
+    setError("");
+    try {
+      const response = await authApis().get(detailEndpoint(type, item.id));
+      setForm(apiData(response));
+    } catch (requestError) {
+      setError(apiError(requestError));
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const changeStatus = async (item) => {
+    const nextStatus = item.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+    if (!window.confirm(`Chuyển ${item[config.name]} sang ${nextStatus}?`)) return;
+    setActionId(item.id);
+    setError("");
+    try {
+      const singular = type.slice(0, -1);
+      await authApis().patch(endpoints[`change-${singular}-status`](item.id), {
+        status: nextStatus,
+      });
+      await load();
+    } catch (requestError) {
+      setError(apiError(requestError));
+    } finally {
+      setActionId(null);
     }
   };
 
@@ -457,9 +489,10 @@ export default function AdminCatalogScreen({ type }) {
                     </td>
                     <td>
                       <div className="row-actions">
-                        <button onClick={() => setForm({ ...item })}>
-                          Sửa
+                        <button disabled={actionId === item.id} onClick={() => edit(item)}>
+                          {actionId === item.id ? "Đang tải..." : "Sửa"}
                         </button>
+                        {["languages", "levels"].includes(type) && <button disabled={actionId === item.id} onClick={() => changeStatus(item)}>{item.status === "ACTIVE" ? "Ngừng hoạt động" : "Kích hoạt"}</button>}
                         <button
                           className="danger-link"
                           onClick={() => remove(item)}
