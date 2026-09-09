@@ -1,5 +1,9 @@
 package com.ntt.language_center_management.entity;
 
+import com.ntt.language_center_management.enums.RefundStatus;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -31,7 +35,8 @@ public class Refund {
   @Column(nullable = false, precision = 18, scale = 2)
   private BigDecimal amount;
   @Column(nullable = false, length = 20)
-  private String status;
+  @Enumerated(EnumType.STRING)
+  private RefundStatus status;
   @Column(name = "gateway_refund_id", length = 150)
   private String gatewayRefundId;
   @Column(name = "error_message", length = 500)
@@ -56,8 +61,8 @@ public class Refund {
   public void setIdempotencyKey(String idempotencyKey) { this.idempotencyKey = idempotencyKey; }
   public BigDecimal getAmount() { return amount; }
   public void setAmount(BigDecimal amount) { this.amount = amount; }
-  public String getStatus() { return status; }
-  public void setStatus(String status) { this.status = status; }
+  public RefundStatus getStatus() { return status; }
+  public void setStatus(RefundStatus status) { this.status = status; }
   public String getGatewayRefundId() { return gatewayRefundId; }
   public void setGatewayRefundId(String gatewayRefundId) { this.gatewayRefundId = gatewayRefundId; }
   public String getErrorMessage() { return errorMessage; }

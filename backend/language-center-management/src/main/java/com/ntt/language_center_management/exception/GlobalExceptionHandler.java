@@ -57,6 +57,12 @@ public class GlobalExceptionHandler {
     return error(HttpStatus.BAD_REQUEST, exception.getMessage());
   }
 
+  @ExceptionHandler(PaymentGatewayException.class)
+  public ResponseEntity<ApiResponse<Void>> handlePaymentGateway(PaymentGatewayException exception) {
+    LOGGER.warn("Payment gateway request failed: {}", exception.getMessage());
+    return error(HttpStatus.BAD_GATEWAY, exception.getMessage());
+  }
+
   @ExceptionHandler(HttpMessageNotReadableException.class)
   public ResponseEntity<ApiResponse<Void>> handleUnreadableRequest(
       HttpMessageNotReadableException exception) {

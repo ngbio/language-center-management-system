@@ -1,9 +1,9 @@
 package com.ntt.language_center_management.dto.request;
 
+import com.ntt.language_center_management.enums.CatalogStatus;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public class LevelRequest {
@@ -24,9 +24,8 @@ public class LevelRequest {
   @Min(1)
   private int displayOrder = 1;
 
-  @NotBlank
-  @Pattern(regexp = "ACTIVE|INACTIVE")
-  private String status = "ACTIVE";
+  @NotNull
+  private CatalogStatus status = CatalogStatus.ACTIVE;
 
   public Integer getId() {
     return id;
@@ -76,11 +75,11 @@ public class LevelRequest {
     this.displayOrder = displayOrder;
   }
 
-  public String getStatus() {
+  public CatalogStatus getStatus() {
     return status;
   }
 
-  public void setStatus(String status) {
+  public void setStatus(CatalogStatus status) {
     this.status = status;
   }
 }

@@ -1,5 +1,8 @@
 package com.ntt.language_center_management.dto.response;
 
+import com.ntt.language_center_management.enums.DeliveryMode;
+import com.ntt.language_center_management.enums.LessonStatus;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -15,8 +18,8 @@ public record LessonResponse(
     @JsonFormat(pattern = "HH:mm") LocalTime startTime,
     @JsonFormat(pattern = "HH:mm") LocalTime endTime,
     String topic,
-    String status,
-    String deliveryMode,
+    LessonStatus status,
+    DeliveryMode deliveryMode,
     Integer roomId,
     String roomCode,
     String roomName,

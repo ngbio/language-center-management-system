@@ -1,5 +1,7 @@
 package com.ntt.language_center_management.service.impl;
 
+import com.ntt.language_center_management.enums.AccountStatus;
+
 import com.ntt.language_center_management.dto.request.TeacherProfileUpdateRequest;
 import com.ntt.language_center_management.dto.response.TeacherOptionResponse;
 import com.ntt.language_center_management.dto.response.TeacherProfileResponse;
@@ -30,7 +32,7 @@ public class TeacherServiceImpl implements TeacherService {
   @Override
   @Transactional(readOnly = true)
   public List<TeacherOptionResponse> getActiveTeachers() {
-    return teacherRepository.findByUserStatus("ACTIVE").stream()
+    return teacherRepository.findByUserStatus(AccountStatus.ACTIVE).stream()
         .map(teacherMapper::toOptionResponse)
         .toList();
   }
@@ -71,7 +73,7 @@ public class TeacherServiceImpl implements TeacherService {
         teacher.getId(), teacher.getTeacherCode(), user.getId(), user.getUsername(),
         user.getFullName(), user.getEmail(), user.getPhoneNumber(), user.getAddress(),
         teacher.getSpecialization(), teacher.getDegree(), teacher.getExperienceYears(),
-        user.getStatus(), user.getCreatedAt(), user.getUpdatedAt());
+        user.getStatus().name(), user.getCreatedAt(), user.getUpdatedAt());
   }
 
   private String trimToNull(String value) {

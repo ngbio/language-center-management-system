@@ -53,7 +53,6 @@ Cập nhật: **06/09/2026**
 | ✅ | GET | `/api/levels` | Danh sách trình độ, có lọc `languageId` |
 | ✅ | GET | `/api/levels/{id}` | Chi tiết trình độ đang hoạt động |
 | ✅ | GET | `/api/rooms` | Danh sách phòng |
-| ✅ | GET | `/api/rooms/{id}` | Chi tiết phòng |
 | ✅ | GET | `/api/teachers` | Danh sách giảng viên `ACTIVE` hiển thị trên trang chủ |
 
 ## Lớp học Public
@@ -129,7 +128,6 @@ Cập nhật: **06/09/2026**
 
 | Trạng thái | Method | API | Chức năng/Ghi chú |
 |:---:|---|---|---|
-| ✅ | POST | `/api/admin/teachers` | Tạo tài khoản và hồ sơ Teacher |
 | ✅ | GET | `/api/admin/teachers` | Danh sách Teacher đang hoạt động |
 | ✅ | GET | `/api/admin/users` | Danh sách người dùng có tìm kiếm và phân trang |
 | ✅ | GET | `/api/admin/users/{id}` | Chi tiết người dùng |

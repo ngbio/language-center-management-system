@@ -4,6 +4,11 @@
  */
 package com.ntt.language_center_management.entity;
 
+import com.ntt.language_center_management.enums.PaymentMethod;
+import com.ntt.language_center_management.enums.PaymentTransactionStatus;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
+
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -46,9 +51,9 @@ public class Payment implements Serializable {
     private String transactionCode;
     @Basic(optional = false)
     @NotNull
-    @Size(min = 1, max = 30)
     @Column(name = "method")
-    private String method;
+    @Enumerated(EnumType.STRING)
+    private PaymentMethod method;
     // @Max(value=?)  @Min(value=?)//if you know range of your decimal fields consider using these annotations to enforce field validation
     @Basic(optional = false)
     @NotNull
@@ -56,9 +61,9 @@ public class Payment implements Serializable {
     private BigDecimal amount;
     @Basic(optional = false)
     @NotNull
-    @Size(min = 1, max = 20)
     @Column(name = "status")
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private PaymentTransactionStatus status;
     @Basic(optional = false)
     @NotNull
     @Column(name = "created_at")
@@ -86,12 +91,13 @@ public class Payment implements Serializable {
         this.id = id;
     }
 
-    public Payment(Integer id, String transactionCode, String method, BigDecimal amount, String status, Date createdAt) {
+    public Payment(Integer id, String transactionCode, PaymentMethod method, BigDecimal amount,
+            PaymentTransactionStatus status, Date createdAt) {
         this.id = id;
         this.transactionCode = transactionCode;
-        this.method = method;
+        setMethod(method);
         this.amount = amount;
-        this.status = status;
+        setStatus(status);
         this.createdAt = createdAt;
     }
 
@@ -111,11 +117,11 @@ public class Payment implements Serializable {
         this.transactionCode = transactionCode;
     }
 
-    public String getMethod() {
+    public PaymentMethod getMethod() {
         return method;
     }
 
-    public void setMethod(String method) {
+    public void setMethod(PaymentMethod method) {
         this.method = method;
     }
 
@@ -127,11 +133,11 @@ public class Payment implements Serializable {
         this.amount = amount;
     }
 
-    public String getStatus() {
+    public PaymentTransactionStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(PaymentTransactionStatus status) {
         this.status = status;
     }
 

@@ -1,5 +1,9 @@
 package com.ntt.language_center_management.service.impl;
 
+import com.ntt.language_center_management.enums.CatalogStatus;
+import com.ntt.language_center_management.enums.PublicationStatus;
+
+
 import com.ntt.language_center_management.dto.request.CourseRequest;
 import com.ntt.language_center_management.dto.response.CourseResponse;
 import com.ntt.language_center_management.dto.response.PageResponse;
@@ -93,7 +97,8 @@ public class CourseServiceImpl implements CourseService {
     String normalizedSlug = slug == null ? "" : slug.trim().toLowerCase();
     Course course =
         courseRepository
-            .findBySlugAndStatusAndPublicationStatus(normalizedSlug, "ACTIVE", "PUBLISHED")
+            .findBySlugAndStatusAndPublicationStatus(
+                normalizedSlug, CatalogStatus.ACTIVE, PublicationStatus.PUBLISHED)
             .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy khóa học"));
     return courseMapper.toResponse(course);
   }
@@ -164,8 +169,8 @@ public class CourseServiceImpl implements CourseService {
         levelRepository
             .findById(request.getLevelId())
             .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy trình độ"));
-    if (!"ACTIVE".equals(level.getStatus())
-        || !"ACTIVE".equals(level.getLanguageId().getStatus())) {
+    if (level.getStatus() != CatalogStatus.ACTIVE
+        || level.getLanguageId().getStatus() != CatalogStatus.ACTIVE) {
       throw new IllegalArgumentException("Chỉ được chọn ngôn ngữ và trình độ đang hoạt động");
     }
     Course course = request.getId() == null ? new Course() : find(request.getId());
@@ -187,10 +192,10 @@ public class CourseServiceImpl implements CourseService {
     course.setTuitionFee(request.getTuitionFee());
     course.setTotalSessions(request.getTotalSessions());
     course.setDurationHours(request.getDurationHours());
-    course.setStatus(normalizeStatus(request.getStatus()));
-    String publicationStatus = normalizePublicationStatus(request.getPublicationStatus());
+    course.setStatus(request.getStatus());
+    PublicationStatus publicationStatus = request.getPublicationStatus();
     course.setPublicationStatus(publicationStatus);
-    if ("PUBLISHED".equals(publicationStatus) && course.getPublishedAt() == null) {
+    if (publicationStatus == PublicationStatus.PUBLISHED && course.getPublishedAt() == null) {
       course.setPublishedAt(now);
     } else if ("DRAFT".equals(publicationStatus)) {
       course.setPublishedAt(null);

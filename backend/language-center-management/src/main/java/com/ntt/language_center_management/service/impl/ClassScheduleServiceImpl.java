@@ -1,5 +1,10 @@
 package com.ntt.language_center_management.service.impl;
 
+import com.ntt.language_center_management.enums.DeliveryMode;
+import com.ntt.language_center_management.enums.ClassStatus;
+import com.ntt.language_center_management.enums.RoomStatus;
+
+
 import com.ntt.language_center_management.dto.request.ClassScheduleRequest;
 import com.ntt.language_center_management.dto.response.ClassScheduleResponse;
 import com.ntt.language_center_management.entity.Classschedule;
@@ -105,7 +110,7 @@ public class ClassScheduleServiceImpl implements ClassScheduleService {
   }
 
   private Room validateLocation(ClassScheduleRequest request, Courseclass courseClass) {
-    if ("IN_PERSON".equals(request.deliveryMode())) {
+    if (request.deliveryMode() == DeliveryMode.IN_PERSON) {
       if (request.roomId() == null) {
         throw new IllegalArgumentException("Lịch học trực tiếp phải chọn phòng");
       }
@@ -114,7 +119,7 @@ public class ClassScheduleServiceImpl implements ClassScheduleService {
       }
       Room room =
           roomRepository
-              .findByIdAndStatus(request.roomId(), "ACTIVE")
+              .findByIdAndStatus(request.roomId(), RoomStatus.ACTIVE)
               .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy phòng đang hoạt động"));
       if (room.getCapacity() < courseClass.getMaxStudents()) {
         throw new IllegalArgumentException("Sức chứa phòng nhỏ hơn sĩ số tối đa của lớp");
@@ -177,7 +182,8 @@ public class ClassScheduleServiceImpl implements ClassScheduleService {
   }
 
   private void ensureClassAllowsScheduleChanges(Courseclass courseClass) {
-    if ("COMPLETED".equals(courseClass.getStatus()) || "CANCELLED".equals(courseClass.getStatus())) {
+    if (courseClass.getStatus() == ClassStatus.COMPLETED
+        || courseClass.getStatus() == ClassStatus.CANCELLED) {
       throw new IllegalArgumentException("Không thể thay đổi lịch của lớp đã kết thúc hoặc đã hủy");
     }
   }

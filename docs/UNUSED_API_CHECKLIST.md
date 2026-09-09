@@ -41,21 +41,20 @@ Tài liệu này đối chiếu controller backend với các lời gọi API tr
 | Trạng thái | Method | API | Hiện trạng / giao diện còn thiếu |
 |:---:|---|---|---|
 | ✅ | GET | `/api/languages` | Trang chủ, trang `/ngon-ngu`, bộ lọc khóa học và Admin đang dùng |
-| ⬜ | GET | `/api/languages/{id}` | Chưa có trang chi tiết ngôn ngữ Public |
+| ✅ | GET | `/api/languages/{id}` | Trang chi tiết ngôn ngữ Public; hiển thị mô tả và các trình độ |
 | ✅ | GET | `/api/languages/{id}/levels` | Bộ lọc khóa học Public gọi khi người dùng chọn ngôn ngữ |
 | ✅ | GET | `/api/levels` | Dashboard và form khóa học đang dùng |
 | ✅ | GET | `/api/teachers` | Đã dùng ở khu vực “Đội ngũ giảng viên” trên trang chủ |
-| ⬜ | GET | `/api/levels/{id}` | Chưa có trang chi tiết trình độ Public |
+| ✅ | GET | `/api/levels/{id}` | Trang chi tiết trình độ Public; hiển thị các khóa học tương ứng |
 | ✅ | GET | `/api/rooms` | Dashboard đang dùng để lấy tổng số phòng |
-| ⬜ | GET | `/api/rooms/{id}` | Chủ động giữ làm API tra cứu phòng Public; thời khóa biểu hiện đã nhận thông tin phòng trực tiếp nên chưa cần gọi riêng |
 
 ## 4. Lớp học Public
 
 | Trạng thái | Method | API | Hiện trạng / giao diện còn thiếu |
 |:---:|---|---|---|
 | ✅ | GET | `/api/classes` | Trang `/lop-hoc` có tìm kiếm, lọc khóa học, trình độ, ngày khai giảng và sắp xếp |
-| ⬜ | GET | `/api/classes/{id}` | Chưa có trang chi tiết lớp và chọn lớp để đăng ký |
-| ⬜ | GET | `/api/classes/{classId}/schedules` | Chưa gọi trực tiếp; Student đang dùng API thời khóa biểu tổng hợp |
+| ✅ | GET | `/api/classes/{id}` | Trang chi tiết lớp Public và thao tác chọn lớp để đăng ký |
+| ✅ | GET | `/api/classes/{classId}/schedules` | Trang chi tiết lớp hiển thị lịch cố định, phòng hoặc hình thức online |
 
 ## 5. Student
 
@@ -70,13 +69,13 @@ Tài liệu này đối chiếu controller backend với các lời gọi API tr
 | ✅ | PUT | `/api/students/me/profile` | Đã dùng để cập nhật hồ sơ Student |
 | ✅ | POST | `/api/payments` | Đã dùng tại trang lịch sử; enrollment giữ chỗ ngay và có hạn thanh toán 48 giờ |
 | ✅ | GET | `/api/students/me/payments` | Đã dùng tại trang kết quả thanh toán |
-| ⬜ | GET | `/api/enrollments/{id}/payments` | Backend đã có; chưa có màn chi tiết mọi lần thử thanh toán |
-| ⬜ | GET | `/api/payments/{transactionCode}` | Backend đã có; chưa có ô tra cứu giao dịch |
+| ✅ | GET | `/api/enrollments/{id}/payments` | Modal chi tiết đăng ký hiển thị toàn bộ các lần thử thanh toán |
+| ⬜ | GET | `/api/payments/{transactionCode}` | Giữ cho tra cứu/polling một giao dịch cụ thể; chưa cần ô tìm kiếm thủ công vì màn chi tiết đã hiển thị đầy đủ |
 | ✅ | POST | `/api/staff/enrollments/{id}/refunds` | Đã có nút hoàn toàn bộ học phí trong màn quản lý enrollment |
-| ⬜ | GET | `/api/enrollments/{id}/refunds` | Backend đã có; chưa hiển thị lịch sử hoàn tiền chi tiết |
+| ✅ | GET | `/api/enrollments/{id}/refunds` | Modal chi tiết đăng ký hiển thị lịch sử hoàn tiền |
 | ✅ | GET | `/api/staff/refunds` | Đã dùng tại màn quản lý hoàn tiền của Staff/Admin |
 | ✅ | POST | `/api/staff/refunds/{id}/refresh` | Đã có nút đồng bộ refund đang PENDING |
-| ⬜ | GET | `/api/enrollments/{id}/invoice` | Backend đã có JSON; frontend hiện dùng endpoint PDF |
+| ✅ | GET | `/api/enrollments/{id}/invoice` | Modal chi tiết đăng ký hiển thị tổng học phí, đã trả, đã hoàn và thực thu |
 | ✅ | GET | `/api/enrollments/{id}/invoice.pdf` | Nút “Tải hóa đơn PDF” đã tích hợp trong lịch sử đăng ký và thanh toán của Student |
 | ✅ | POST | `/api/enrollments/{id}/cancel-request` | Đã có nút yêu cầu hủy tại trang lịch sử riêng |
 | ✅ | GET | `/api/classes/{classId}/lessons` | Đã dùng tại trang điểm danh để Student xem từng buổi học |
@@ -131,7 +130,6 @@ Backend đã có toàn bộ API cơ bản nhưng giao diện Admin/Consultant ch
 
 | Trạng thái | Method | API | Hiện trạng / giao diện còn thiếu |
 |:---:|---|---|---|
-| ⬜ | POST | `/api/admin/teachers` | Chưa có form tạo tài khoản Teacher |
 | ✅ | GET | `/api/admin/teachers` | Đã dùng làm lựa chọn phân công giáo viên |
 | ✅ | GET | `/api/admin/users` | Đã có danh sách, tìm kiếm và bộ lọc |
 | ✅ | GET | `/api/admin/users/{id}` | Đã có modal chi tiết |
@@ -162,10 +160,10 @@ Backend đã có toàn bộ API cơ bản nhưng giao diện Admin/Consultant ch
 | Trạng thái | Method | API | Hiện trạng / giao diện còn thiếu |
 |:---:|---|---|---|
 | ✅ | GET | `/api/admin/languages` | Đã có danh sách và lọc trạng thái |
-| ⬜ | GET | `/api/admin/languages/{id}` | Chưa gọi riêng; form sửa dùng dữ liệu từ danh sách |
+| ✅ | GET | `/api/admin/languages/{id}` | Nút Sửa tải dữ liệu chi tiết mới nhất trước khi mở form |
 | ✅ | POST | `/api/admin/languages` | Đã có form tạo |
 | ✅ | PUT | `/api/admin/languages/{id}` | Đã có form cập nhật, gồm cả trạng thái |
-| ⬜ | PATCH | `/api/admin/languages/{id}/status` | Chưa dùng nút đổi trạng thái riêng |
+| ✅ | PATCH | `/api/admin/languages/{id}/status` | Nút Kích hoạt/Ngừng hoạt động trong danh sách ngôn ngữ |
 | ✅ | DELETE | `/api/admin/languages/{id}` | Đã có thao tác xóa |
 
 ## 13. Admin quản lý trình độ
@@ -173,10 +171,10 @@ Backend đã có toàn bộ API cơ bản nhưng giao diện Admin/Consultant ch
 | Trạng thái | Method | API | Hiện trạng / giao diện còn thiếu |
 |:---:|---|---|---|
 | ✅ | GET | `/api/admin/levels` | Đã có danh sách và lọc trạng thái |
-| ⬜ | GET | `/api/admin/levels/{id}` | Chưa gọi riêng; form sửa dùng dữ liệu từ danh sách |
+| ✅ | GET | `/api/admin/levels/{id}` | Nút Sửa tải dữ liệu chi tiết mới nhất trước khi mở form |
 | ✅ | POST | `/api/admin/levels` | Đã có form tạo |
 | ✅ | PUT | `/api/admin/levels/{id}` | Đã có form cập nhật, gồm cả trạng thái |
-| ⬜ | PATCH | `/api/admin/levels/{id}/status` | Chưa dùng nút đổi trạng thái riêng |
+| ✅ | PATCH | `/api/admin/levels/{id}/status` | Nút Kích hoạt/Ngừng hoạt động trong danh sách trình độ |
 | ✅ | DELETE | `/api/admin/levels/{id}` | Đã có thao tác xóa |
 
 ## 14. Admin quản lý phòng
@@ -184,7 +182,7 @@ Backend đã có toàn bộ API cơ bản nhưng giao diện Admin/Consultant ch
 | Trạng thái | Method | API | Hiện trạng / giao diện còn thiếu |
 |:---:|---|---|---|
 | ✅ | GET | `/api/admin/rooms` | Đã có danh sách và lọc trạng thái |
-| ⬜ | GET | `/api/admin/rooms/{id}` | Chưa gọi riêng; form sửa dùng dữ liệu từ danh sách |
+| ✅ | GET | `/api/admin/rooms/{id}` | Nút Sửa tải dữ liệu phòng mới nhất trước khi mở form |
 | ✅ | POST | `/api/admin/rooms` | Đã có form tạo |
 | ✅ | PUT | `/api/admin/rooms/{id}` | Đã có form cập nhật |
 | ✅ | DELETE | `/api/admin/rooms/{id}` | Đã có thao tác xóa |

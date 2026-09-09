@@ -1,5 +1,7 @@
 package com.ntt.language_center_management.service.impl;
 
+import com.ntt.language_center_management.enums.RoomStatus;
+
 import com.ntt.language_center_management.dto.request.RoomRequest;
 import com.ntt.language_center_management.dto.response.RoomResponse;
 import com.ntt.language_center_management.entity.Room;
@@ -36,7 +38,7 @@ public class RoomServiceImpl implements RoomService {
       return getAll();
     }
     String validStatus = status(status);
-    return roomRepository.findByStatusOrderByRoomCodeAsc(validStatus).stream()
+    return roomRepository.findByStatusOrderByRoomCodeAsc(RoomStatus.valueOf(validStatus)).stream()
         .map(this::toResponse)
         .toList();
   }
@@ -74,7 +76,7 @@ public class RoomServiceImpl implements RoomService {
     room.setCapacity(request.getCapacity());
     room.setLocation(
         StringUtils.hasText(request.getLocation()) ? request.getLocation().trim() : null);
-    room.setStatus(status(request.getStatus()));
+    room.setStatus(request.getStatus());
     return toResponse(roomRepository.save(room));
   }
 

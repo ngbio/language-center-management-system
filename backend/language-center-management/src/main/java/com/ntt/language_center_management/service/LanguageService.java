@@ -2,6 +2,7 @@ package com.ntt.language_center_management.service;
 
 import com.ntt.language_center_management.dto.request.LanguageRequest;
 import com.ntt.language_center_management.dto.response.LanguageResponse;
+import com.ntt.language_center_management.enums.CatalogStatus;
 import java.util.List;
 
 public interface LanguageService {
@@ -20,7 +21,7 @@ public interface LanguageService {
 
   LanguageResponse addOrUpdateLanguage(LanguageRequest request);
 
-  LanguageResponse changeStatus(int id, String status);
+  LanguageResponse changeStatus(int id, CatalogStatus status);
 
   boolean deleteLanguage(int id);
 }

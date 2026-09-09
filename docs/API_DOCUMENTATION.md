@@ -678,24 +678,6 @@ Staff đăng ký giúp cũng giữ chỗ ngay với `CONFIRMED + PENDING`; khôn
 
 ## 10. Admin — Người dùng và giáo viên
 
-### POST `/admin/teachers`
-
-- Quyền: ADMIN
-
-```json
-{
-  "username": "teacher01",
-  "password": "Teacher@123",
-  "fullName": "Giáo viên A",
-  "email": "teacher@example.com",
-  "phoneNumber": "0900000000",
-  "address": "TP. Hồ Chí Minh",
-  "specialization": "Tiếng Nhật",
-  "degree": "Cử nhân",
-  "experienceYears": 3
-}
-```
-
 ### GET `/admin/teachers`
 
 - Quyền: ADMIN

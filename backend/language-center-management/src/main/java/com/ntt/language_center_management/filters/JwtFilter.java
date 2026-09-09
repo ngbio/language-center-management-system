@@ -1,5 +1,7 @@
 package com.ntt.language_center_management.filters;
 
+import com.ntt.language_center_management.enums.AccountStatus;
+
 import com.ntt.language_center_management.entity.User;
 import com.ntt.language_center_management.service.UserService;
 import com.ntt.language_center_management.util.JwtUtils;
@@ -61,7 +63,7 @@ public class JwtFilter extends OncePerRequestFilter {
       String email = jwtUtils.validateTokenAndGetUsername(token);
       User user = userService.getUserEntityByEmail(email);
 
-      if (!"ACTIVE".equals(user.getStatus())) {
+      if (user.getStatus() != AccountStatus.ACTIVE) {
         throw new IllegalArgumentException("Tài khoản không hoạt động");
       }
 

@@ -2,6 +2,7 @@ package com.ntt.language_center_management.service;
 
 import com.ntt.language_center_management.dto.request.CourseClassRequest;
 import com.ntt.language_center_management.dto.response.CourseClassResponse;
+import com.ntt.language_center_management.enums.ClassStatus;
 import com.ntt.language_center_management.dto.response.CourseResponse;
 import com.ntt.language_center_management.dto.response.PageResponse;
 import java.security.Principal;
@@ -38,7 +39,7 @@ public interface CourseClassService {
 
   CourseClassResponse assignTeacher(Integer id, Integer teacherId);
 
-  CourseClassResponse changeStatus(Integer id, String status);
+  CourseClassResponse changeStatus(Integer id, ClassStatus status);
 
   List<CourseClassResponse> getTeacherClasses(Principal principal);
 

@@ -26,6 +26,7 @@ export default function RefundManagementScreen() {
     }
   }, [status]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadRefunds(); }, [loadRefunds]);
 
   const refresh = async (refund) => {

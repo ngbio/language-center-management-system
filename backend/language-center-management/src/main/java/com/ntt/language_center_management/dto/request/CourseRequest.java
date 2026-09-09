@@ -1,5 +1,7 @@
 package com.ntt.language_center_management.dto.request;
 
+import com.ntt.language_center_management.enums.CatalogStatus;
+import com.ntt.language_center_management.enums.PublicationStatus;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -56,13 +58,11 @@ public class CourseRequest {
 
   @NotNull private Integer levelId;
 
-  @NotBlank
-  @Pattern(regexp = "ACTIVE|INACTIVE")
-  private String status = "ACTIVE";
+  @NotNull
+  private CatalogStatus status = CatalogStatus.ACTIVE;
 
-  @NotBlank
-  @Pattern(regexp = "DRAFT|PUBLISHED|ARCHIVED")
-  private String publicationStatus = "DRAFT";
+  @NotNull
+  private PublicationStatus publicationStatus = PublicationStatus.DRAFT;
 
   private boolean featured;
 
@@ -202,19 +202,19 @@ public class CourseRequest {
     this.levelId = levelId;
   }
 
-  public String getStatus() {
+  public CatalogStatus getStatus() {
     return status;
   }
 
-  public void setStatus(String status) {
+  public void setStatus(CatalogStatus status) {
     this.status = status;
   }
 
-  public String getPublicationStatus() {
+  public PublicationStatus getPublicationStatus() {
     return publicationStatus;
   }
 
-  public void setPublicationStatus(String publicationStatus) {
+  public void setPublicationStatus(PublicationStatus publicationStatus) {
     this.publicationStatus = publicationStatus;
   }
 

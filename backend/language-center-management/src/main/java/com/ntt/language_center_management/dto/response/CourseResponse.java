@@ -1,5 +1,8 @@
 package com.ntt.language_center_management.dto.response;
 
+import com.ntt.language_center_management.enums.CatalogStatus;
+import com.ntt.language_center_management.enums.PublicationStatus;
+
 import java.math.BigDecimal;
 import java.util.Date;
 
@@ -20,8 +23,8 @@ public record CourseResponse(
     BigDecimal tuitionFee,
     int totalSessions,
     Integer durationHours,
-    String status,
-    String publicationStatus,
+    CatalogStatus status,
+    PublicationStatus publicationStatus,
     Date publishedAt,
     boolean featured,
     Integer levelId,

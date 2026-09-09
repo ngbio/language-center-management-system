@@ -1,7 +1,8 @@
 package com.ntt.language_center_management.dto.request;
 
+import com.ntt.language_center_management.enums.CatalogStatus;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public class LanguageRequest {
@@ -15,8 +16,8 @@ public class LanguageRequest {
     private String languageName;
     @Size(max = 500)
     private String description;
-    @Pattern(regexp = "ACTIVE|INACTIVE", message = "Status phải là ACTIVE hoặc INACTIVE")
-    private String status;
+    @NotNull
+    private CatalogStatus status = CatalogStatus.ACTIVE;
 
     public Integer getId() {
         return id;
@@ -50,11 +51,11 @@ public class LanguageRequest {
         this.description = description;
     }
 
-    public String getStatus() {
+    public CatalogStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(CatalogStatus status) {
         this.status = status;
     }
 }

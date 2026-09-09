@@ -4,6 +4,10 @@
  */
 package com.ntt.language_center_management.entity;
 
+import com.ntt.language_center_management.enums.NotificationType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
+
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -52,9 +56,9 @@ public class Notification implements Serializable {
     private String content;
     @Basic(optional = false)
     @NotNull
-    @Size(min = 1, max = 30)
     @Column(name = "notification_type")
-    private String notificationType;
+    @Enumerated(EnumType.STRING)
+    private NotificationType notificationType;
     @Basic(optional = false)
     @NotNull
     @Column(name = "is_read")
@@ -78,11 +82,12 @@ public class Notification implements Serializable {
         this.id = id;
     }
 
-    public Notification(Integer id, String title, String content, String notificationType, boolean isRead, Date createdAt) {
+    public Notification(Integer id, String title, String content, NotificationType notificationType,
+            boolean isRead, Date createdAt) {
         this.id = id;
         this.title = title;
         this.content = content;
-        this.notificationType = notificationType;
+        setNotificationType(notificationType);
         this.isRead = isRead;
         this.createdAt = createdAt;
     }
@@ -111,11 +116,11 @@ public class Notification implements Serializable {
         this.content = content;
     }
 
-    public String getNotificationType() {
+    public NotificationType getNotificationType() {
         return notificationType;
     }
 
-    public void setNotificationType(String notificationType) {
+    public void setNotificationType(NotificationType notificationType) {
         this.notificationType = notificationType;
     }
 

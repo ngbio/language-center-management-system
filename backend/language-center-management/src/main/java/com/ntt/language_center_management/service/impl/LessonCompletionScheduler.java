@@ -1,5 +1,8 @@
 package com.ntt.language_center_management.service.impl;
 
+import com.ntt.language_center_management.enums.LessonStatus;
+import com.ntt.language_center_management.enums.ClassStatus;
+
 import com.ntt.language_center_management.entity.Lesson;
 import com.ntt.language_center_management.repository.LessonRepository;
 import java.time.LocalDate;
@@ -34,12 +37,13 @@ public class LessonCompletionScheduler {
     List<Lesson> endedLessons =
         lessonRepository
             .findByStatusAndLessonDateLessThanEqual(
-                "SCHEDULED", java.sql.Date.valueOf(now.toLocalDate()))
+                LessonStatus.SCHEDULED, java.sql.Date.valueOf(now.toLocalDate()))
             .stream()
-            .filter(lesson -> !"CANCELLED".equals(lesson.getClassScheduleId().getCourseClassId().getStatus()))
+            .filter(lesson -> lesson.getClassScheduleId().getCourseClassId().getStatus()
+                != ClassStatus.CANCELLED)
             .filter(lesson -> !now.isBefore(endTimeOf(lesson)))
             .toList();
-    endedLessons.forEach(lesson -> lesson.setStatus("COMPLETED"));
+    endedLessons.forEach(lesson -> lesson.setStatus(LessonStatus.COMPLETED));
     if (!endedLessons.isEmpty()) {
       lessonRepository.saveAll(endedLessons);
     }

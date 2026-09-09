@@ -1,5 +1,11 @@
 package com.ntt.language_center_management.service.impl;
 
+import com.ntt.language_center_management.enums.AttendanceStatus;
+import com.ntt.language_center_management.enums.ClassStatus;
+import com.ntt.language_center_management.enums.LessonStatus;
+import com.ntt.language_center_management.enums.EnrollmentPaymentStatus;
+import com.ntt.language_center_management.enums.EnrollmentStatus;
+
 import com.ntt.language_center_management.dto.request.AttendanceBulkRequest;
 import com.ntt.language_center_management.dto.request.AttendanceItemRequest;
 import com.ntt.language_center_management.dto.request.AttendanceUpdateRequest;
@@ -116,7 +122,7 @@ public class AttendanceServiceImpl implements AttendanceService {
       boolean isNew = attendance.getId() == null;
       attendance.setLessonId(lesson);
       attendance.setEnrollmentId(validEnrollments.get(item.studentId()));
-      attendance.setStatus(item.status().name());
+      attendance.setStatus(item.status());
       attendance.setNote(trimToNull(item.note()));
       if (isNew) {
         attendance.setAttendanceTime(markedAt);
@@ -139,7 +145,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     Lesson lesson = attendance.getLessonId();
     Teacher teacher = requireAssignedTeacher(lesson.getClassScheduleId().getCourseClassId(), principal);
     ensureCanUpdateAttendance(lesson);
-    attendance.setStatus(request.status().name());
+    attendance.setStatus(request.status());
     attendance.setNote(trimToNull(request.note()));
     attendance.setUpdatedAt(new Date());
     Attendance saved = attendanceRepository.save(attendance);
@@ -189,8 +195,10 @@ public class AttendanceServiceImpl implements AttendanceService {
         courseClass.getId(),
         courseClass.getClassCode(),
         courseClass.getClassName(),
-        lessonRepository.countByClassScheduleId_CourseClassId_IdAndStatusNot(classId, "CANCELLED"),
-        lessonRepository.countByClassScheduleId_CourseClassId_IdAndStatus(classId, "COMPLETED"),
+        lessonRepository.countByClassScheduleId_CourseClassId_IdAndStatusNot(
+            classId, LessonStatus.CANCELLED),
+        lessonRepository.countByClassScheduleId_CourseClassId_IdAndStatus(
+            classId, LessonStatus.COMPLETED),
         students);
   }
 
@@ -209,22 +217,22 @@ public class AttendanceServiceImpl implements AttendanceService {
                       student.getId(),
                       student.getStudentCode(),
                       student.getUserId().getFullName(),
-                      attendance == null ? null : attendance.getStatus(),
+                      attendance == null ? null : attendance.getStatus().name(),
                       attendance == null ? null : attendance.getNote(),
                       attendance == null ? null : attendance.getAttendanceTime());
                 })
             .toList();
     Courseclass courseClass = lesson.getClassScheduleId().getCourseClassId();
     return new AttendanceSheetResponse(
-        lesson.getId(), lesson.getLessonDate(), lesson.getTopic(), lesson.getStatus(),
+        lesson.getId(), lesson.getLessonDate(), lesson.getTopic(), lesson.getStatus().name(),
         courseClass.getId(), courseClass.getClassCode(), courseClass.getClassName(), students);
   }
 
   private StudentAttendanceSummaryResponse summarize(Student student, List<Attendance> records) {
-    long present = count(records, "PRESENT");
-    long absent = count(records, "ABSENT");
-    long late = count(records, "LATE");
-    long excused = count(records, "EXCUSED");
+    long present = count(records, AttendanceStatus.PRESENT);
+    long absent = count(records, AttendanceStatus.ABSENT);
+    long late = count(records, AttendanceStatus.LATE);
+    long excused = count(records, AttendanceStatus.EXCUSED);
     long total = records.size();
     double rate = total == 0 ? 0 : Math.round(((present + late) * 10000.0) / total) / 100.0;
     return new StudentAttendanceSummaryResponse(
@@ -232,14 +240,14 @@ public class AttendanceServiceImpl implements AttendanceService {
         total, present, absent, late, excused, rate);
   }
 
-  private long count(List<Attendance> records, String status) {
-    return records.stream().filter(value -> status.equals(value.getStatus())).count();
+  private long count(List<Attendance> records, AttendanceStatus status) {
+    return records.stream().filter(value -> value.getStatus() == status).count();
   }
 
   private List<Enrollment> validEnrollments(Integer classId) {
     return enrollmentRepository
         .findByCourseClassId_IdAndEnrollmentStatusAndPaymentStatusOrderByStudentId_UserId_FullNameAsc(
-            classId, "CONFIRMED", "PAID");
+            classId, EnrollmentStatus.CONFIRMED, EnrollmentPaymentStatus.PAID);
   }
 
   private Teacher requireAssignedTeacher(Courseclass courseClass, Principal principal) {
@@ -254,10 +262,10 @@ public class AttendanceServiceImpl implements AttendanceService {
   }
 
   private void ensureAttendanceAllowed(Lesson lesson) {
-    if ("CANCELLED".equals(lesson.getStatus())) {
+    if (lesson.getStatus() == LessonStatus.CANCELLED) {
       throw new IllegalArgumentException("Không thể điểm danh buổi học đã hủy");
     }
-    if ("CANCELLED".equals(lesson.getClassScheduleId().getCourseClassId().getStatus())) {
+    if (lesson.getClassScheduleId().getCourseClassId().getStatus() == ClassStatus.CANCELLED) {
       throw new IllegalArgumentException("Không thể điểm danh cho lớp học đã hủy");
     }
   }
@@ -286,7 +294,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         attendance.getId(), lesson.getId(), lesson.getLessonDate(), lesson.getTopic(),
         courseClass.getId(), courseClass.getClassCode(), courseClass.getClassName(),
         student.getId(), student.getStudentCode(), student.getUserId().getFullName(),
-        attendance.getStatus(), attendance.getNote(), attendance.getAttendanceTime());
+        attendance.getStatus().name(), attendance.getNote(), attendance.getAttendanceTime());
   }
 
   private Lesson findLesson(Integer id) {
