@@ -32,6 +32,9 @@ import StaffLoginScreen from "./screens/staff/StaffLoginScreen";
 import CoursesScreen from "./screens/public/CoursesScreen";
 import LanguagesScreen from "./screens/public/LanguagesScreen";
 import OpenClassesScreen from "./screens/public/OpenClassesScreen";
+import LanguageDetailScreen from "./screens/public/LanguageDetailScreen";
+import LevelDetailScreen from "./screens/public/LevelDetailScreen";
+import ClassDetailScreen from "./screens/public/ClassDetailScreen";
 import "./App.css";
 
 function App() {
@@ -41,7 +44,10 @@ function App() {
         <Route path="/" element={<HomeScreen />} />
         <Route path="/khoa-hoc" element={<CoursesScreen />} />
         <Route path="/ngon-ngu" element={<LanguagesScreen />} />
+        <Route path="/ngon-ngu/:id" element={<LanguageDetailScreen />} />
+        <Route path="/trinh-do/:id" element={<LevelDetailScreen />} />
         <Route path="/lop-hoc" element={<OpenClassesScreen />} />
+        <Route path="/lop-hoc/:id" element={<ClassDetailScreen />} />
         <Route path="/khoa-hoc/:slug" element={<CourseDetailScreen />} />
         <Route path="/khoa-hoc-cua-toi" element={<MyCoursesScreen />} />
         <Route path="/lop-hoc-cua-toi" element={<MyClassesScreen />} />
