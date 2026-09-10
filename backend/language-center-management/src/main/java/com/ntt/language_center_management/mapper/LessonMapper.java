@@ -44,10 +44,19 @@ public class LessonMapper {
   }
 
   private LocalDate toLocalDate(java.util.Date value) {
-    return value == null ? null : Instant.ofEpochMilli(value.getTime()).atZone(applicationZone).toLocalDate();
+    if (value == null) {
+      return null;
+    }
+    if (value instanceof java.sql.Date sqlDate) {
+      return sqlDate.toLocalDate();
+    }
+    return Instant.ofEpochMilli(value.getTime()).atZone(applicationZone).toLocalDate();
   }
 
   private LocalTime toLocalTime(java.util.Date value) {
+    if (value instanceof java.sql.Time sqlTime) {
+      return sqlTime.toLocalTime();
+    }
     return Instant.ofEpochMilli(value.getTime()).atZone(applicationZone).toLocalTime();
   }
 
