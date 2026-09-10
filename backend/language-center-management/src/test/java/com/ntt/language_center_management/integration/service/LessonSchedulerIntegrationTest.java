@@ -27,7 +27,7 @@ class LessonSchedulerIntegrationTest {
     LessonRepository repository = Mockito.mock(LessonRepository.class);
     Lesson ended = lesson(ClassStatus.IN_PROGRESS, Time.valueOf("00:01:00"));
     Lesson cancelledClassLesson = lesson(ClassStatus.CANCELLED, Time.valueOf("00:01:00"));
-    when(repository.findByStatusAndLessonDateLessThanEqual(eq(LessonStatus.SCHEDULED), any()))
+    when(repository.findByStatusInAndLessonDateLessThanEqual(any(), any()))
         .thenReturn(List.of(ended, cancelledClassLesson));
 
     new LessonCompletionScheduler(repository, "Asia/Ho_Chi_Minh").completeEndedLessons();
@@ -40,7 +40,7 @@ class LessonSchedulerIntegrationTest {
   @Test
   void schedulerDoesNotWriteWhenNoLessonHasEnded() {
     LessonRepository repository = Mockito.mock(LessonRepository.class);
-    when(repository.findByStatusAndLessonDateLessThanEqual(eq(LessonStatus.SCHEDULED), any()))
+    when(repository.findByStatusInAndLessonDateLessThanEqual(any(), any()))
         .thenReturn(List.of());
     new LessonCompletionScheduler(repository, "Asia/Ho_Chi_Minh").completeEndedLessons();
     verify(repository, never()).saveAll(any());

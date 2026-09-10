@@ -8,8 +8,16 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
+import java.util.Collection;
+import java.util.Optional;
 
 public interface LessonRepository extends JpaRepository<Lesson, Integer> {
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("select lesson from Lesson lesson where lesson.id = :id")
+  Optional<Lesson> lockById(@Param("id") Integer id);
 
   List<Lesson> findByClassScheduleId_CourseClassId_IdOrderByLessonDateAsc(
       Integer courseClassId);
@@ -31,6 +39,9 @@ public interface LessonRepository extends JpaRepository<Lesson, Integer> {
 
   List<Lesson> findByStatusAndLessonDateLessThanEqual(
       LessonStatus status, Date lessonDate);
+
+  List<Lesson> findByStatusInAndLessonDateLessThanEqual(
+      Collection<LessonStatus> statuses, Date lessonDate);
 
   @Query(
       """

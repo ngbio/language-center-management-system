@@ -43,6 +43,49 @@ class RoomServiceImplTest {
     assertThrows(ResourceNotFoundException.class, () -> new RoomServiceImpl(repository).getById(99));
   }
 
+  @Test void shouldExcludeCurrentRoomFromDuplicateCheckWhenUpdating() {
+    RoomRepository repository = mock(RoomRepository.class);
+    Room existing = new Room(1);
+    RoomRequest request = request(" p101 ");
+    request.setId(1);
+    when(repository.findById(1)).thenReturn(Optional.of(existing));
+    when(repository.save(existing)).thenReturn(existing);
+
+    var result = new RoomServiceImpl(repository).save(request);
+
+    verify(repository).existsByRoomCodeIgnoreCaseAndIdNot("P101", 1);
+    verify(repository, never()).existsByRoomCodeIgnoreCase(anyString());
+    assertEquals(1, result.id());
+  }
+
+  @Test void shouldRejectUnsupportedStatusFilter() {
+    RoomRepository repository = mock(RoomRepository.class);
+    assertThrows(IllegalArgumentException.class,
+        () -> new RoomServiceImpl(repository).getAll("BROKEN"));
+    verify(repository, never()).findByStatusOrderByRoomCodeAsc(any());
+  }
+
+  @Test void shouldDeleteRoomWhenItHasNoSchedules() {
+    RoomRepository repository = mock(RoomRepository.class);
+    Room room = new Room(1);
+    room.setClassscheduleList(List.of());
+    when(repository.findById(1)).thenReturn(Optional.of(room));
+
+    new RoomServiceImpl(repository).delete(1);
+
+    verify(repository).delete(room);
+  }
+
+  @Test void shouldUseMatchingRepositoryQueryWhenFilteringByEachStatus() {
+    RoomRepository repository = mock(RoomRepository.class);
+    RoomServiceImpl service = new RoomServiceImpl(repository);
+    for (RoomStatus status : RoomStatus.values()) {
+      when(repository.findByStatusOrderByRoomCodeAsc(status)).thenReturn(List.of());
+      assertTrue(service.getAll("  " + status.name().toLowerCase() + "  ").isEmpty());
+      verify(repository).findByStatusOrderByRoomCodeAsc(status);
+    }
+  }
+
   private RoomRequest request(String code) {
     RoomRequest value = new RoomRequest(); value.setRoomCode(code); value.setRoomName(" Phòng 101 ");
     value.setCapacity(20); value.setStatus(RoomStatus.ACTIVE); return value;

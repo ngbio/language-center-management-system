@@ -165,10 +165,13 @@ public class CourseClassServiceImpl implements CourseClassService {
                   cb.equal(root.get("courseId").get("levelId").get("id"), levelId));
     }
     if (StringUtils.hasText(status)) {
-      if (!TRANSITIONS.containsKey(status)) {
+      ClassStatus normalizedStatus;
+      try {
+        normalizedStatus = ClassStatus.valueOf(status.trim().toUpperCase());
+      } catch (IllegalArgumentException exception) {
         throw new IllegalArgumentException("Trạng thái lớp không hợp lệ");
       }
-      spec = spec.and((root, query, cb) -> cb.equal(root.get("status"), status));
+      spec = spec.and((root, query, cb) -> cb.equal(root.get("status"), normalizedStatus));
     }
 
     int safePage = Math.max(page, 0);
@@ -269,6 +272,10 @@ public class CourseClassServiceImpl implements CourseClassService {
     if (normalizedStatus == ClassStatus.OPEN) {
       validateCanOpen(value);
     }
+    if (normalizedStatus == ClassStatus.FULL
+        && countActiveEnrollments(id) < value.getMaxStudents()) {
+      throw new IllegalArgumentException("Chỉ có thể chuyển FULL khi lớp đã đủ sĩ số");
+    }
     value.setStatus(normalizedStatus);
     value.setUpdatedAt(new Date());
     return toResponse(courseClassRepository.save(value));
@@ -277,10 +284,7 @@ public class CourseClassServiceImpl implements CourseClassService {
   @Override
   @Transactional(readOnly = true)
   public List<CourseClassResponse> getTeacherClasses(Principal principal) {
-    Teacher teacher =
-        teacherRepository
-            .findByUserId_EmailIgnoreCase(principal.getName())
-            .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hồ sơ giảng viên"));
+    Teacher teacher = findTeacherByPrincipal(principal);
     return courseClassRepository.findByTeacherId_IdOrderByStartDateDesc(teacher.getId()).stream()
         .map(this::toResponse)
         .toList();
@@ -335,6 +339,13 @@ public class CourseClassServiceImpl implements CourseClassService {
   }
 
   private void validateDates(CourseClassRequest request) {
+    if (request.getMaxStudents() < 1) {
+      throw new IllegalArgumentException("Sĩ số tối đa phải lớn hơn 0");
+    }
+    if (request.getAppliedTuitionFee() == null
+        || request.getAppliedTuitionFee().signum() < 0) {
+      throw new IllegalArgumentException("Học phí áp dụng không được âm");
+    }
     if (!request.getStartDate().before(request.getEndDate())) {
       throw new IllegalArgumentException("Ngày bắt đầu phải trước ngày kết thúc");
     }

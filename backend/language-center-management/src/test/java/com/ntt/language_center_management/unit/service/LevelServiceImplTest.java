@@ -109,6 +109,77 @@ class LevelServiceImplTest {
     verify(levelRepository, never()).delete(level);
   }
 
+  @Test
+  void shouldAllowSameCodeWhenLanguageIsDifferent() {
+    LevelRequest request = request();
+    request.setLanguageId(2);
+    Language japanese = language(2, "JA", CatalogStatus.ACTIVE);
+    when(languageRepository.findByIdAndStatus(2, CatalogStatus.ACTIVE))
+        .thenReturn(Optional.of(japanese));
+    when(levelRepository.save(any(Level.class))).thenAnswer(call -> call.getArgument(0));
+
+    var response = service.save(request);
+
+    assertThat(response.levelCode()).isEqualTo("A1");
+    assertThat(response.languageId()).isEqualTo(2);
+    verify(levelRepository)
+        .existsByLanguageId_IdAndLevelCodeIgnoreCaseAndIdNot(2, "A1", -1);
+  }
+
+  @Test
+  void shouldReuseCurrentLanguageWhenUpdatingWithinSameLanguage() {
+    Level existing = level();
+    LevelRequest request = request();
+    request.setId(2);
+    when(levelRepository.findById(2)).thenReturn(Optional.of(existing));
+    when(levelRepository.save(existing)).thenReturn(existing);
+
+    service.save(request);
+
+    verify(languageRepository, never()).findByIdAndStatus(any(), any());
+    assertThat(existing.getLanguageId().getId()).isEqualTo(1);
+  }
+
+  @Test
+  void shouldRequireActiveTargetLanguageWhenChangingLanguage() {
+    Level existing = level();
+    LevelRequest request = request();
+    request.setId(2);
+    request.setLanguageId(3);
+    when(levelRepository.findById(2)).thenReturn(Optional.of(existing));
+    when(languageRepository.findByIdAndStatus(3, CatalogStatus.ACTIVE))
+        .thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.save(request)).isInstanceOf(IllegalArgumentException.class);
+    verify(levelRepository, never()).save(any());
+  }
+
+  @Test
+  void shouldDeleteLevelWhenItHasNoCourses() {
+    Level level = level();
+    level.setCourseList(List.of());
+    when(levelRepository.findById(2)).thenReturn(Optional.of(level));
+
+    service.delete(2);
+
+    verify(levelRepository).delete(level);
+  }
+
+  @Test
+  void shouldQueryOnlyActiveLevelsOfActiveLanguagesWhenGettingPublicCatalog() {
+    Level active = level();
+    when(levelRepository.findByStatusAndLanguageId_StatusOrderByDisplayOrderAsc(
+        CatalogStatus.ACTIVE, CatalogStatus.ACTIVE)).thenReturn(List.of(active));
+
+    var result = service.getActive(null);
+
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).status()).isEqualTo(CatalogStatus.ACTIVE);
+    verify(levelRepository).findByStatusAndLanguageId_StatusOrderByDisplayOrderAsc(
+        CatalogStatus.ACTIVE, CatalogStatus.ACTIVE);
+    verify(levelRepository, never()).findAll();
+  }
+
   private LevelRequest request() {
     LevelRequest request = new LevelRequest();
     request.setLanguageId(1);
@@ -121,10 +192,14 @@ class LevelServiceImplTest {
   }
 
   private Language language() {
-    Language language = new Language(1);
-    language.setLanguageCode("EN");
-    language.setLanguageName("English");
-    language.setStatus(CatalogStatus.ACTIVE);
+    return language(1, "EN", CatalogStatus.ACTIVE);
+  }
+
+  private Language language(int id, String code, CatalogStatus status) {
+    Language language = new Language(id);
+    language.setLanguageCode(code);
+    language.setLanguageName(code);
+    language.setStatus(status);
     return language;
   }
 
