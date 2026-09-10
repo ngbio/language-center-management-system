@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.security.Principal;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
+import java.util.List;
 import java.util.Locale;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -23,6 +24,7 @@ import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Service
 public class InvoicePdfServiceImpl implements InvoicePdfService {
@@ -37,10 +39,7 @@ public class InvoicePdfServiceImpl implements InvoicePdfService {
   @Transactional(readOnly = true)
   public byte[] createInvoicePdf(Integer enrollmentId, Principal principal) {
     InvoiceResponse invoice = billingService.getInvoice(enrollmentId, principal);
-    Path path = Path.of(fontPath);
-    if (!Files.isRegularFile(path)) {
-      throw new IllegalStateException("Không tìm thấy font Unicode xuất PDF: " + fontPath);
-    }
+    Path path = resolveFontPath();
     try (PDDocument document = new PDDocument();
          var fontStream = Files.newInputStream(path);
          ByteArrayOutputStream output = new ByteArrayOutputStream()) {
@@ -89,6 +88,29 @@ public class InvoicePdfServiceImpl implements InvoicePdfService {
   }
   private static String date(java.util.Date value) {
     return value == null ? "-" : new SimpleDateFormat("dd/MM/yyyy HH:mm").format(value);
+  }
+
+  private Path resolveFontPath() {
+    if (StringUtils.hasText(fontPath)) {
+      Path configuredPath = Path.of(fontPath);
+      if (Files.isRegularFile(configuredPath)) {
+        return configuredPath;
+      }
+      throw new IllegalStateException("Không tìm thấy font Unicode xuất PDF: " + fontPath);
+    }
+
+    return List.of(
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/dejavu/DejaVuSans.ttf",
+            "C:/Windows/Fonts/arial.ttf")
+        .stream()
+        .map(Path::of)
+        .filter(Files::isRegularFile)
+        .findFirst()
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Không tìm thấy font Unicode xuất PDF; hãy cấu hình INVOICE_PDF_FONT_PATH"));
   }
 
   private static final class PageWriter {
