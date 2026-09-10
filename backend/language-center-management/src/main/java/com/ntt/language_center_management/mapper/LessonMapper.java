@@ -22,8 +22,6 @@ public class LessonMapper {
     var schedule = lesson.getClassScheduleId();
     var courseClass = schedule.getCourseClassId();
     var room = schedule.getRoomId();
-    String meetingUrl =
-        lesson.getMeetingUrl() == null ? schedule.getMeetingUrl() : lesson.getMeetingUrl();
     return new LessonResponse(
         lesson.getId(),
         courseClass.getId(),
@@ -39,11 +37,10 @@ public class LessonMapper {
         room == null ? null : room.getId(),
         room == null ? null : room.getRoomCode(),
         room == null ? null : room.getRoomName(),
-        meetingUrl,
+        schedule.getMeetingUrl(),
         toLocalDate(lesson.getOriginalLessonDate()),
         lesson.getRescheduleReason(),
-        toLocalDateTime(lesson.getRescheduledAt()),
-        lesson.getRescheduledBy() == null ? null : lesson.getRescheduledBy().getFullName());
+        toLocalDateTime(lesson.getRescheduledAt()));
   }
 
   private LocalDate toLocalDate(java.util.Date value) {

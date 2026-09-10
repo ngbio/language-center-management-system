@@ -6,6 +6,7 @@ import com.ntt.language_center_management.dto.request.TransferEnrollmentRequest;
 import com.ntt.language_center_management.dto.response.ApiResponse;
 import com.ntt.language_center_management.dto.response.EnrollmentResponse;
 import com.ntt.language_center_management.dto.response.EnrollmentSummaryResponse;
+import com.ntt.language_center_management.dto.response.PageResponse;
 import com.ntt.language_center_management.service.EnrollmentService;
 import jakarta.validation.Valid;
 import java.security.Principal;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api")
@@ -28,6 +30,28 @@ public class StaffEnrollmentApiController {
 
   public StaffEnrollmentApiController(EnrollmentService enrollmentService) {
     this.enrollmentService = enrollmentService;
+  }
+
+  @GetMapping("/staff/enrollments")
+  public ApiResponse<PageResponse<EnrollmentResponse>> search(
+      @RequestParam(required = false) String keyword,
+      @RequestParam(required = false) Integer courseId,
+      @RequestParam(required = false) Integer classId,
+      @RequestParam(required = false) String enrollmentStatus,
+      @RequestParam(required = false) String paymentStatus,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size,
+      @RequestParam(defaultValue = "enrollmentDate") String sort,
+      @RequestParam(defaultValue = "desc") String direction) {
+    return new ApiResponse<>(200, "Lấy danh sách đăng ký thành công",
+        enrollmentService.searchStaffEnrollments(keyword, courseId, classId, enrollmentStatus,
+            paymentStatus, page, size, sort, direction));
+  }
+
+  @GetMapping("/staff/enrollments/{id}")
+  public ApiResponse<EnrollmentResponse> getById(@PathVariable Integer id) {
+    return new ApiResponse<>(200, "Lấy chi tiết đăng ký thành công",
+        enrollmentService.getStaffEnrollment(id));
   }
 
   @PostMapping("/staff/enrollments")

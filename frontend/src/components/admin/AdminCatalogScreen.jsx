@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { authApis, endpoints } from "../../configs/Apis";
 import {
   EmptyState,
@@ -489,6 +490,7 @@ export default function AdminCatalogScreen({ type }) {
                     </td>
                     <td>
                       <div className="row-actions">
+                        {type === "courses" && <Link className="button-link" to={`/admin/courses/${item.id}/curriculum`}>Giáo trình</Link>}
                         <button disabled={actionId === item.id} onClick={() => edit(item)}>
                           {actionId === item.id ? "Đang tải..." : "Sửa"}
                         </button>

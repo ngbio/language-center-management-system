@@ -33,9 +33,13 @@ public interface CourseClassService {
 
   CourseClassResponse getById(Integer id);
 
+  CourseClassResponse getAdminById(Integer id);
+
   CourseClassResponse create(CourseClassRequest request);
 
   CourseClassResponse update(Integer id, CourseClassRequest request);
+
+  void deleteDraft(Integer id);
 
   CourseClassResponse assignTeacher(Integer id, Integer teacherId);
 

@@ -16,11 +16,17 @@ export default function StaffLayout() {
           <div><strong>Lingua Center</strong><small>Staff workspace</small></div>
         </div>
         <nav>
+          <NavLink to="/staff/profile">
+            <span className="nav-icon">S</span>Hồ sơ cá nhân
+          </NavLink>
           <NavLink to="/staff/enrollments">
             <span className="nav-icon">✓</span>Đăng ký học
           </NavLink>
           <NavLink to="/staff/refunds">
             <span className="nav-icon">↩</span>Hoàn tiền
+          </NavLink>
+          <NavLink to="/staff/change-password">
+            <span className="nav-icon">🔒</span>Đổi mật khẩu
           </NavLink>
         </nav>
         <div className="sidebar-foot">

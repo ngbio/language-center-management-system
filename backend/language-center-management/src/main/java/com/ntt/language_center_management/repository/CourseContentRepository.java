@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface CourseContentRepository extends JpaRepository<CourseContent, Integer> {
 
+  List<CourseContent> findBySectionId_IdOrderByDisplayOrderAsc(Integer sectionId);
+
   List<CourseContent> findBySectionId_IdAndPublicationStatusOrderByDisplayOrderAsc(
       Integer sectionId, PublicationStatus publicationStatus);
 

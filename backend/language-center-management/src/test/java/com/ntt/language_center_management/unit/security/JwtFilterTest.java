@@ -1,4 +1,4 @@
-package com.ntt.language_center_management.security;
+package com.ntt.language_center_management.unit.security;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -19,7 +19,7 @@ import tools.jackson.databind.ObjectMapper;
 class JwtFilterTest {
 
     @Test
-    void requestWithoutAuthorizationHeaderContinuesFilterChain() throws Exception {
+    void shouldContinueFilterChainWhenAuthorizationHeaderIsMissing() throws Exception {
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = mock(HttpServletResponse.class);
         FilterChain chain = mock(FilterChain.class);
@@ -32,7 +32,7 @@ class JwtFilterTest {
     }
 
     @Test
-    void malformedAuthorizationHeaderReturnsUnauthorized() throws Exception {
+    void shouldReturnUnauthorizedWhenAuthorizationHeaderIsMalformed() throws Exception {
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = mock(HttpServletResponse.class);
         FilterChain chain = mock(FilterChain.class);

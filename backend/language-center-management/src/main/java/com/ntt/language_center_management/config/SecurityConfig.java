@@ -1,10 +1,13 @@
 package com.ntt.language_center_management.config;
 
 import com.ntt.language_center_management.filters.JwtFilter;
+import com.ntt.language_center_management.filters.SystemLoggingFilter;
+import com.ntt.language_center_management.service.SystemLogService;
 import com.ntt.language_center_management.service.UserService;
 import com.ntt.language_center_management.util.JwtUtils;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,7 +38,7 @@ public class SecurityConfig {
     configuration.setAllowedOrigins(allowedOrigins);
     configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
-    configuration.setExposedHeaders(List.of("Authorization"));
+    configuration.setExposedHeaders(List.of("Authorization", "X-Request-ID"));
     configuration.setAllowCredentials(true);
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -49,6 +52,7 @@ public class SecurityConfig {
       CorsConfigurationSource corsConfigurationSource,
       JwtUtils jwtUtils,
       UserService userService,
+      Optional<SystemLogService> systemLogService,
       ObjectMapper objectMapper)
       throws Exception {
     JwtFilter jwtFilter = new JwtFilter(jwtUtils, userService, objectMapper);
@@ -112,17 +116,17 @@ public class SecurityConfig {
                     .requestMatchers("/api/staff/refunds/**")
                     .hasAnyRole("ADMIN", "CONSULTANT")
                     .requestMatchers(HttpMethod.GET, "/api/classes/*/enrollments")
-                    .hasAnyRole("ADMIN", "CONSULTANT", "TEACHER")
+                    .hasAnyRole("ADMIN", "TEACHER")
                     .requestMatchers(
                         HttpMethod.POST,
                         "/api/classes/*/schedules")
-                    .hasAnyRole("ADMIN", "CONSULTANT")
+                    .hasRole("ADMIN")
                     .requestMatchers(HttpMethod.POST, "/api/classes/*/lessons/generate")
-                    .hasAnyRole("ADMIN", "CONSULTANT", "TEACHER")
+                    .hasAnyRole("ADMIN", "TEACHER")
                     .requestMatchers(HttpMethod.PUT, "/api/schedules/**")
-                    .hasAnyRole("ADMIN", "CONSULTANT")
+                    .hasRole("ADMIN")
                     .requestMatchers(HttpMethod.DELETE, "/api/schedules/**")
-                    .hasAnyRole("ADMIN", "CONSULTANT")
+                    .hasRole("ADMIN")
                     .requestMatchers(HttpMethod.GET, "/api/classes/*/lessons")
                     .authenticated()
                     .requestMatchers(
@@ -131,21 +135,26 @@ public class SecurityConfig {
                         "/api/classes/*/attendance-summary")
                     .hasRole("TEACHER")
                     .requestMatchers(HttpMethod.PUT, "/api/lessons/*")
-                    .hasAnyRole("ADMIN", "CONSULTANT", "TEACHER")
-                    .requestMatchers(
-                        HttpMethod.PATCH,
-                        "/api/lessons/*/reschedule",
-                        "/api/lessons/*/cancel")
-                    .hasAnyRole("ADMIN", "CONSULTANT")
+                    .hasAnyRole("ADMIN", "TEACHER")
+                    .requestMatchers(HttpMethod.PATCH, "/api/lessons/*/reschedule")
+                    .hasRole("ADMIN")
+                    .requestMatchers(HttpMethod.PATCH, "/api/lessons/*/cancel")
+                    .hasRole("ADMIN")
                     .requestMatchers(HttpMethod.PATCH, "/api/admin/classes/*/status")
                     .hasRole("ADMIN")
+                    .requestMatchers(HttpMethod.DELETE, "/api/admin/classes/*")
+                    .hasRole("ADMIN")
                     .requestMatchers(HttpMethod.GET, "/api/admin/reports/upcoming-classes")
+                    .hasRole("ADMIN")
+                    .requestMatchers(HttpMethod.GET, "/api/admin/classes/**")
                     .hasAnyRole("ADMIN", "CONSULTANT")
                     .requestMatchers("/api/admin/classes/**")
-                    .hasAnyRole("ADMIN", "CONSULTANT")
+                    .hasRole("ADMIN")
                     .requestMatchers("/api/admin/**")
                     .hasRole("ADMIN")
                     .requestMatchers(HttpMethod.GET, "/api/auth/me")
+                    .authenticated()
+                    .requestMatchers(HttpMethod.PUT, "/api/auth/change-password")
                     .authenticated()
                     .requestMatchers("/api/auth/**")
                     .permitAll()
@@ -173,6 +182,9 @@ public class SecurityConfig {
                     .anyRequest()
                     .authenticated())
         .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+
+    systemLogService.ifPresent(
+        service -> http.addFilterBefore(new SystemLoggingFilter(service), JwtFilter.class));
 
     return http.build();
   }

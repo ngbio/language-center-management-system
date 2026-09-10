@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 @RestController
 @RequestMapping("/api/admin/classes")
@@ -47,6 +48,11 @@ public class AdminCourseClassApiController {
             keyword, courseId, levelId, status, page, size, sort, direction));
   }
 
+  @GetMapping("/{id}")
+  public ApiResponse<CourseClassResponse> getById(@PathVariable Integer id) {
+    return new ApiResponse<>(200, "Lấy chi tiết lớp học thành công", courseClassService.getAdminById(id));
+  }
+
   @PostMapping
   public ResponseEntity<ApiResponse<CourseClassResponse>> create(
       @Valid @RequestBody CourseClassRequest request) {
@@ -61,6 +67,12 @@ public class AdminCourseClassApiController {
     request.setId(id);
     return new ApiResponse<>(
         200, "Cập nhật lớp học thành công", courseClassService.update(id, request));
+  }
+
+  @DeleteMapping("/{id}")
+  public ApiResponse<Void> delete(@PathVariable Integer id) {
+    courseClassService.deleteDraft(id);
+    return new ApiResponse<>(200, "Xóa lớp nháp thành công", null);
   }
 
   @PatchMapping("/{id}/teacher")

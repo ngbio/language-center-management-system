@@ -101,6 +101,9 @@ Response `data`:
 
 - Quyền: Public
 - Công dụng: đăng ký tài khoản học viên.
+- Email phải có cấu trúc hợp lệ như `ten@mien.com`.
+- Mật khẩu phải có 8-100 ký tự, bao gồm chữ thường, chữ số và ký tự đặc biệt.
+- Số điện thoại bắt buộc gồm đúng 10 chữ số và bắt đầu bằng `0`.
 
 ```json
 {
@@ -123,6 +126,7 @@ Response `data`:
 - Quyền: Public
 - Công dụng: giáo viên tự gửi đăng ký tài khoản.
 - Trạng thái ban đầu: `INACTIVE`; chưa thể đăng nhập cho tới khi Admin đổi sang `ACTIVE` qua `PATCH /admin/users/{id}/status`.
+- Áp dụng cùng quy tắc email, mật khẩu và số điện thoại như đăng ký học viên.
 
 ```json
 {
@@ -143,6 +147,21 @@ Response `data`:
 - Quyền: Authenticated
 - Công dụng: kiểm tra token và lấy thông tin người đang đăng nhập.
 - Trả về: `UserResponse`.
+
+### PUT `/auth/change-password`
+
+- Quyền: Authenticated (`STUDENT`, `TEACHER`, `CONSULTANT`, `ADMIN`).
+- Công dụng: đổi mật khẩu của chính tài khoản đang đăng nhập.
+- Mật khẩu mới phải có 8-100 ký tự, gồm chữ thường, chữ số và ký tự đặc biệt; đồng thời phải khác mật khẩu hiện tại và khớp trường xác nhận.
+- Sau khi thành công, frontend xóa phiên hiện tại và yêu cầu đăng nhập lại.
+
+```json
+{
+  "currentPassword": "Current@123",
+  "newPassword": "NewPassword@123",
+  "confirmPassword": "NewPassword@123"
+}
+```
 
 ---
 
@@ -260,7 +279,7 @@ Response `data`:
 ### GET `/classes/{classId}/schedules`
 
 - Quyền hiện tại: Public.
-- Công dụng: lấy lịch học cố định của lớp gồm thứ, giờ, hình thức và phòng học. Với Public và tài khoản không quản lý, `meetingUrl` được che (`null`). ADMIN/CONSULTANT nhận link đầy đủ để quản lý; Student/Teacher lấy link học từ API lịch/buổi học đã xác thực của mình.
+- Công dụng: lấy lịch học cố định của lớp gồm thứ, giờ, hình thức và phòng học. Với Public và tài khoản không phải Admin, `meetingUrl` được che (`null`). Student/Teacher lấy link học từ API lịch/buổi học đã xác thực của mình.
 - Trả về: `ClassScheduleResponse[]`.
 
 ---
@@ -512,13 +531,13 @@ Chỉ hủy trước ngày khai giảng và khi chưa phát sinh thanh toán.
 
 ### PUT `/lessons/{id}`
 
-- Quyền: ADMIN, CONSULTANT, TEACHER
+- Quyền: ADMIN, TEACHER
 - Teacher chỉ sửa buổi học thuộc lớp mình phụ trách.
+- Link học trực tuyến được lấy từ lịch học cố định (`classschedule`), không lưu riêng trên từng lesson.
 
 ```json
 {
-  "topic": "Ngữ pháp bài 1",
-  "meetingUrl": "https://meet.example.com/lesson-1"
+  "topic": "Ngữ pháp bài 1"
 }
 ```
 
@@ -666,7 +685,7 @@ Staff đăng ký giúp cũng giữ chỗ ngay với `CONFIRMED + PENDING`; khôn
 - Chỉ dời lesson `SCHEDULED` chưa đến giờ bắt đầu và chưa có điểm danh.
 - Ngày mới phải khác ngày hiện tại, chưa diễn ra và nằm trong khoảng ngày của lớp.
 - Backend kiểm tra trùng lesson, phòng học và giáo viên tại ngày mới.
-- Lưu ngày ban đầu, lý do, thời điểm và ADMIN/CONSULTANT thực hiện dời lịch.
+- Chỉ ADMIN được phép dời lịch; hệ thống lưu ngày ban đầu, lý do và thời điểm dời.
 - TODO Notification: sau khi module thông báo hoàn thiện, gửi lịch mới cho Teacher và các Student của lớp sau khi transaction commit thành công.
 
 ### PATCH `/lessons/{id}/cancel`
@@ -764,10 +783,20 @@ Staff đăng ký giúp cũng giữ chỗ ngay với `CONFIRMED + PENDING`; khôn
 - HTTP thành công: `201`.
 - Request: `CourseClassRequest` ở phần schema.
 
+### GET `/admin/classes/{id}`
+
+- Quyền: ADMIN, CONSULTANT.
+- Trả về chi tiết lớp kể cả khi lớp chưa mở hoặc khóa học chưa xuất bản.
+
 ### PUT `/admin/classes/{id}`
 
 - Quyền: ADMIN, CONSULTANT
 - Request: `CourseClassRequest`.
+
+### DELETE `/admin/classes/{id}`
+
+- Quyền: chỉ ADMIN.
+- Chỉ xóa lớp ở trạng thái `DRAFT` và chưa có bất kỳ lịch sử đăng ký nào.
 
 ### PATCH `/admin/classes/{id}/teacher`
 
@@ -1010,4 +1039,12 @@ Các endpoint yêu cầu quyền `ADMIN`, riêng báo cáo lớp sắp khai gi�
 | GET | `/api/admin/reports/teacher-load` | `from`, `to` | Số lớp và lesson của từng giảng viên trong kỳ |
 | GET | `/api/admin/reports/upcoming-classes` | `from`, `to` | Lớp sắp khai giảng và số chỗ còn lại |
 
-Quy tắc: `from <= to`, tối đa 366 ngày; doanh thu chỉ cộng payment `PAID` và trừ refund `COMPLETED`. Các giao dịch chưa thành công không được tính. Mốc ngày dùng `app.time-zone`, mặc định `Asia/Ho_Chi_Minh`. SystemLog chưa triển khai trong giai đoạn này.
+Quy tắc: `from <= to`, tối đa 366 ngày; doanh thu chỉ cộng payment `PAID` và trừ refund `COMPLETED`. Các giao dịch chưa thành công không được tính. Mốc ngày dùng `app.time-zone`, mặc định `Asia/Ho_Chi_Minh`.
+
+### Nhật ký hệ thống
+
+`GET /api/admin/system-logs` dành riêng cho Admin. Hỗ trợ `level` (`WARN`, `ERROR`), `eventType`, `requestId`, `from`, `to`, `page` và `size`. Hệ thống gắn header `X-Request-ID` vào response và chỉ lưu metadata của request thất bại; không lưu token, password, header hoặc request body.
+
+### Quản lý giáo trình Admin
+
+Admin quản lý section qua `/api/admin/courses/{courseId}/sections`, `/api/admin/sections/{id}` và `/api/admin/sections/reorder`; quản lý content qua `/api/admin/sections/{sectionId}/contents`, `/api/admin/contents/{id}`, `/api/admin/contents/{id}/publication-status` và `/api/admin/contents/reorder`. Payload reorder có dạng `{ "ids": [3, 1, 2] }` và phải chứa đầy đủ, không trùng ID, thuộc cùng một khóa học hoặc section. Content mới luôn bắt đầu ở trạng thái `DRAFT`.

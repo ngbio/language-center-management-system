@@ -22,14 +22,12 @@ Cập nhật: **06/09/2026**
 |:---:|---|---|---|
 | ✅ | POST | `/api/auth/login` | Đăng nhập chung Student và Teacher |
 | ✅ | POST | `/api/admin/auth/login` | Đăng nhập Admin |
-| ✅ | POST | `/api/auth/register` | Đăng ký tài khoản Student |
-| ✅ | POST | `/api/auth/teacher/register` | Teacher tự đăng ký, tài khoản `INACTIVE` chờ Admin kích hoạt |
+| ✅ | POST | `/api/auth/register` | Đăng ký Student; kiểm tra định dạng email, mật khẩu mạnh và số điện thoại 10 chữ số |
+| ✅ | POST | `/api/auth/teacher/register` | Teacher tự đăng ký với cùng validation; tài khoản `INACTIVE` chờ Admin kích hoạt |
 | ✅ | GET | `/api/auth/me` | Xác thực token và lấy người dùng hiện tại |
-| ⬜ | POST | `/api/auth/logout` | Chưa cần thiết với JWT stateless; frontend tự xóa token |
-| ⬜ | POST | `/api/auth/refresh-token` | Chưa có refresh token |
 | ⬜ | POST | `/api/auth/forgot-password` | Chưa có quên mật khẩu |
 | ⬜ | POST | `/api/auth/reset-password` | Chưa có đặt lại mật khẩu |
-| ⬜ | PUT | `/api/auth/change-password` | Chưa có đổi mật khẩu |
+| ✅ | PUT | `/api/auth/change-password` | Mọi user đăng nhập có thể đổi mật khẩu; giao diện đăng xuất sau khi đổi thành công |
 
 ## Khóa học và nội dung Public
 
@@ -106,8 +104,8 @@ Cập nhật: **06/09/2026**
 | ✅ | GET | `/api/classes/{id}/enrollments` | Admin/Consultant/Teacher xem enrollment của lớp |
 | ✅ | PATCH | `/api/staff/enrollments/{id}/status` | Quản lý trạng thái cũ/hủy; đăng ký mới tự `CONFIRMED` |
 | ✅ | POST | `/api/staff/enrollments/{id}/transfer` | Chuyển enrollment chưa thanh toán sang lớp khác |
-| ⬜ | GET | `/api/staff/enrollments` | Chưa có tìm kiếm tất cả enrollment có phân trang |
-| ⬜ | GET | `/api/staff/enrollments/{id}` | Chưa có API chi tiết riêng theo enrollment ID |
+| ✅ | GET | `/api/staff/enrollments` | Tìm kiếm, lọc và phân trang toàn bộ enrollment |
+| ✅ | GET | `/api/staff/enrollments/{id}` | Tải chi tiết mới nhất theo enrollment ID |
 
 ## Lịch học và buổi học
 
@@ -119,7 +117,7 @@ Cập nhật: **06/09/2026**
 | ✅ | POST | `/api/classes/{classId}/lessons/generate` | Teacher phụ trách chỉ được sinh từ ngày khai giảng; Admin/Consultant có thể chủ động sinh |
 | ✅ | GET | `/api/classes/{classId}/lessons` | API dùng chung; Student yêu cầu `CONFIRMED + PAID` |
 | ✅ | PUT | `/api/lessons/{id}` | Cập nhật nội dung buổi học |
-| ✅ | PATCH | `/api/lessons/{id}/reschedule` | Dời lesson chưa bắt đầu; kiểm tra xung đột và lưu lịch sử/lý do. Chờ tích hợp Notification |
+| ✅ | PATCH | `/api/lessons/{id}/reschedule` | Chỉ Admin dời lesson chưa bắt đầu; kiểm tra xung đột và lưu ngày cũ, lý do, thời điểm. Chờ tích hợp Notification |
 | ✅ | PATCH | `/api/lessons/{id}/cancel` | Hủy buổi học |
 | ⬜ | GET | `/api/lessons/{id}` | Chưa có API lấy riêng chi tiết một buổi học |
 | ⬜ | PATCH | `/api/lessons/{id}/status` | Chưa quản lý đầy đủ trạng thái buổi học |
@@ -144,15 +142,17 @@ Cập nhật: **06/09/2026**
 | ✅ | POST | `/api/admin/courses` | Tạo khóa học |
 | ✅ | PUT | `/api/admin/courses/{id}` | Cập nhật khóa học |
 | ✅ | DELETE | `/api/admin/courses/{id}` | Xóa khóa chưa có lớp |
-| ⬜ | POST | `/api/admin/courses/{courseId}/sections` | Chưa có API tạo section |
-| ⬜ | PUT | `/api/admin/sections/{id}` | Chưa có API cập nhật section |
-| ⬜ | DELETE | `/api/admin/sections/{id}` | Chưa có API xóa section |
-| ⬜ | PATCH | `/api/admin/sections/reorder` | Chưa có sắp xếp section |
-| ⬜ | POST | `/api/admin/sections/{sectionId}/contents` | Chưa có API tạo content |
-| ⬜ | PUT | `/api/admin/contents/{id}` | Chưa có API cập nhật content |
-| ⬜ | DELETE | `/api/admin/contents/{id}` | Chưa có API xóa content |
-| ⬜ | PATCH | `/api/admin/contents/{id}/publication-status` | Chưa có API publish/unpublish content |
-| ⬜ | PATCH | `/api/admin/contents/reorder` | Chưa có sắp xếp content |
+| ✅ | GET | `/api/admin/courses/{courseId}/sections` | Lấy toàn bộ section gồm nội dung chưa xuất bản |
+| ✅ | POST | `/api/admin/courses/{courseId}/sections` | Tạo section và tự gán thứ tự cuối |
+| ✅ | PUT | `/api/admin/sections/{id}` | Cập nhật section |
+| ✅ | DELETE | `/api/admin/sections/{id}` | Xóa section cùng content và chuẩn hóa thứ tự |
+| ✅ | PATCH | `/api/admin/sections/reorder` | Sắp xếp toàn bộ section của một khóa học |
+| ✅ | GET | `/api/admin/sections/{sectionId}/contents` | Lấy toàn bộ content cho Admin |
+| ✅ | POST | `/api/admin/sections/{sectionId}/contents` | Tạo content ở trạng thái `DRAFT` |
+| ✅ | PUT | `/api/admin/contents/{id}` | Cập nhật content |
+| ✅ | DELETE | `/api/admin/contents/{id}` | Xóa content và chuẩn hóa thứ tự |
+| ✅ | PATCH | `/api/admin/contents/{id}/publication-status` | Publish/unpublish content |
+| ✅ | PATCH | `/api/admin/contents/reorder` | Sắp xếp toàn bộ content của một section |
 
 ## Admin/Consultant quản lý lớp
 
@@ -163,8 +163,8 @@ Cập nhật: **06/09/2026**
 | ✅ | PUT | `/api/admin/classes/{id}` | Cập nhật lớp |
 | ✅ | PATCH | `/api/admin/classes/{id}/teacher` | Phân công Teacher |
 | 🟡 | PATCH | `/api/admin/classes/{id}/status` | Đã có; khi mở lớp chưa kiểm tra Course `PUBLISHED` |
-| ⬜ | GET | `/api/admin/classes/{id}` | Chưa có endpoint Admin lấy riêng một lớp |
-| ⬜ | DELETE | `/api/admin/classes/{id}` | Chưa có xóa lớp Draft |
+| ✅ | GET | `/api/admin/classes/{id}` | Lấy chi tiết mới nhất khi mở cửa sổ quản lý lớp |
+| ✅ | DELETE | `/api/admin/classes/{id}` | Xóa lớp `DRAFT` chưa có lịch sử đăng ký |
 
 ## Admin quản lý ngôn ngữ
 
@@ -238,4 +238,4 @@ Cập nhật: **06/09/2026**
 | ✅ | GET | `/api/admin/reports/popular-courses?from&to&limit` | Xếp hạng khóa học theo đăng ký đã thanh toán |
 | ✅ | GET | `/api/admin/reports/teacher-load?from&to` | Số lớp, buổi học và buổi hoàn thành của giảng viên |
 | ✅ | GET | `/api/admin/reports/upcoming-classes?from&to` | Lớp sắp khai giảng, giảng viên và số chỗ còn lại |
-| ⬜ | GET | `/api/admin/system-logs` | Chưa triển khai; thực hiện ở giai đoạn SystemLog riêng |
+| ✅ | GET | `/api/admin/system-logs` | Lọc theo mức độ, loại sự kiện, request ID và thời gian; có phân trang |

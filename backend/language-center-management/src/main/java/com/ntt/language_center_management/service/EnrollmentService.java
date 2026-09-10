@@ -10,6 +10,7 @@ import com.ntt.language_center_management.dto.response.EnrollmentSummaryResponse
 import com.ntt.language_center_management.dto.response.CourseResponse;
 import com.ntt.language_center_management.dto.response.CourseClassResponse;
 import com.ntt.language_center_management.dto.response.ClassScheduleResponse;
+import com.ntt.language_center_management.dto.response.PageResponse;
 import java.security.Principal;
 import java.util.List;
 
@@ -18,6 +19,12 @@ public interface EnrollmentService {
   EnrollmentResponse enrollMe(CreateEnrollmentRequest request, Principal principal);
 
   EnrollmentResponse enrollByStaff(StaffCreateEnrollmentRequest request);
+
+  PageResponse<EnrollmentResponse> searchStaffEnrollments(
+      String keyword, Integer courseId, Integer classId, String enrollmentStatus,
+      String paymentStatus, int page, int size, String sort, String direction);
+
+  EnrollmentResponse getStaffEnrollment(Integer id);
 
   List<EnrollmentSummaryResponse> getMyEnrollments(Principal principal);
 

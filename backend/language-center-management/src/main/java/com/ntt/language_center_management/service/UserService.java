@@ -4,6 +4,7 @@ import java.security.Principal;
 import java.util.List;
 
 import com.ntt.language_center_management.dto.request.LoginRequest;
+import com.ntt.language_center_management.dto.request.ChangePasswordRequest;
 import com.ntt.language_center_management.dto.request.TeacherRegisterRequest;
 import com.ntt.language_center_management.dto.request.UserRegisterRequest;
 import com.ntt.language_center_management.dto.response.UserResponse;
@@ -34,6 +35,8 @@ public interface UserService {
     UserResponse registerTeacher(TeacherRegisterRequest request);
 
     UserResponse getCurrentUserProfile(Principal principal);
+
+    void changePassword(Principal principal, ChangePasswordRequest request);
 
     StudentProfileResponse getStudentProfile(Principal principal);
 

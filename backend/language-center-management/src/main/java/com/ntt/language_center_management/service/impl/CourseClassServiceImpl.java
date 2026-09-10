@@ -197,6 +197,12 @@ public class CourseClassServiceImpl implements CourseClassService {
   }
 
   @Override
+  @Transactional(readOnly = true)
+  public CourseClassResponse getAdminById(Integer id) {
+    return toResponse(find(id));
+  }
+
+  @Override
   public CourseClassResponse create(CourseClassRequest request) {
     validateCode(request.getClassCode(), null);
     validateDates(request);
@@ -224,6 +230,18 @@ public class CourseClassServiceImpl implements CourseClassService {
       validateSchedulesAndConflicts(value);
     }
     return toResponse(courseClassRepository.save(value));
+  }
+
+  @Override
+  public void deleteDraft(Integer id) {
+    Courseclass value = lock(id);
+    if (value.getStatus() != ClassStatus.DRAFT) {
+      throw new IllegalArgumentException("Chỉ có thể xóa lớp ở trạng thái DRAFT");
+    }
+    if (enrollmentRepository.existsByCourseClassId_Id(id)) {
+      throw new IllegalArgumentException("Không thể xóa lớp đã có lịch sử đăng ký");
+    }
+    courseClassRepository.delete(value);
   }
 
   @Override

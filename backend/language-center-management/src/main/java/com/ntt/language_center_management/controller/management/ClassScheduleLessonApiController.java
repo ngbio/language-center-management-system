@@ -44,8 +44,7 @@ public class ClassScheduleLessonApiController {
             && authentication.getAuthorities().stream()
                 .anyMatch(
                     authority ->
-                        "ROLE_ADMIN".equals(authority.getAuthority())
-                            || "ROLE_CONSULTANT".equals(authority.getAuthority()));
+                        "ROLE_ADMIN".equals(authority.getAuthority()));
     List<ClassScheduleResponse> visibleSchedules =
         classScheduleService.getByClassId(classId).stream()
             .map(schedule -> canManageSchedules ? schedule : withoutMeetingUrl(schedule))
@@ -115,10 +114,9 @@ public class ClassScheduleLessonApiController {
   @PatchMapping("/lessons/{id}/reschedule")
   public ApiResponse<LessonResponse> rescheduleLesson(
       @PathVariable Integer id,
-      @Valid @RequestBody LessonRescheduleRequest request,
-      Principal principal) {
+      @Valid @RequestBody LessonRescheduleRequest request) {
     return new ApiResponse<>(
-        200, "Dời buổi học thành công", lessonService.reschedule(id, request, principal));
+        200, "Dời buổi học thành công", lessonService.reschedule(id, request));
   }
 
   @PatchMapping("/lessons/{id}/cancel")

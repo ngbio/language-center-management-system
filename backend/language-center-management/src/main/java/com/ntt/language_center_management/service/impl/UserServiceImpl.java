@@ -5,6 +5,7 @@ import com.ntt.language_center_management.enums.Gender;
 
 
 import com.ntt.language_center_management.dto.request.LoginRequest;
+import com.ntt.language_center_management.dto.request.ChangePasswordRequest;
 import com.ntt.language_center_management.dto.request.TeacherRegisterRequest;
 import com.ntt.language_center_management.dto.request.UserRegisterRequest;
 import com.ntt.language_center_management.dto.response.UserResponse;
@@ -255,6 +256,23 @@ public class UserServiceImpl implements UserService {
   public UserResponse getCurrentUserProfile(Principal principal) {
     User user = validateAndGetCurrentUser(principal);
     return userMapper.toResponse(user);
+  }
+
+  @Override
+  public void changePassword(Principal principal, ChangePasswordRequest request) {
+    User user = validateAndGetCurrentUser(principal);
+    if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+      throw new IllegalArgumentException("Mật khẩu hiện tại không chính xác");
+    }
+    if (!request.newPassword().equals(request.confirmPassword())) {
+      throw new IllegalArgumentException("Xác nhận mật khẩu mới không khớp");
+    }
+    if (passwordEncoder.matches(request.newPassword(), user.getPasswordHash())) {
+      throw new IllegalArgumentException("Mật khẩu mới phải khác mật khẩu hiện tại");
+    }
+    user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+    user.setUpdatedAt(new Date());
+    userRepository.save(user);
   }
 
   @Override

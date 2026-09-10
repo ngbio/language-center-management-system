@@ -35,6 +35,10 @@ import OpenClassesScreen from "./screens/public/OpenClassesScreen";
 import LanguageDetailScreen from "./screens/public/LanguageDetailScreen";
 import LevelDetailScreen from "./screens/public/LevelDetailScreen";
 import ClassDetailScreen from "./screens/public/ClassDetailScreen";
+import ChangePasswordScreen from "./screens/ChangePasswordScreen";
+import SystemLogsScreen from "./screens/admin/SystemLogsScreen";
+import AccountProfileScreen from "./screens/AccountProfileScreen";
+import CourseCurriculumAdminScreen from "./screens/admin/courses/CourseCurriculumAdminScreen";
 import "./App.css";
 
 function App() {
@@ -55,6 +59,7 @@ function App() {
         <Route path="/thong-tin-ca-nhan" element={<StudentProfileScreen />} />
         <Route path="/diem-danh" element={<StudentAttendanceScreen />} />
         <Route path="/thanh-toan/ket-qua" element={<PaymentResultScreen />} />
+        <Route path="/doi-mat-khau" element={<ChangePasswordScreen />} />
         <Route path="/giao-vien/khoa-hoc" element={<TeacherCoursesScreen />} />
         <Route path="/giao-vien/lop-hoc" element={<TeacherClassesScreen />} />
         <Route path="/giao-vien/thong-tin-ca-nhan" element={<TeacherProfileScreen />} />
@@ -71,10 +76,14 @@ function App() {
           <Route path="languages" element={<LanguageListScreen />} />
           <Route path="levels" element={<LevelListScreen />} />
           <Route path="courses" element={<CourseListScreen />} />
+          <Route path="courses/:courseId/curriculum" element={<CourseCurriculumAdminScreen />} />
           <Route path="rooms" element={<RoomListScreen />} />
           <Route path="classes" element={<ClassListScreen />} />
           <Route path="enrollments" element={<EnrollmentManagementScreen />} />
           <Route path="refunds" element={<RefundManagementScreen />} />
+          <Route path="system-logs" element={<SystemLogsScreen />} />
+          <Route path="profile" element={<AccountProfileScreen />} />
+          <Route path="change-password" element={<ChangePasswordScreen />} />
         </Route>
       </Route>
       <Route element={<ProtectedStaffRoute />}>
@@ -82,6 +91,8 @@ function App() {
           <Route index element={<Navigate to="enrollments" replace />} />
           <Route path="enrollments" element={<EnrollmentManagementScreen />} />
           <Route path="refunds" element={<RefundManagementScreen />} />
+          <Route path="profile" element={<AccountProfileScreen />} />
+          <Route path="change-password" element={<ChangePasswordScreen />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

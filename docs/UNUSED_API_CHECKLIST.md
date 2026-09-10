@@ -24,8 +24,7 @@ Tài liệu này đối chiếu controller backend với các lời gọi API tr
 | ✅ | POST | `/api/auth/teacher/register` | Teacher tự đăng ký ở trạng thái `INACTIVE`, chờ Admin kích hoạt |
 | ✅ | POST | `/api/auth/login` | Đã dùng tại trang đăng nhập Student/Teacher |
 | ✅ | POST | `/api/admin/auth/login` | Đã dùng tại trang đăng nhập Admin |
-| ✅ | GET | `/api/auth/me` | Đã dùng để xác thực quyền khi vào Admin |
-| 🟡 | GET | `/api/auth/me` | Chưa có trang hiển thị hồ sơ cá nhân; hiện chỉ dùng ngầm để kiểm tra token |
+| ✅ | GET | `/api/auth/me` | Đã dùng tại trang hồ sơ cá nhân của Admin và Consultant |
 
 ## 2. Khóa học Public
 
@@ -106,7 +105,9 @@ Frontend đã có workspace riêng cho lớp, khóa học, hồ sơ và quản l
 | Trạng thái | Method | API | Giao diện cần bổ sung |
 |:---:|---|---|---|
 | ✅ | POST | `/api/staff/enrollments` | Form Staff/Admin lọc theo khóa học, chọn lớp, tìm Student bằng email và xếp lớp |
-| ✅ | GET | `/api/classes/{id}/enrollments` | Danh sách đăng ký theo lớp trên màn hình Admin |
+| ✅ | GET | `/api/staff/enrollments` | Danh sách tổng hợp có tìm kiếm, bộ lọc và phân trang |
+| ✅ | GET | `/api/staff/enrollments/{id}` | Modal tải chi tiết enrollment mới nhất |
+| ✅ | GET | `/api/classes/{id}/enrollments` | Teacher tải danh sách học viên khi chọn “Xem học viên”; Admin cũng được phép truy cập |
 | ✅ | PATCH | `/api/staff/enrollments/{id}/status` | Giao diện dùng để hủy; không còn nút xác nhận thủ công |
 | ✅ | POST | `/api/staff/enrollments/{id}/transfer` | Thao tác chuyển đăng ký sang lớp khác cùng khóa học |
 
@@ -123,7 +124,7 @@ Backend đã có toàn bộ API cơ bản nhưng giao diện Admin/Consultant ch
 | ✅ | POST | `/api/classes/{classId}/lessons/generate` | Teacher đã có nút sinh buổi học cho lớp mình phụ trách |
 | ✅ | GET | `/api/classes/{classId}/lessons` | Danh sách buổi học trong quản lý lớp |
 | ✅ | PUT | `/api/lessons/{id}` | Admin có form sửa nội dung buổi học |
-| ✅ | PATCH | `/api/lessons/{id}/reschedule` | Admin/Consultant có form dời lesson chưa bắt đầu, nhập lý do và lưu dấu vết; Notification làm sau |
+| ✅ | PATCH | `/api/lessons/{id}/reschedule` | Chỉ Admin có form dời lesson chưa bắt đầu; lưu ngày cũ, lý do và thời điểm; Notification làm sau |
 | ✅ | PATCH | `/api/lessons/{id}/cancel` | Admin có nút hủy buổi học chưa điểm danh |
 
 ## 9. Admin quản lý người dùng
@@ -140,10 +141,21 @@ Backend đã có toàn bộ API cơ bản nhưng giao diện Admin/Consultant ch
 | Trạng thái | Method | API | Hiện trạng / giao diện còn thiếu |
 |:---:|---|---|---|
 | ✅ | GET | `/api/admin/courses` | Đã có danh sách và bộ lọc |
-| ⬜ | GET | `/api/admin/courses/{id}` | Chưa gọi riêng; form sửa dùng dữ liệu có sẵn từ danh sách |
+| ✅ | GET | `/api/admin/courses/{id}` | Đã gọi để tải dữ liệu đầy đủ khi mở form sửa khóa học |
 | ✅ | POST | `/api/admin/courses` | Đã có form tạo |
 | ✅ | PUT | `/api/admin/courses/{id}` | Đã có form cập nhật |
 | ✅ | DELETE | `/api/admin/courses/{id}` | Đã có thao tác xóa |
+| ✅ | GET | `/api/admin/courses/{courseId}/sections` | Đã dùng tại trang quản lý giáo trình |
+| ✅ | POST | `/api/admin/courses/{courseId}/sections` | Đã có form thêm phần giáo trình |
+| ✅ | PUT | `/api/admin/sections/{id}` | Đã có form sửa phần giáo trình |
+| ✅ | DELETE | `/api/admin/sections/{id}` | Đã có thao tác xóa phần giáo trình |
+| ✅ | PATCH | `/api/admin/sections/reorder` | Đã có nút sắp xếp phần lên/xuống |
+| ✅ | GET | `/api/admin/sections/{sectionId}/contents` | Đã tải nội dung theo từng phần |
+| ✅ | POST | `/api/admin/sections/{sectionId}/contents` | Đã có form thêm nội dung |
+| ✅ | PUT | `/api/admin/contents/{id}` | Đã có form sửa nội dung |
+| ✅ | DELETE | `/api/admin/contents/{id}` | Đã có thao tác xóa nội dung |
+| ✅ | PATCH | `/api/admin/contents/{id}/publication-status` | Đã có publish/unpublish |
+| ✅ | PATCH | `/api/admin/contents/reorder` | Đã có nút sắp xếp nội dung lên/xuống |
 
 ## 11. Admin/Consultant quản lý lớp
 
@@ -151,7 +163,9 @@ Backend đã có toàn bộ API cơ bản nhưng giao diện Admin/Consultant ch
 |:---:|---|---|---|
 | ✅ | GET | `/api/admin/classes` | Đã có danh sách, phân trang và bộ lọc |
 | ✅ | POST | `/api/admin/classes` | Đã có form tạo lớp |
-| ⬜ | PUT | `/api/admin/classes/{id}` | Chưa có form sửa toàn bộ thông tin lớp |
+| ✅ | PUT | `/api/admin/classes/{id}` | Đã có form sửa toàn bộ thông tin lớp |
+| ✅ | GET | `/api/admin/classes/{id}` | Đã tải chi tiết mới nhất khi mở quản lý lớp |
+| ✅ | DELETE | `/api/admin/classes/{id}` | Đã có xóa lớp nháp chưa phát sinh đăng ký |
 | ✅ | PATCH | `/api/admin/classes/{id}/teacher` | Đã có phân công giáo viên |
 | ✅ | PATCH | `/api/admin/classes/{id}/status` | Đã có chuyển trạng thái lớp |
 
@@ -218,4 +232,4 @@ Một endpoint có thể xuất hiện ở nhiều nhóm quyền hoặc chức n
 | ✅ | GET | `/api/admin/reports/popular-courses` | Đã dùng bảng xếp hạng khóa học |
 | ✅ | GET | `/api/admin/reports/teacher-load` | Đã dùng bảng tải giảng viên |
 | ✅ | GET | `/api/admin/reports/upcoming-classes` | Đã dùng danh sách lớp trong 30 ngày tới |
-| ⬜ | GET | `/api/admin/system-logs` | Chưa xây dựng backend và giao diện |
+| ✅ | GET | `/api/admin/system-logs` | Đã xây dựng backend, bộ lọc và giao diện Admin |
