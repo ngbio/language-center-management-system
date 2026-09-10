@@ -160,17 +160,13 @@ public class LessonServiceImpl implements LessonService {
       throw new IllegalArgumentException("Không thể sửa nội dung buổi học đã hoàn thành hoặc đã hủy");
     }
     lesson.setTopic(StringUtils.hasText(request.topic()) ? request.topic().trim() : null);
-    lesson.setMeetingUrl(
-        StringUtils.hasText(request.meetingUrl()) ? request.meetingUrl().trim() : null);
     return lessonMapper.toResponse(lessonRepository.save(lesson));
   }
 
   @Override
-  public LessonResponse reschedule(
-      Integer id, LessonRescheduleRequest request, Principal principal) {
+  public LessonResponse reschedule(Integer id, LessonRescheduleRequest request) {
     Lesson lesson = findLesson(id);
     Courseclass courseClass = lesson.getClassScheduleId().getCourseClassId();
-    User editor = ensureCanManageSchedule(courseClass, principal);
     if (Set.of("COMPLETED", "CANCELLED").contains(lesson.getStatus())) {
       throw new IllegalArgumentException("Không thể dời buổi học đã hoàn thành hoặc đã hủy");
     }
@@ -208,7 +204,6 @@ public class LessonServiceImpl implements LessonService {
     lesson.setLessonDate(newDate);
     lesson.setRescheduleReason(request.reason().trim());
     lesson.setRescheduledAt(Date.from(now.atZone(applicationZone).toInstant()));
-    lesson.setRescheduledBy(editor);
     // TODO(notification): notify the assigned teacher and enrolled students after commit.
     return lessonMapper.toResponse(lessonRepository.save(lesson));
   }
@@ -282,14 +277,6 @@ public class LessonServiceImpl implements LessonService {
       return user;
     }
     throw new ForbiddenException("Bạn không được sửa nội dung buổi học này");
-  }
-
-  private User ensureCanManageSchedule(Courseclass courseClass, Principal principal) {
-    User user = findUser(principal);
-    if (!Set.of("ADMIN", "CONSULTANT").contains(user.getRoleId().getRoleCode())) {
-      throw new ForbiddenException("Chỉ Admin hoặc Consultant được dời buổi học");
-    }
-    return user;
   }
 
   private User findUser(Principal principal) {

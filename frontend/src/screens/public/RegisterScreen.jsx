@@ -16,6 +16,7 @@ const teacherInitial = {
 };
 
 const optionalToNull = (value) => value === "" ? null : value;
+const passwordPattern = "(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9\\s]).{8,100}";
 
 export default function RegisterScreen() {
   const [accountType, setAccountType] = useState("student");
@@ -96,9 +97,9 @@ export default function RegisterScreen() {
           <div className="register-grid">
             <label>Họ và tên<input name="fullName" required maxLength="150" value={form.fullName} onChange={update} /></label>
             <label>Tên đăng nhập<input name="username" required maxLength="100" value={form.username} onChange={update} /></label>
-            <label>Email<input name="email" type="email" required maxLength="150" value={form.email} onChange={update} /></label>
-            <label>Mật khẩu<input name="password" type="password" required minLength="6" maxLength="100" value={form.password} onChange={update} /></label>
-            <label>Số điện thoại<input name="phoneNumber" maxLength="20" value={form.phoneNumber} onChange={update} /></label>
+            <label>Email<input name="email" type="email" required maxLength="150" placeholder="ten@mien.com" value={form.email} onChange={update} /></label>
+            <label>Mật khẩu<input name="password" type="password" required minLength="8" maxLength="100" pattern={passwordPattern} title="Từ 8 ký tự, có chữ thường, chữ số và ký tự đặc biệt" value={form.password} onChange={update} /><small>Tối thiểu 8 ký tự, gồm chữ thường, chữ số và ký tự đặc biệt.</small></label>
+            <label>Số điện thoại<input name="phoneNumber" type="tel" required inputMode="numeric" pattern="0[0-9]{9}" minLength="10" maxLength="10" placeholder="0901234567" title="Nhập đúng 10 chữ số và bắt đầu bằng 0" value={form.phoneNumber} onChange={update} /></label>
             {accountType === "student" ? (
               <>
                 <label>Ngày sinh<input name="dateOfBirth" type="date" value={form.dateOfBirth} onChange={update} /></label>

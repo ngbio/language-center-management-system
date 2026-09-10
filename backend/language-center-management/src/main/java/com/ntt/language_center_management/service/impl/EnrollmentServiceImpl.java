@@ -14,6 +14,7 @@ import com.ntt.language_center_management.dto.response.EnrollmentSummaryResponse
 import com.ntt.language_center_management.dto.response.CourseResponse;
 import com.ntt.language_center_management.dto.response.CourseClassResponse;
 import com.ntt.language_center_management.dto.response.ClassScheduleResponse;
+import com.ntt.language_center_management.dto.response.PageResponse;
 import com.ntt.language_center_management.entity.Courseclass;
 import com.ntt.language_center_management.entity.Enrollment;
 import com.ntt.language_center_management.entity.Student;
@@ -35,6 +36,10 @@ import java.security.Principal;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.Locale;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +51,8 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
   private static final Set<EnrollmentStatus> ACTIVE_STATUSES =
       Set.of(EnrollmentStatus.PENDING, EnrollmentStatus.CONFIRMED);
+  private static final Set<String> ENROLLMENT_SORT_FIELDS =
+      Set.of("id", "enrollmentDate", "paymentDeadline", "amountDue", "enrollmentStatus", "paymentStatus");
 
   private final EnrollmentRepository enrollmentRepository;
   private final CourseClassRepository courseClassRepository;
@@ -90,6 +97,46 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         .orElseThrow(() -> new ResourceNotFoundException(
             "Không tìm thấy tài khoản học viên với email " + request.studentEmail().trim()));
     return createEnrollment(student, request.courseClassId());
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public PageResponse<EnrollmentResponse> searchStaffEnrollments(
+      String keyword, Integer courseId, Integer classId, String enrollmentStatus,
+      String paymentStatus, int page, int size, String sort, String direction) {
+    if (page < 0) throw new IllegalArgumentException("Số trang không được nhỏ hơn 0");
+    if (size < 1 || size > 100) throw new IllegalArgumentException("Kích thước trang phải từ 1 đến 100");
+    EnrollmentStatus selectedStatus = parseEnrollmentStatus(enrollmentStatus);
+    EnrollmentPaymentStatus selectedPayment = parsePaymentStatus(paymentStatus);
+    Specification<Enrollment> spec = (root, query, builder) -> builder.conjunction();
+    if (StringUtils.hasText(keyword)) {
+      String value = "%" + keyword.trim().toLowerCase(Locale.ROOT) + "%";
+      spec = spec.and((root, query, builder) -> builder.or(
+          builder.like(builder.lower(root.get("studentId").get("studentCode")), value),
+          builder.like(builder.lower(root.get("studentId").get("userId").get("fullName")), value),
+          builder.like(builder.lower(root.get("studentId").get("userId").get("email")), value),
+          builder.like(builder.lower(root.get("courseClassId").get("classCode")), value),
+          builder.like(builder.lower(root.get("courseClassId").get("className")), value)));
+    }
+    if (courseId != null) spec = spec.and((root, query, builder) ->
+        builder.equal(root.get("courseClassId").get("courseId").get("id"), courseId));
+    if (classId != null) spec = spec.and((root, query, builder) ->
+        builder.equal(root.get("courseClassId").get("id"), classId));
+    if (selectedStatus != null) spec = spec.and((root, query, builder) ->
+        builder.equal(root.get("enrollmentStatus"), selectedStatus));
+    if (selectedPayment != null) spec = spec.and((root, query, builder) ->
+        builder.equal(root.get("paymentStatus"), selectedPayment));
+    String sortField = ENROLLMENT_SORT_FIELDS.contains(sort) ? sort : "enrollmentDate";
+    Sort.Direction sortDirection = "asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
+    return PageResponse.from(enrollmentRepository.findAll(spec,
+        PageRequest.of(page, size, Sort.by(sortDirection, sortField))).map(enrollmentMapper::toResponse));
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public EnrollmentResponse getStaffEnrollment(Integer id) {
+    return enrollmentMapper.toResponse(enrollmentRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đăng ký học")));
   }
 
   @Override
@@ -402,5 +449,17 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     return courseClassRepository
         .findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp học"));
+  }
+
+  private EnrollmentStatus parseEnrollmentStatus(String value) {
+    if (!StringUtils.hasText(value)) return null;
+    try { return EnrollmentStatus.valueOf(value.trim().toUpperCase(Locale.ROOT)); }
+    catch (IllegalArgumentException exception) { throw new IllegalArgumentException("Trạng thái đăng ký không hợp lệ"); }
+  }
+
+  private EnrollmentPaymentStatus parsePaymentStatus(String value) {
+    if (!StringUtils.hasText(value)) return null;
+    try { return EnrollmentPaymentStatus.valueOf(value.trim().toUpperCase(Locale.ROOT)); }
+    catch (IllegalArgumentException exception) { throw new IllegalArgumentException("Trạng thái thanh toán không hợp lệ"); }
   }
 }

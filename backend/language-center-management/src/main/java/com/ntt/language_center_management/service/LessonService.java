@@ -14,7 +14,7 @@ public interface LessonService {
 
   LessonResponse update(Integer id, LessonUpdateRequest request, Principal principal);
 
-  LessonResponse reschedule(Integer id, LessonRescheduleRequest request, Principal principal);
+  LessonResponse reschedule(Integer id, LessonRescheduleRequest request);
 
   LessonResponse cancel(Integer id);
 }

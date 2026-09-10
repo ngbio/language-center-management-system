@@ -26,5 +26,4 @@ public record LessonResponse(
     String meetingUrl,
     @JsonFormat(pattern = "yyyy-MM-dd") LocalDate originalLessonDate,
     String rescheduleReason,
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss") LocalDateTime rescheduledAt,
-    String rescheduledBy) {}
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss") LocalDateTime rescheduledAt) {}

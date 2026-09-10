@@ -3,6 +3,8 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { SESSION_KEYS, clearSession } from "../utils/authSession";
 
 const navigation = [
+  ["/admin/profile", "A", "Hồ sơ cá nhân"],
+  ["/admin/system-logs", "!", "Nhật ký hệ thống"],
   ["/admin", "▦", "Tổng quan"],
   ["/admin/users", "◎", "Người dùng"],
   ["/admin/languages", "文", "Ngôn ngữ"],
@@ -12,6 +14,7 @@ const navigation = [
   ["/admin/classes", "◫", "Lớp học"],
   ["/admin/enrollments", "✓", "Đăng ký học"],
   ["/admin/refunds", "↩", "Hoàn tiền"],
+  ["/admin/change-password", "🔒", "Đổi mật khẩu"],
 ];
 
 export default function AdminLayout() {

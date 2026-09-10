@@ -53,9 +53,6 @@ public class Lesson implements Serializable {
     @Column(name = "lesson_date")
     @Temporal(TemporalType.DATE)
     private Date lessonDate;
-    @Size(max = 500)
-    @Column(name = "meeting_url")
-    private String meetingUrl;
     @Column(name = "original_lesson_date")
     @Temporal(TemporalType.DATE)
     private Date originalLessonDate;
@@ -65,9 +62,6 @@ public class Lesson implements Serializable {
     @Column(name = "rescheduled_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date rescheduledAt;
-    @JoinColumn(name = "rescheduled_by", referencedColumnName = "id")
-    @ManyToOne
-    private User rescheduledBy;
     @Basic(optional = false)
     @NotNull
     @Column(name = "status")
@@ -116,14 +110,6 @@ public class Lesson implements Serializable {
         this.lessonDate = lessonDate;
     }
 
-    public String getMeetingUrl() {
-        return meetingUrl;
-    }
-
-    public void setMeetingUrl(String meetingUrl) {
-        this.meetingUrl = meetingUrl;
-    }
-
     public Date getOriginalLessonDate() {
         return originalLessonDate;
     }
@@ -146,14 +132,6 @@ public class Lesson implements Serializable {
 
     public void setRescheduledAt(Date rescheduledAt) {
         this.rescheduledAt = rescheduledAt;
-    }
-
-    public User getRescheduledBy() {
-        return rescheduledBy;
-    }
-
-    public void setRescheduledBy(User rescheduledBy) {
-        this.rescheduledBy = rescheduledBy;
     }
 
     public LessonStatus getStatus() {

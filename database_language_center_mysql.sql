@@ -269,17 +269,13 @@ CREATE TABLE lesson (
     class_schedule_id   INT NOT NULL,
     topic               VARCHAR(255) NULL,
     lesson_date         DATE NOT NULL,
-    meeting_url         VARCHAR(500) NULL,
     original_lesson_date DATE NULL,
     reschedule_reason   VARCHAR(500) NULL,
     rescheduled_at      DATETIME NULL,
-    rescheduled_by      INT NULL,
     status              VARCHAR(20) NOT NULL DEFAULT 'SCHEDULED',
     PRIMARY KEY (id),
     CONSTRAINT fk_lesson_classschedule
         FOREIGN KEY (class_schedule_id) REFERENCES classschedule(id),
-    CONSTRAINT fk_lesson_rescheduled_by
-        FOREIGN KEY (rescheduled_by) REFERENCES `user`(id),
     CONSTRAINT uq_lesson_schedule_date
         UNIQUE (class_schedule_id, lesson_date),
     CONSTRAINT ck_lesson_status
@@ -404,6 +400,22 @@ CREATE INDEX ix_enrollment_student_date
     ON enrollment(student_id, enrollment_date DESC);
 CREATE INDEX ix_attendance_lesson
     ON attendance(lesson_id);
+
+CREATE TABLE system_logs (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    level VARCHAR(10) NOT NULL,
+    event_type VARCHAR(50) NOT NULL,
+    message VARCHAR(500) NOT NULL,
+    request_id VARCHAR(36),
+    actor_email VARCHAR(150),
+    http_method VARCHAR(10),
+    request_path VARCHAR(255),
+    http_status INT,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX ix_system_logs_created_at (created_at),
+    INDEX ix_system_logs_request_id (request_id),
+    INDEX ix_system_logs_level_event (level, event_type)
+);
 
 INSERT INTO role (role_code, role_name) VALUES
 ('STUDENT', 'Student'),

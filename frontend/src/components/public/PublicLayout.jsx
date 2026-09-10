@@ -111,6 +111,7 @@ export default function PublicLayout() {
                     {session.role === "TEACHER" && <Link role="menuitem" to="/giao-vien/thong-tin-ca-nhan" onClick={() => setAccountMenuOpen(false)}><span aria-hidden="true">◎</span> Thông tin cá nhân</Link>}
                     {session.role === "ADMIN" && <Link role="menuitem" to="/admin" onClick={() => setAccountMenuOpen(false)}><span aria-hidden="true">▦</span> Trang quản trị</Link>}
                     {session.role === "STUDENT" && <Link role="menuitem" to="/thong-tin-ca-nhan" onClick={() => setAccountMenuOpen(false)}><span aria-hidden="true">◎</span> Thông tin cá nhân</Link>}
+                    <Link role="menuitem" to="/doi-mat-khau" onClick={() => setAccountMenuOpen(false)}><span aria-hidden="true">🔒</span> Đổi mật khẩu</Link>
                     <a role="menuitem" href="mailto:hello@linguacenter.vn"><span aria-hidden="true">?</span> Hỗ trợ học tập</a>
                     <button className="account-logout" role="menuitem" type="button" onClick={logout}><span aria-hidden="true">↪</span> Đăng xuất</button>
                   </div>
