@@ -77,7 +77,7 @@ public class LessonServiceImpl implements LessonService {
 
   @Override
   public List<LessonResponse> generate(Integer classId, Principal principal) {
-    Courseclass courseClass = findClass(classId);
+    Courseclass courseClass = lockClass(classId);
     User editor = ensureCanEditContent(courseClass, principal);
     if ("TEACHER".equals(editor.getRoleId().getRoleCode())
         && LocalDate.now().isBefore(toLocalDate(courseClass.getStartDate()))) {
@@ -154,7 +154,7 @@ public class LessonServiceImpl implements LessonService {
 
   @Override
   public LessonResponse update(Integer id, LessonUpdateRequest request, Principal principal) {
-    Lesson lesson = findLesson(id);
+    Lesson lesson = lockLesson(id);
     ensureCanEditContent(lesson.getClassScheduleId().getCourseClassId(), principal);
     if (Set.of("COMPLETED", "CANCELLED").contains(lesson.getStatus())) {
       throw new IllegalArgumentException("Không thể sửa nội dung buổi học đã hoàn thành hoặc đã hủy");
@@ -165,7 +165,7 @@ public class LessonServiceImpl implements LessonService {
 
   @Override
   public LessonResponse reschedule(Integer id, LessonRescheduleRequest request) {
-    Lesson lesson = findLesson(id);
+    Lesson lesson = lockLesson(id);
     Courseclass courseClass = lesson.getClassScheduleId().getCourseClassId();
     if (Set.of("COMPLETED", "CANCELLED").contains(lesson.getStatus())) {
       throw new IllegalArgumentException("Không thể dời buổi học đã hoàn thành hoặc đã hủy");
@@ -210,7 +210,7 @@ public class LessonServiceImpl implements LessonService {
 
   @Override
   public LessonResponse cancel(Integer id) {
-    Lesson lesson = findLesson(id);
+    Lesson lesson = lockLesson(id);
     if (lesson.getStatus() == LessonStatus.COMPLETED) {
       throw new IllegalArgumentException("Không thể hủy buổi học đã hoàn thành");
     }
@@ -307,9 +307,21 @@ public class LessonServiceImpl implements LessonService {
         .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp học"));
   }
 
+  private Courseclass lockClass(Integer id) {
+    return courseClassRepository
+        .lockById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp học"));
+  }
+
   private Lesson findLesson(Integer id) {
     return lessonRepository
         .findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy buổi học"));
+  }
+
+  private Lesson lockLesson(Integer id) {
+    return lessonRepository
+        .lockById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy buổi học"));
   }
 

@@ -62,7 +62,7 @@ public class ClassScheduleServiceImpl implements ClassScheduleService {
 
   @Override
   public ClassScheduleResponse create(Integer classId, ClassScheduleRequest request) {
-    Courseclass courseClass = findClass(classId);
+    Courseclass courseClass = lockClass(classId);
     ensureClassAllowsScheduleChanges(courseClass);
     ensureLessonsNotGenerated(courseClass.getId());
 
@@ -75,9 +75,11 @@ public class ClassScheduleServiceImpl implements ClassScheduleService {
 
   @Override
   public ClassScheduleResponse update(Integer id, ClassScheduleRequest request) {
-    Classschedule schedule = findSchedule(id);
-    ensureClassAllowsScheduleChanges(schedule.getCourseClassId());
-    ensureLessonsNotGenerated(schedule.getCourseClassId().getId());
+    Classschedule schedule = lockSchedule(id);
+    Courseclass courseClass = lockClass(schedule.getCourseClassId().getId());
+    schedule.setCourseClassId(courseClass);
+    ensureClassAllowsScheduleChanges(courseClass);
+    ensureLessonsNotGenerated(courseClass.getId());
 
     applyRequest(schedule, request);
     validateConflicts(schedule);
@@ -86,8 +88,10 @@ public class ClassScheduleServiceImpl implements ClassScheduleService {
 
   @Override
   public void delete(Integer id) {
-    Classschedule schedule = findSchedule(id);
-    ensureClassAllowsScheduleChanges(schedule.getCourseClassId());
+    Classschedule schedule = lockSchedule(id);
+    Courseclass courseClass = lockClass(schedule.getCourseClassId().getId());
+    schedule.setCourseClassId(courseClass);
+    ensureClassAllowsScheduleChanges(courseClass);
     if (lessonRepository.existsByClassScheduleId_Id(id)) {
       throw new IllegalArgumentException("Không thể xóa lịch đã sinh buổi học");
     }
@@ -95,6 +99,9 @@ public class ClassScheduleServiceImpl implements ClassScheduleService {
   }
 
   private void applyRequest(Classschedule schedule, ClassScheduleRequest request) {
+    if (request.dayOfWeek() < 1 || request.dayOfWeek() > 7) {
+      throw new IllegalArgumentException("Ngày trong tuần phải từ 1 đến 7");
+    }
     if (!request.startTime().isBefore(request.endTime())) {
       throw new IllegalArgumentException("Giờ bắt đầu phải trước giờ kết thúc");
     }
@@ -200,9 +207,21 @@ public class ClassScheduleServiceImpl implements ClassScheduleService {
         .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp học"));
   }
 
+  private Courseclass lockClass(Integer id) {
+    return courseClassRepository
+        .lockById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp học"));
+  }
+
   private Classschedule findSchedule(Integer id) {
     return classScheduleRepository
         .findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lịch học"));
+  }
+
+  private Classschedule lockSchedule(Integer id) {
+    return classScheduleRepository
+        .lockById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lịch học"));
   }
 
@@ -216,6 +235,9 @@ public class ClassScheduleServiceImpl implements ClassScheduleService {
   }
 
   private LocalDate toLocalDate(Date value) {
+    if (value instanceof java.sql.Date sqlDate) {
+      return sqlDate.toLocalDate();
+    }
     return value.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
   }
 }

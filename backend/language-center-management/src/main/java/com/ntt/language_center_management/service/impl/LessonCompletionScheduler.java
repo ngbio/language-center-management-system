@@ -36,8 +36,9 @@ public class LessonCompletionScheduler {
     LocalDateTime now = LocalDateTime.now(applicationZone);
     List<Lesson> endedLessons =
         lessonRepository
-            .findByStatusAndLessonDateLessThanEqual(
-                LessonStatus.SCHEDULED, java.sql.Date.valueOf(now.toLocalDate()))
+            .findByStatusInAndLessonDateLessThanEqual(
+                List.of(LessonStatus.SCHEDULED, LessonStatus.IN_PROGRESS),
+                java.sql.Date.valueOf(now.toLocalDate()))
             .stream()
             .filter(lesson -> lesson.getClassScheduleId().getCourseClassId().getStatus()
                 != ClassStatus.CANCELLED)

@@ -27,27 +27,27 @@ Checklist này theo dõi Unit Test cho các class có logic trong backend hiện
 - [x] Không tìm thấy email khi login thì ném `UnauthorizedException`.
 - [x] Đổi mật khẩu hợp lệ thì encode và lưu password hash mới.
 - [x] Mật khẩu hiện tại sai thì không encode và không lưu.
-- [ ] Login thành công trả đúng UserResponse.
-- [ ] Sai mật khẩu trả Unauthorized.
-- [ ] Tài khoản INACTIVE hoặc LOCKED không được login.
-- [ ] Login Admin chỉ chấp nhận role ADMIN.
-- [ ] Login Staff chỉ chấp nhận role CONSULTANT hoặc ADMIN theo nghiệp vụ hiện tại.
-- [ ] Đăng ký Student chuẩn hóa email/username và encode password.
-- [ ] Đăng ký Student tạo đồng thời User và Student.
-- [ ] Email trùng bị từ chối trước khi save.
-- [ ] Username trùng bị từ chối trước khi save.
-- [ ] Không tìm thấy role STUDENT thì rollback bằng exception.
-- [ ] Sinh student code không trùng.
-- [ ] Đăng ký Teacher tạo status chờ kích hoạt và Teacher record.
-- [ ] Sinh teacher code không trùng.
-- [ ] Principal null/rỗng bị từ chối ở các API hồ sơ.
-- [ ] Lấy và cập nhật Student profile đúng dữ liệu.
-- [ ] Cập nhật profile trim chuỗi và chuyển chuỗi rỗng thành null.
-- [ ] Password mới trùng password cũ bị từ chối.
-- [ ] Confirm password không khớp bị từ chối.
-- [ ] Search user chuẩn hóa keyword/role/status, sort và pagination.
-- [ ] Status filter không hợp lệ bị từ chối.
-- [ ] Đổi trạng thái user không tồn tại trả ResourceNotFound.
+- [x] Login thành công trả đúng UserResponse.
+- [x] Sai mật khẩu trả Unauthorized.
+- [x] Tài khoản INACTIVE hoặc LOCKED không được login.
+- [x] Login Admin chỉ chấp nhận role ADMIN.
+- [x] Login Staff chỉ chấp nhận role CONSULTANT; ADMIN dùng cổng đăng nhập Admin riêng.
+- [x] Đăng ký Student chuẩn hóa email/username và encode password.
+- [x] Đăng ký Student tạo đồng thời User và Student.
+- [x] Email trùng bị từ chối trước khi save.
+- [x] Username trùng bị từ chối trước khi save.
+- [x] Không tìm thấy role STUDENT thì rollback bằng exception.
+- [x] Sinh student code không trùng.
+- [x] Đăng ký Teacher tạo status chờ kích hoạt và Teacher record.
+- [x] Sinh teacher code không trùng.
+- [x] Principal null/rỗng bị từ chối ở các API hồ sơ.
+- [x] Lấy và cập nhật Student profile đúng dữ liệu.
+- [x] Cập nhật profile trim chuỗi và chuyển chuỗi rỗng thành null.
+- [x] Password mới trùng password cũ bị từ chối.
+- [x] Confirm password không khớp bị từ chối.
+- [x] Search user chuẩn hóa keyword/role/status, sort và pagination.
+- [x] Status filter không hợp lệ bị từ chối.
+- [x] Đổi trạng thái user không tồn tại trả ResourceNotFound.
 
 ## 4. TeacherServiceImpl
 
@@ -57,8 +57,8 @@ Checklist này theo dõi Unit Test cho các class có logic trong backend hiện
 - [x] Principal có name rỗng bị từ chối.
 - [x] Không có hồ sơ Teacher trả ResourceNotFound.
 - [x] Cập nhật profile trim dữ liệu, chuyển blank thành null và lưu updatedAt.
-- [ ] Cập nhật experienceYears khác null giữ đúng giá trị.
-- [ ] Repository save lỗi được truyền ra và không trả response sai.
+- [x] Cập nhật experienceYears khác null giữ đúng giá trị.
+- [x] Repository save lỗi được truyền ra và không trả response sai.
 
 ## 5. LanguageServiceImpl
 
@@ -66,12 +66,12 @@ Checklist này theo dõi Unit Test cho các class có logic trong backend hiện
 - [x] Trùng language code bị từ chối.
 - [x] Không xóa Language đã có Level.
 - [x] Xóa Language chưa có Level thành công.
-- [ ] Trùng language name bị từ chối.
-- [ ] Update Language giữ đúng ID và kiểm tra duplicate loại trừ chính nó.
-- [ ] Status filter không hợp lệ bị từ chối.
-- [ ] Lấy Language không tồn tại trả ResourceNotFound.
-- [ ] Public get active không trả dữ liệu INACTIVE.
-- [ ] Change status cập nhật và map response đúng.
+- [x] Trùng language name bị từ chối.
+- [x] Update Language giữ đúng ID và kiểm tra duplicate loại trừ chính nó.
+- [x] Status filter không hợp lệ bị từ chối.
+- [x] Lấy Language không tồn tại trả ResourceNotFound.
+- [x] Public get active không trả dữ liệu INACTIVE.
+- [x] Change status cập nhật và map response đúng.
 
 ## 6. LevelServiceImpl
 
@@ -82,11 +82,11 @@ Checklist này theo dõi Unit Test cho các class có logic trong backend hiện
 - [x] Status filter không hỗ trợ bị từ chối.
 - [x] Level không tồn tại trả ResourceNotFound.
 - [x] Không xóa Level đã có Course.
-- [ ] Cùng level code nhưng khác Language được phép.
-- [ ] Update cùng Language không truy vấn lại active Language không cần thiết.
-- [ ] Đổi Language khi update phải kiểm tra Language đích ACTIVE.
-- [ ] Delete Level không có Course thành công.
-- [ ] Get active loại bỏ Level hoặc Language INACTIVE.
+- [x] Cùng level code nhưng khác Language được phép.
+- [x] Update cùng Language không truy vấn lại active Language không cần thiết.
+- [x] Đổi Language khi update phải kiểm tra Language đích ACTIVE.
+- [x] Delete Level không có Course thành công.
+- [x] Get active loại bỏ Level hoặc Language INACTIVE.
 
 ## 7. RoomServiceImpl
 
@@ -94,78 +94,80 @@ Checklist này theo dõi Unit Test cho các class có logic trong backend hiện
 - [x] Room code trùng bị từ chối.
 - [x] Không xóa Room đã có ClassSchedule.
 - [x] Room không tồn tại trả ResourceNotFound.
-- [ ] Update Room kiểm tra duplicate loại trừ chính nó.
-- [ ] Status filter không hợp lệ bị từ chối.
-- [ ] Xóa Room chưa được sử dụng thành công.
-- [ ] Get all theo ACTIVE/MAINTENANCE/INACTIVE gọi đúng repository.
+- [x] Update Room kiểm tra duplicate loại trừ chính nó.
+- [x] Status filter không hợp lệ bị từ chối.
+- [x] Xóa Room chưa được sử dụng thành công.
+- [x] Get all theo ACTIVE/MAINTENANCE/INACTIVE gọi đúng repository.
 
 ## 8. CourseServiceImpl
 
-- [ ] Search chuẩn hóa keyword, status, languageId, levelId, sort và direction.
-- [ ] Sort field/direction không hợp lệ bị từ chối hoặc dùng mặc định đúng thiết kế.
-- [ ] Get published by slug chỉ nhận ACTIVE + PUBLISHED.
-- [ ] Course/slug không tồn tại trả ResourceNotFound.
-- [ ] Tạo Course hợp lệ chuẩn hóa code, slug và text optional.
-- [ ] Course code trùng bị từ chối.
-- [ ] Slug trùng bị từ chối.
-- [ ] Update duplicate check loại trừ chính Course hiện tại.
-- [ ] Publication status PUBLISHED xử lý publishedAt đúng.
-- [ ] Status/publication status không hợp lệ bị từ chối.
-- [ ] Không xóa Course đã có Class hoặc Section theo ràng buộc hiện tại.
+- [x] Search chuẩn hóa keyword, status, languageId, levelId, sort và direction.
+- [x] Sort field/direction không hợp lệ bị từ chối hoặc dùng mặc định đúng thiết kế.
+- [x] Get published by slug chỉ nhận ACTIVE + PUBLISHED.
+- [x] Course/slug không tồn tại trả ResourceNotFound.
+- [x] Tạo Course hợp lệ chuẩn hóa code, slug và text optional.
+- [x] Course code trùng bị từ chối.
+- [x] Slug trùng bị từ chối.
+- [x] Update duplicate check loại trừ chính Course hiện tại.
+- [x] Publication status PUBLISHED xử lý publishedAt đúng.
+- [x] Status/publication status không hợp lệ bị từ chối.
+- [x] Không xóa Course đã có Class hoặc Section theo ràng buộc hiện tại.
 
 ## 9. CourseCurriculumServiceImpl và mapper
 
-- [ ] Trả danh sách section/content PUBLISHED đúng thứ tự.
-- [ ] Nội dung preview được trả khi chưa đăng nhập.
-- [ ] Nội dung không preview chỉ trả khi Student CONFIRMED + PAID.
-- [ ] Principal không phải Student không được nhận nội dung khóa.
-- [ ] Section/Course không tồn tại trả ResourceNotFound.
-- [ ] CourseCurriculumMapper map đầy đủ media URL, publication và preview.
+- [x] Trả danh sách section/content PUBLISHED đúng thứ tự.
+- [x] Nội dung preview được trả khi chưa đăng nhập.
+- [x] Nội dung không preview chỉ trả khi Student CONFIRMED + PAID.
+- [x] Principal không phải Student không được nhận nội dung khóa.
+- [x] Section/Course không tồn tại trả ResourceNotFound.
+- [x] CourseCurriculumMapper map đầy đủ media URL, content type và preview; publication được lọc ở repository.
 
 ## 10. CourseClassServiceImpl
 
-- [ ] Search public chỉ trả lớp hợp lệ và map pagination.
-- [ ] Search admin chuẩn hóa filter/sort/direction.
-- [ ] Tạo lớp kiểm tra mã trùng, ngày, sĩ số và học phí.
-- [ ] Update lớp loại trừ chính ID khi kiểm tra class code.
-- [ ] Gán Teacher ACTIVE thành công.
-- [ ] Teacher thiếu/INACTIVE/LOCKED bị từ chối.
-- [ ] Không OPEN lớp thiếu Teacher hoặc lịch.
-- [ ] OPEN lớp phát hiện xung đột nội bộ giữa các schedule.
-- [ ] OPEN lớp phát hiện trùng phòng hoặc lịch Teacher.
-- [ ] FULL chỉ phù hợp khi đủ sĩ số theo rule hiện tại.
-- [ ] Change status khóa class trước khi cập nhật.
-- [ ] Teacher chỉ lấy được classes/courses mình phụ trách.
-- [ ] Principal Teacher không hợp lệ trả Unauthorized/ResourceNotFound.
+- [x] Search public chỉ trả lớp hợp lệ và map pagination.
+- [x] Search admin chuẩn hóa filter/sort/direction.
+- [x] Tạo lớp kiểm tra mã trùng, ngày, sĩ số và học phí.
+- [x] Update lớp loại trừ chính ID khi kiểm tra class code.
+- [x] Gán Teacher ACTIVE thành công.
+- [x] Teacher thiếu/INACTIVE/LOCKED bị từ chối.
+- [x] Không OPEN lớp thiếu Teacher hoặc lịch.
+- [x] OPEN lớp phát hiện xung đột nội bộ giữa các schedule.
+- [x] OPEN lớp phát hiện trùng phòng hoặc lịch Teacher.
+- [x] FULL chỉ phù hợp khi đủ sĩ số theo rule hiện tại.
+- [x] Change status khóa class trước khi cập nhật.
+- [x] Teacher chỉ lấy được classes/courses mình phụ trách.
+- [x] Principal Teacher không hợp lệ trả Unauthorized/ResourceNotFound.
 
 ## 11. ClassScheduleServiceImpl
 
-- [ ] Tạo schedule IN_PERSON bắt buộc Room ACTIVE và không có meeting URL.
-- [ ] Tạo schedule ONLINE bắt buộc meeting URL và không gắn Room.
-- [ ] Start time phải nhỏ hơn end time.
-- [ ] Day of week phải nằm trong phạm vi hợp lệ.
-- [ ] Phát hiện trùng giờ trong cùng lớp.
-- [ ] Phát hiện trùng Room và Teacher từ repository.
-- [ ] Update conflict loại trừ chính schedule hiện tại.
-- [ ] Không sửa lịch của lớp CANCELLED/COMPLETED theo rule hiện tại.
-- [ ] Không sửa/xóa lịch sau khi đã sinh Lesson.
-- [ ] Schedule/Class/Room không tồn tại trả exception phù hợp.
+- [x] Tạo schedule IN_PERSON bắt buộc Room ACTIVE và không có meeting URL.
+- [x] Tạo schedule ONLINE bắt buộc meeting URL và không gắn Room.
+- [x] Start time phải nhỏ hơn end time.
+- [x] Day of week phải nằm trong phạm vi hợp lệ.
+- [x] Phát hiện trùng giờ trong cùng lớp.
+- [x] Phát hiện trùng Room và Teacher từ repository.
+- [x] Update conflict loại trừ chính schedule hiện tại.
+- [x] Không sửa lịch của lớp CANCELLED/COMPLETED theo rule hiện tại.
+- [x] Không sửa/xóa lịch sau khi đã sinh Lesson.
+- [x] Schedule/Class/Room không tồn tại trả exception phù hợp.
+- [x] Create/update/delete khóa pessimistic Class/Schedule để tuần tự hóa request đồng thời.
 
 ## 12. LessonServiceImpl và scheduler
 
-- [ ] Generate lesson đúng các thứ cố định và khoảng ngày lớp.
-- [ ] Không generate trước ngày khai giảng.
-- [ ] Không tạo lesson trùng schedule/date.
-- [ ] Không vượt totalSessions.
-- [ ] Teacher chỉ thao tác lớp mình phụ trách.
-- [ ] Update topic/meeting URL trim đúng.
-- [ ] Reschedule chỉ trong khoảng ngày lớp và không trùng tài nguyên.
-- [ ] Không reschedule/cancel lesson đã có attendance.
-- [ ] Không thay đổi lesson của class CANCELLED/COMPLETED.
-- [ ] Scheduler chỉ hoàn thành lesson SCHEDULED/IN_PROGRESS đã qua end time.
-- [ ] Scheduler dùng timezone được cấu hình.
-- [ ] Scheduler không save khi chưa có lesson kết thúc.
-- [ ] LessonMapper map ngày, giờ, room và meeting URL đúng.
+- [x] Generate lesson đúng các thứ cố định và khoảng ngày lớp.
+- [x] Không generate trước ngày khai giảng.
+- [x] Không tạo lesson trùng schedule/date.
+- [x] Không vượt totalSessions.
+- [x] Teacher chỉ thao tác lớp mình phụ trách.
+- [x] Update topic trim đúng; meeting URL lấy từ ClassSchedule.
+- [x] Reschedule chỉ trong khoảng ngày lớp và không trùng tài nguyên.
+- [x] Không reschedule/cancel lesson đã có attendance.
+- [x] Không thay đổi lesson của class CANCELLED/COMPLETED.
+- [x] Scheduler chỉ hoàn thành lesson SCHEDULED/IN_PROGRESS đã qua end time.
+- [x] Scheduler dùng timezone được cấu hình.
+- [x] Scheduler không save khi chưa có lesson kết thúc.
+- [x] LessonMapper map ngày, giờ, room và meeting URL đúng.
+- [x] Generate khóa pessimistic Class; update/reschedule/cancel khóa pessimistic Lesson.
 
 ## 13. EnrollmentServiceImpl và expiration
 

@@ -112,6 +112,36 @@ class TeacherServiceImplTest {
     verify(teacherRepository).save(teacher);
   }
 
+  @Test
+  void shouldKeepProvidedExperienceYearsWhenUpdatingProfile() {
+    Teacher teacher = teacher();
+    when(teacherRepository.findByUserId_EmailIgnoreCase("teacher@example.com"))
+        .thenReturn(Optional.of(teacher));
+    when(teacherRepository.save(teacher)).thenReturn(teacher);
+
+    TeacherProfileResponse response = teacherService.updateProfile(
+        () -> "teacher@example.com",
+        new TeacherProfileUpdateRequest("Teacher", null, null, null, null, 8));
+
+    assertThat(teacher.getExperienceYears()).isEqualTo(8);
+    assertThat(response.experienceYears()).isEqualTo(8);
+  }
+
+  @Test
+  void shouldPropagateRepositoryFailureWhenUpdatingProfile() {
+    Teacher teacher = teacher();
+    when(teacherRepository.findByUserId_EmailIgnoreCase("teacher@example.com"))
+        .thenReturn(Optional.of(teacher));
+    when(teacherRepository.save(teacher))
+        .thenThrow(new IllegalStateException("database unavailable"));
+
+    assertThatThrownBy(() -> teacherService.updateProfile(
+        () -> "teacher@example.com",
+        new TeacherProfileUpdateRequest("Teacher", null, null, null, null, 5)))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("database unavailable");
+  }
+
   private Teacher teacher() {
     User user =
         new User(

@@ -153,6 +153,12 @@ public class CourseServiceImpl implements CourseService {
 
   @Override
   public CourseResponse save(CourseRequest request) {
+    if (request.getStatus() == null) {
+      throw new IllegalArgumentException("Trạng thái khóa học không được để trống");
+    }
+    if (request.getPublicationStatus() == null) {
+      throw new IllegalArgumentException("Trạng thái xuất bản không được để trống");
+    }
     String code = request.getCourseCode().trim().toUpperCase();
     String slug = request.getSlug().trim().toLowerCase();
     if (request.getId() == null
@@ -197,7 +203,7 @@ public class CourseServiceImpl implements CourseService {
     course.setPublicationStatus(publicationStatus);
     if (publicationStatus == PublicationStatus.PUBLISHED && course.getPublishedAt() == null) {
       course.setPublishedAt(now);
-    } else if ("DRAFT".equals(publicationStatus)) {
+    } else if (publicationStatus == PublicationStatus.DRAFT) {
       course.setPublishedAt(null);
     }
     course.setIsFeatured(request.isFeatured());
@@ -210,6 +216,8 @@ public class CourseServiceImpl implements CourseService {
     Course course = find(id);
     if (course.getCourseclassList() != null && !course.getCourseclassList().isEmpty())
       throw new IllegalArgumentException("Không thể xóa khóa học đã có lớp");
+    if (course.getCourseSectionList() != null && !course.getCourseSectionList().isEmpty())
+      throw new IllegalArgumentException("Không thể xóa khóa học đã có nội dung giáo trình");
     courseRepository.delete(course);
   }
 

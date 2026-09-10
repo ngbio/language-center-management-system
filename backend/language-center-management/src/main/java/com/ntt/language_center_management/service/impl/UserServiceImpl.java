@@ -157,14 +157,18 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public UserResponse addUser(UserRegisterRequest request) {
-    if (userRepository.existsByEmailIgnoreCase(request.email())) {
+    String normalizedEmail = request.email().trim().toLowerCase(Locale.ROOT);
+    String normalizedUsername = request.username().trim();
+    if (userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
       throw new DuplicateResourceException("Email này đã có người đăng ký!");
     }
-    if (userRepository.existsByUsernameIgnoreCase(request.username())) {
+    if (userRepository.existsByUsernameIgnoreCase(normalizedUsername)) {
       throw new DuplicateResourceException("Tên đăng nhập này đã tồn tại!");
     }
 
     User user = userMapper.toEntity(request);
+    user.setEmail(normalizedEmail);
+    user.setUsername(normalizedUsername);
     user.setPasswordHash(passwordEncoder.encode(request.password()));
 
     Date now = new Date();
@@ -201,17 +205,19 @@ public class UserServiceImpl implements UserService {
   }
 
   private UserResponse createTeacher(TeacherRegisterRequest request, String initialStatus) {
-    if (userRepository.existsByEmailIgnoreCase(request.email())) {
+    String normalizedEmail = request.email().trim().toLowerCase(Locale.ROOT);
+    String normalizedUsername = request.username().trim();
+    if (userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
       throw new DuplicateResourceException("Email này đã có người đăng ký!");
     }
-    if (userRepository.existsByUsernameIgnoreCase(request.username())) {
+    if (userRepository.existsByUsernameIgnoreCase(normalizedUsername)) {
       throw new DuplicateResourceException("Tên đăng nhập này đã tồn tại!");
     }
 
     User user = new User();
-    user.setUsername(request.username());
+    user.setUsername(normalizedUsername);
     user.setFullName(request.fullName());
-    user.setEmail(request.email());
+    user.setEmail(normalizedEmail);
     user.setPhoneNumber(request.phoneNumber());
     user.setAddress(request.address());
     user.setPasswordHash(passwordEncoder.encode(request.password()));
