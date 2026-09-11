@@ -70,6 +70,7 @@ Cập nhật: **06/09/2026**
 | ✅ | GET | `/api/students/me/courses` | Khóa học đã `CONFIRMED + PAID` |
 | ✅ | GET | `/api/students/me/classes` | Lớp học đã `CONFIRMED + PAID` và chưa bị hủy |
 | ✅ | GET | `/api/students/me/schedules` | Thời khóa biểu của các lớp đã kích hoạt |
+| ✅ | GET | `/api/students/me/lessons` | Lấy toàn bộ buổi học được phép xem trong một request, tránh gọi riêng từng lớp |
 | ✅ | POST | `/api/enrollments/{id}/cancel-request` | Hủy enrollment của chính Student |
 | ✅ | GET | `/api/classes/{classId}/lessons` | Student phải có enrollment `CONFIRMED + PAID` đúng lớp |
 | ✅ | GET | `/api/students/me/profile` | Lấy đầy đủ tài khoản và hồ sơ Student hiện tại |

@@ -63,7 +63,7 @@ Tài liệu này đối chiếu controller backend với các lời gọi API tr
 | ✅ | GET | `/api/students/me/enrollments` | Đã dùng tại trang riêng “Lịch sử đăng ký & thanh toán” (`/lich-su-dang-ky`) |
 | ✅ | GET | `/api/students/me/courses` | Đã dùng ở nhóm “Khóa học đã mua” |
 | ✅ | GET | `/api/students/me/classes` | Đã dùng ở tab “Lớp học” |
-| ✅ | GET | `/api/students/me/schedules` | Đã dùng ở tab “Thời khóa biểu” |
+| ✅ | GET | `/api/students/me/schedules` | Giữ tương thích và dùng khi chỉ tải thời khóa biểu; màn lớp hiện đọc `schedules` đã gộp |
 | ✅ | GET | `/api/students/me/profile` | Đã dùng tại trang “Thông tin cá nhân” của Student |
 | ✅ | PUT | `/api/students/me/profile` | Đã dùng để cập nhật hồ sơ Student |
 | ✅ | POST | `/api/payments` | Đã dùng tại trang lịch sử; enrollment giữ chỗ ngay và có hạn thanh toán 48 giờ |
@@ -77,7 +77,8 @@ Tài liệu này đối chiếu controller backend với các lời gọi API tr
 | ✅ | GET | `/api/enrollments/{id}/invoice` | Modal chi tiết đăng ký hiển thị tổng học phí, đã trả, đã hoàn và thực thu |
 | ✅ | GET | `/api/enrollments/{id}/invoice.pdf?download={boolean}` | Hai nút “Xem hóa đơn” và “Tải hóa đơn” đã tích hợp trong lịch sử đăng ký và thanh toán của Student |
 | ✅ | POST | `/api/enrollments/{id}/cancel-request` | Đã có nút yêu cầu hủy tại trang lịch sử riêng |
-| ✅ | GET | `/api/classes/{classId}/lessons` | Đã dùng tại trang điểm danh để Student xem từng buổi học |
+| ✅ | GET | `/api/classes/{classId}/lessons` | Teacher/Admin vẫn dùng khi quản lý một lớp cụ thể |
+| ✅ | GET | `/api/students/me/lessons` | Student tải toàn bộ lesson được phép xem bằng một request, thay cho gọi theo từng lớp |
 | ✅ | GET | `/api/students/me/attendance` | Đã có trang kết quả và tỷ lệ chuyên cần theo lớp |
 
 ## 6. Teacher
