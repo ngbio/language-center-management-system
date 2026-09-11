@@ -45,8 +45,11 @@ class JwtUtilsTest {
     assertThatThrownBy(() -> jwtUtils.validateTokenAndGetUsername("not-a-jwt"))
         .isInstanceOf(IllegalArgumentException.class);
     String valid = jwtUtils.generateToken("student@example.com");
-    String tampered = valid.substring(0, valid.length() - 1)
-        + (valid.endsWith("a") ? "b" : "a");
+    String[] tokenParts = valid.split("\\.");
+    String signature = tokenParts[2];
+    String tamperedSignature = (signature.charAt(0) == 'a' ? "b" : "a")
+        + signature.substring(1);
+    String tampered = tokenParts[0] + "." + tokenParts[1] + "." + tamperedSignature;
     assertThatThrownBy(() -> jwtUtils.validateTokenAndGetUsername(tampered))
         .isInstanceOf(IllegalArgumentException.class);
   }
