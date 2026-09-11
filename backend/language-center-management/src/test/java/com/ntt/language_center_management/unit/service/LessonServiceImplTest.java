@@ -202,7 +202,8 @@ class LessonServiceImplTest {
     Courseclass active = courseClass(ClassStatus.OPEN, 2);
     Lesson scheduled = endedLesson(active, LessonStatus.SCHEDULED);
     Lesson inProgress = endedLesson(active, LessonStatus.IN_PROGRESS);
-    Lesson future = lesson(schedule(active, 2), LocalDate.now());
+    ZoneId applicationZone = ZoneId.of("Asia/Ho_Chi_Minh");
+    Lesson future = lesson(schedule(active, 2), LocalDate.now(applicationZone).plusDays(1));
     future.getClassScheduleId().setEndTime(java.sql.Time.valueOf("23:59:59"));
     when(repository.findByStatusInAndLessonDateLessThanEqual(any(), any()))
         .thenReturn(List.of(scheduled, inProgress, future));
