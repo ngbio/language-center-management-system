@@ -12,6 +12,7 @@ import com.ntt.language_center_management.exception.UnauthorizedException;
 import com.ntt.language_center_management.mapper.TeacherMapper;
 import com.ntt.language_center_management.repository.TeacherRepository;
 import com.ntt.language_center_management.service.TeacherService;
+import com.ntt.language_center_management.security.CurrentUserResolver;
 import java.security.Principal;
 import java.util.Date;
 import java.util.List;
@@ -19,14 +20,21 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import static com.ntt.language_center_management.util.TextUtils.trimToNull;
+
 @Service
 public class TeacherServiceImpl implements TeacherService {
   private final TeacherRepository teacherRepository;
   private final TeacherMapper teacherMapper;
+  private final CurrentUserResolver currentUserResolver;
 
-  public TeacherServiceImpl(TeacherRepository teacherRepository, TeacherMapper teacherMapper) {
+  public TeacherServiceImpl(
+      TeacherRepository teacherRepository,
+      TeacherMapper teacherMapper,
+      CurrentUserResolver currentUserResolver) {
     this.teacherRepository = teacherRepository;
     this.teacherMapper = teacherMapper;
+    this.currentUserResolver = currentUserResolver;
   }
 
   @Override
@@ -60,11 +68,7 @@ public class TeacherServiceImpl implements TeacherService {
   }
 
   private Teacher findCurrentTeacher(Principal principal) {
-    if (principal == null || !StringUtils.hasText(principal.getName())) {
-      throw new UnauthorizedException("Không thể xác định giảng viên hiện tại");
-    }
-    return teacherRepository.findByUserId_EmailIgnoreCase(principal.getName())
-        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hồ sơ giảng viên"));
+    return currentUserResolver.requireTeacher(principal);
   }
 
   private TeacherProfileResponse toProfile(Teacher teacher) {
@@ -76,7 +80,4 @@ public class TeacherServiceImpl implements TeacherService {
         user.getStatus().name(), user.getCreatedAt(), user.getUpdatedAt());
   }
 
-  private String trimToNull(String value) {
-    return StringUtils.hasText(value) ? value.trim() : null;
-  }
 }

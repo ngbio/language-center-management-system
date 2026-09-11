@@ -18,33 +18,37 @@ import com.ntt.language_center_management.exception.DuplicateResourceException;
 import com.ntt.language_center_management.exception.ResourceNotFoundException;
 import com.ntt.language_center_management.mapper.CourseClassMapper;
 import com.ntt.language_center_management.mapper.CourseMapper;
+import com.ntt.language_center_management.mapper.ClassScheduleMapper;
 import com.ntt.language_center_management.repository.ClassScheduleRepository;
 import com.ntt.language_center_management.repository.CourseClassRepository;
 import com.ntt.language_center_management.repository.CourseRepository;
 import com.ntt.language_center_management.repository.EnrollmentRepository;
 import com.ntt.language_center_management.repository.TeacherRepository;
 import com.ntt.language_center_management.service.CourseClassService;
+import com.ntt.language_center_management.util.ApplicationDateTimeUtils;
+import com.ntt.language_center_management.security.CurrentUserResolver;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+
+import static com.ntt.language_center_management.policy.EnrollmentPolicy.CAPACITY_RESERVED_STATUSES;
 
 @Service
 @Transactional
 public class CourseClassServiceImpl implements CourseClassService {
 
-  private static final Set<EnrollmentStatus> ACTIVE_ENROLLMENTS =
-      Set.of(EnrollmentStatus.PENDING, EnrollmentStatus.CONFIRMED);
   private static final Set<String> SORT_FIELDS =
       Set.of("classCode", "className", "startDate", "endDate", "appliedTuitionFee", "createdAt");
   private static final Map<ClassStatus, Set<ClassStatus>> TRANSITIONS =
@@ -64,6 +68,9 @@ public class CourseClassServiceImpl implements CourseClassService {
   private final ClassScheduleRepository classScheduleRepository;
   private final CourseClassMapper courseClassMapper;
   private final CourseMapper courseMapper;
+  private final ClassScheduleMapper classScheduleMapper;
+  private final ZoneId applicationZone;
+  private final CurrentUserResolver currentUserResolver;
 
   public CourseClassServiceImpl(
       CourseClassRepository courseClassRepository,
@@ -72,7 +79,10 @@ public class CourseClassServiceImpl implements CourseClassService {
       EnrollmentRepository enrollmentRepository,
       ClassScheduleRepository classScheduleRepository,
       CourseClassMapper courseClassMapper,
-      CourseMapper courseMapper) {
+      CourseMapper courseMapper,
+      ClassScheduleMapper classScheduleMapper,
+      @Value("${app.time-zone:Asia/Ho_Chi_Minh}") String applicationTimeZone,
+      CurrentUserResolver currentUserResolver) {
     this.courseClassRepository = courseClassRepository;
     this.courseRepository = courseRepository;
     this.teacherRepository = teacherRepository;
@@ -80,6 +90,9 @@ public class CourseClassServiceImpl implements CourseClassService {
     this.classScheduleRepository = classScheduleRepository;
     this.courseClassMapper = courseClassMapper;
     this.courseMapper = courseMapper;
+    this.classScheduleMapper = classScheduleMapper;
+    this.applicationZone = ZoneId.of(applicationTimeZone);
+    this.currentUserResolver = currentUserResolver;
   }
 
   @Override
@@ -128,9 +141,8 @@ public class CourseClassServiceImpl implements CourseClassService {
 
     var result =
         courseClassRepository
-            .findAll(spec, PageRequest.of(safePage, safeSize, Sort.by(sortDirection, sortField)))
-            .map(this::toResponse);
-    return PageResponse.from(result);
+            .findAll(spec, PageRequest.of(safePage, safeSize, Sort.by(sortDirection, sortField)));
+    return pageResponse(result, false);
   }
 
   @Override
@@ -182,9 +194,8 @@ public class CourseClassServiceImpl implements CourseClassService {
 
     var result =
         courseClassRepository
-            .findAll(spec, PageRequest.of(safePage, safeSize, Sort.by(sortDirection, sortField)))
-            .map(this::toResponse);
-    return PageResponse.from(result);
+            .findAll(spec, PageRequest.of(safePage, safeSize, Sort.by(sortDirection, sortField)));
+    return pageResponse(result, true);
   }
 
   @Override
@@ -196,13 +207,13 @@ public class CourseClassServiceImpl implements CourseClassService {
         || value.getCourseId().getPublicationStatus() != PublicationStatus.PUBLISHED) {
       throw new ResourceNotFoundException("Không tìm thấy lớp học đang mở");
     }
-    return toResponse(value);
+    return toResponse(value, false);
   }
 
   @Override
   @Transactional(readOnly = true)
   public CourseClassResponse getAdminById(Integer id) {
-    return toResponse(find(id));
+    return toResponse(find(id), true);
   }
 
   @Override
@@ -285,30 +296,21 @@ public class CourseClassServiceImpl implements CourseClassService {
   @Transactional(readOnly = true)
   public List<CourseClassResponse> getTeacherClasses(Principal principal) {
     Teacher teacher = findTeacherByPrincipal(principal);
-    return courseClassRepository.findByTeacherId_IdOrderByStartDateDesc(teacher.getId()).stream()
-        .map(this::toResponse)
-        .toList();
+    return toResponses(
+        courseClassRepository.findByTeacherId_IdOrderByStartDateDesc(teacher.getId()), true);
   }
 
   @Override
   @Transactional(readOnly = true)
   public List<CourseResponse> getTeacherCourses(Principal principal) {
     Teacher teacher = findTeacherByPrincipal(principal);
-    Set<Integer> courseIds = new HashSet<>();
-    return courseClassRepository.findByTeacherId_IdOrderByStartDateDesc(teacher.getId()).stream()
-        .map(Courseclass::getCourseId)
-        .filter(course -> courseIds.add(course.getId()))
+    return courseClassRepository.findDistinctCoursesByTeacherId(teacher.getId()).stream()
         .map(courseMapper::toResponse)
         .toList();
   }
 
   private Teacher findTeacherByPrincipal(Principal principal) {
-    if (principal == null || !StringUtils.hasText(principal.getName())) {
-      throw new ResourceNotFoundException("Không thể xác định giáo viên hiện tại");
-    }
-    return teacherRepository
-        .findByUserId_EmailIgnoreCase(principal.getName())
-        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hồ sơ giáo viên"));
+    return currentUserResolver.requireTeacher(principal);
   }
 
   private void applyRequest(Courseclass value, CourseClassRequest request) {
@@ -359,7 +361,7 @@ public class CourseClassServiceImpl implements CourseClassService {
       throw new IllegalArgumentException("Phải phân công giảng viên trước khi mở lớp");
     }
     ensureTeacherActive(value.getTeacherId());
-    if (toLocalDate(value.getStartDate()).isBefore(LocalDate.now())) {
+    if (toLocalDate(value.getStartDate()).isBefore(LocalDate.now(applicationZone))) {
       throw new IllegalArgumentException("Không thể mở lớp đã qua ngày bắt đầu");
     }
     validateSchedulesAndConflicts(value);
@@ -445,16 +447,74 @@ public class CourseClassServiceImpl implements CourseClassService {
       return 0;
     }
     return enrollmentRepository.countByCourseClassId_IdAndEnrollmentStatusIn(
-        id, ACTIVE_ENROLLMENTS);
+        id, CAPACITY_RESERVED_STATUSES);
   }
 
   private CourseClassResponse toResponse(Courseclass value) {
     return courseClassMapper.toResponse(value, countActiveEnrollments(value.getId()));
   }
 
+  private CourseClassResponse toResponse(Courseclass value, boolean includeMeetingUrl) {
+    List<Classschedule> schedules = value.getId() == null
+        ? List.of()
+        : classScheduleRepository.findByCourseClassId_IdOrderByDayOfWeekAscStartTimeAsc(value.getId());
+    return courseClassMapper.toResponse(
+        value,
+        countActiveEnrollments(value.getId()),
+        schedules.stream()
+            .map(includeMeetingUrl
+                ? classScheduleMapper::toResponse
+                : classScheduleMapper::toPublicResponse)
+            .toList());
+  }
+
+  private PageResponse<CourseClassResponse> pageResponse(
+      org.springframework.data.domain.Page<Courseclass> page,
+      boolean includeMeetingUrl) {
+    return new PageResponse<>(
+        toResponses(page.getContent(), includeMeetingUrl),
+        page.getNumber(),
+        page.getSize(),
+        page.getTotalElements(),
+        page.getTotalPages(),
+        page.isFirst(),
+        page.isLast());
+  }
+
+  private List<CourseClassResponse> toResponses(
+      List<Courseclass> values,
+      boolean includeMeetingUrl) {
+    if (values.isEmpty()) {
+      return List.of();
+    }
+    List<Integer> classIds = values.stream()
+        .map(Courseclass::getId)
+        .filter(java.util.Objects::nonNull)
+        .toList();
+    Map<Integer, Long> enrollmentCounts = enrollmentRepository
+        .countByCourseClassIdsAndEnrollmentStatusIn(classIds, CAPACITY_RESERVED_STATUSES)
+        .stream()
+        .collect(Collectors.toMap(
+            count -> count.getCourseClassId(),
+            count -> count.getEnrollmentCount()));
+    Map<Integer, List<Classschedule>> schedulesByClass = classScheduleRepository
+        .findByCourseClassId_IdInOrderByCourseClassId_IdAscDayOfWeekAscStartTimeAsc(classIds)
+        .stream()
+        .collect(Collectors.groupingBy(schedule -> schedule.getCourseClassId().getId()));
+
+    return values.stream()
+        .map(value -> courseClassMapper.toResponse(
+            value,
+            enrollmentCounts.getOrDefault(value.getId(), 0L),
+            schedulesByClass.getOrDefault(value.getId(), List.of()).stream()
+                .map(includeMeetingUrl
+                    ? classScheduleMapper::toResponse
+                    : classScheduleMapper::toPublicResponse)
+                .toList()))
+        .toList();
+  }
+
   private LocalDate toLocalDate(Date date) {
-    return java.time.Instant.ofEpochMilli(date.getTime())
-        .atZone(ZoneId.systemDefault())
-        .toLocalDate();
+    return ApplicationDateTimeUtils.toLocalDate(date, applicationZone);
   }
 }

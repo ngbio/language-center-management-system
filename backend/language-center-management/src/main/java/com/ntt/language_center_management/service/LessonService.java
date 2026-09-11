@@ -12,6 +12,8 @@ public interface LessonService {
 
   List<LessonResponse> getByClassId(Integer classId, Principal principal);
 
+  List<LessonResponse> getMyLessons(Principal principal);
+
   LessonResponse update(Integer id, LessonUpdateRequest request, Principal principal);
 
   LessonResponse reschedule(Integer id, LessonRescheduleRequest request);

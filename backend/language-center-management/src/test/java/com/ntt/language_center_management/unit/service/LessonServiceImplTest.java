@@ -13,6 +13,7 @@ import com.ntt.language_center_management.exception.*;
 import com.ntt.language_center_management.mapper.LessonMapper;
 import com.ntt.language_center_management.repository.*;
 import com.ntt.language_center_management.service.impl.*;
+import com.ntt.language_center_management.security.CurrentUserResolver;
 import java.time.*;
 import java.util.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,14 +28,17 @@ class LessonServiceImplTest {
   private UserRepository users;
   private LessonMapper mapper;
   private LessonServiceImpl service;
+  private CurrentUserResolver currentUserResolver;
 
   @BeforeEach
   void setUp() {
     lessons = mock(LessonRepository.class); schedules = mock(ClassScheduleRepository.class);
     classes = mock(CourseClassRepository.class); attendance = mock(AttendanceRepository.class);
     users = mock(UserRepository.class); mapper = mock(LessonMapper.class);
+    StudentRepository students = mock(StudentRepository.class);
+    currentUserResolver = new CurrentUserResolver(users, students, mock(TeacherRepository.class));
     service = new LessonServiceImpl(lessons, schedules, classes, attendance,
-        mock(EnrollmentRepository.class), mock(StudentRepository.class), users, mapper,
+        mock(EnrollmentRepository.class), students, currentUserResolver, mapper,
         "Asia/Ho_Chi_Minh");
   }
 
@@ -90,6 +94,27 @@ class LessonServiceImplTest {
 
     assertThat(service.generate(1, () -> "admin@example.com")).hasSize(1);
     verify(lessons, never()).saveAll(any());
+  }
+
+  @Test
+  void shouldReturnAllAccessibleStudentLessonsInOneQuery() {
+    User student = user(7, "STUDENT");
+    Lesson lesson = lesson(schedule(courseClass(ClassStatus.OPEN, 2), 2), LocalDate.now());
+    LessonResponse response = mock(LessonResponse.class);
+    when(users.findByEmailIgnoreCase("student@example.com")).thenReturn(Optional.of(student));
+    when(lessons.findAccessibleLessonsByStudentEmail("student@example.com"))
+        .thenReturn(List.of(lesson));
+    when(mapper.toResponse(lesson)).thenReturn(response);
+
+    assertThat(service.getMyLessons(() -> "student@example.com")).containsExactly(response);
+    verify(lessons).findAccessibleLessonsByStudentEmail("student@example.com");
+  }
+
+  @Test
+  void shouldRejectMyLessonsWhenPrincipalIsMissing() {
+    assertThatThrownBy(() -> service.getMyLessons(null))
+        .isInstanceOf(ForbiddenException.class);
+    verify(lessons, never()).findAccessibleLessonsByStudentEmail(anyString());
   }
 
   @Test

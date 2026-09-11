@@ -18,12 +18,14 @@ import com.ntt.language_center_management.repository.CourseClassRepository;
 import com.ntt.language_center_management.repository.LessonRepository;
 import com.ntt.language_center_management.repository.RoomRepository;
 import com.ntt.language_center_management.service.ClassScheduleService;
+import com.ntt.language_center_management.util.ApplicationDateTimeUtils;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
@@ -35,18 +37,21 @@ public class ClassScheduleServiceImpl implements ClassScheduleService {
   private final LessonRepository lessonRepository;
   private final RoomRepository roomRepository;
   private final ClassScheduleMapper classScheduleMapper;
+  private final ZoneId applicationZone;
 
   public ClassScheduleServiceImpl(
       ClassScheduleRepository classScheduleRepository,
       CourseClassRepository courseClassRepository,
       LessonRepository lessonRepository,
       RoomRepository roomRepository,
-      ClassScheduleMapper classScheduleMapper) {
+      ClassScheduleMapper classScheduleMapper,
+      @Value("${app.time-zone:Asia/Ho_Chi_Minh}") String applicationTimeZone) {
     this.classScheduleRepository = classScheduleRepository;
     this.courseClassRepository = courseClassRepository;
     this.lessonRepository = lessonRepository;
     this.roomRepository = roomRepository;
     this.classScheduleMapper = classScheduleMapper;
+    this.applicationZone = ZoneId.of(applicationTimeZone);
   }
 
   @Override
@@ -226,18 +231,14 @@ public class ClassScheduleServiceImpl implements ClassScheduleService {
   }
 
   private Date toDate(LocalTime value) {
-    return Date.from(
-        LocalDate.of(1970, 1, 1).atTime(value).atZone(ZoneId.systemDefault()).toInstant());
+    return java.sql.Time.valueOf(value);
   }
 
   private Date toDate(LocalDate value) {
-    return Date.from(value.atStartOfDay(ZoneId.systemDefault()).toInstant());
+    return java.sql.Date.valueOf(value);
   }
 
   private LocalDate toLocalDate(Date value) {
-    if (value instanceof java.sql.Date sqlDate) {
-      return sqlDate.toLocalDate();
-    }
-    return value.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+    return ApplicationDateTimeUtils.toLocalDate(value, applicationZone);
   }
 }

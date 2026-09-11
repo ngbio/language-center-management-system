@@ -2,6 +2,7 @@ package com.ntt.language_center_management.repository;
 
 import com.ntt.language_center_management.entity.Classschedule;
 import java.util.Date;
+import java.util.Collection;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -20,6 +21,9 @@ public interface ClassScheduleRepository extends JpaRepository<Classschedule, In
 
   List<Classschedule> findByCourseClassId_IdOrderByDayOfWeekAscStartTimeAsc(
       Integer courseClassId);
+
+  List<Classschedule> findByCourseClassId_IdInOrderByCourseClassId_IdAscDayOfWeekAscStartTimeAsc(
+      Collection<Integer> courseClassIds);
 
   @Query(
       """

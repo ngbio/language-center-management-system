@@ -26,6 +26,10 @@ import com.ntt.language_center_management.exception.PaymentGatewayException;
 import com.ntt.language_center_management.repository.EnrollmentRepository;
 import com.ntt.language_center_management.repository.PaymentRepository;
 import com.ntt.language_center_management.repository.StudentRepository;
+import com.ntt.language_center_management.repository.TeacherRepository;
+import com.ntt.language_center_management.repository.UserRepository;
+import com.ntt.language_center_management.security.CurrentUserResolver;
+import com.ntt.language_center_management.transaction.TransactionExecutor;
 import com.ntt.language_center_management.service.EnrollmentExpirationService;
 import com.ntt.language_center_management.service.impl.PaymentServiceImpl;
 import java.math.BigDecimal;
@@ -54,6 +58,8 @@ class PaymentServiceImplTest {
   private EnrollmentRepository enrollments;
   private StudentRepository students;
   private EnrollmentExpirationService expiration;
+  private CurrentUserResolver currentUserResolver;
+  private TransactionExecutor transactionExecutor;
   private ObjectMapper objectMapper;
   private PaymentServiceImpl service;
   private Student student;
@@ -66,7 +72,11 @@ class PaymentServiceImplTest {
     students = mock(StudentRepository.class);
     expiration = mock(EnrollmentExpirationService.class);
     objectMapper = mock(ObjectMapper.class);
-    service = new PaymentServiceImpl(payments, enrollments, students, objectMapper, expiration);
+    currentUserResolver = new CurrentUserResolver(
+        mock(UserRepository.class), students, mock(TeacherRepository.class));
+    transactionExecutor = new TransactionExecutor();
+    service = new PaymentServiceImpl(
+        payments, enrollments, currentUserResolver, objectMapper, expiration, transactionExecutor);
     student = new Student(7);
     enrollment = enrollment(15, student, "3200000");
     when(students.findByUserId_EmailIgnoreCase("student@example.com")).thenReturn(Optional.of(student));
@@ -279,7 +289,8 @@ class PaymentServiceImplTest {
     ObjectMapper json = new ObjectMapper();
     RestClient.Builder builder = RestClient.builder();
     MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-    service = new PaymentServiceImpl(payments, enrollments, students, json, expiration, builder.build());
+    service = new PaymentServiceImpl(payments, enrollments, currentUserResolver, json, expiration,
+        transactionExecutor, builder.build());
     configureMomo();
     when(payments.save(any(Payment.class))).thenAnswer(invocation -> {
       Payment value = invocation.getArgument(0);
@@ -320,7 +331,8 @@ class PaymentServiceImplTest {
     ObjectMapper json = new ObjectMapper();
     RestClient.Builder builder = RestClient.builder();
     MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-    service = new PaymentServiceImpl(payments, enrollments, students, json, expiration, builder.build());
+    service = new PaymentServiceImpl(payments, enrollments, currentUserResolver, json, expiration,
+        transactionExecutor, builder.build());
     configureZaloPay();
     when(payments.save(any(Payment.class))).thenAnswer(invocation -> {
       Payment value = invocation.getArgument(0);
@@ -353,7 +365,8 @@ class PaymentServiceImplTest {
     ObjectMapper json = new ObjectMapper();
     RestClient.Builder builder = RestClient.builder();
     MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-    service = new PaymentServiceImpl(payments, enrollments, students, json, expiration, builder.build());
+    service = new PaymentServiceImpl(payments, enrollments, currentUserResolver, json, expiration,
+        transactionExecutor, builder.build());
     configureMomo();
     server.expect(requestTo("https://test-payment.momo.vn/v2/gateway/api/create"))
         .andRespond(withStatus(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON)
@@ -370,8 +383,8 @@ class PaymentServiceImplTest {
   void shouldWrapGatewayNetworkFailureAndNotCreatePendingPayment() {
     RestClient.Builder builder = RestClient.builder();
     MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-    service = new PaymentServiceImpl(payments, enrollments, students, new ObjectMapper(),
-        expiration, builder.build());
+    service = new PaymentServiceImpl(payments, enrollments, currentUserResolver, new ObjectMapper(),
+        expiration, transactionExecutor, builder.build());
     configureMomo();
     server.expect(requestTo("https://test-payment.momo.vn/v2/gateway/api/create"))
         .andRespond(request -> { throw new java.io.IOException("network unavailable"); });

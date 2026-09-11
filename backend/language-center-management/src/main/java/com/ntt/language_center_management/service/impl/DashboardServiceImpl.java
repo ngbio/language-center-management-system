@@ -19,6 +19,7 @@ import com.ntt.language_center_management.repository.RefundRepository;
 import com.ntt.language_center_management.repository.StudentRepository;
 import com.ntt.language_center_management.repository.TeacherRepository;
 import com.ntt.language_center_management.service.DashboardService;
+import com.ntt.language_center_management.util.ApplicationDateTimeUtils;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -30,9 +31,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import static com.ntt.language_center_management.policy.EnrollmentPolicy.CAPACITY_RESERVED_STATUSES;
 
 @Service
 @Transactional(readOnly = true)
@@ -42,8 +46,6 @@ public class DashboardServiceImpl implements DashboardService {
       Set.of(ClassStatus.OPEN, ClassStatus.IN_PROGRESS);
   private static final Set<ClassStatus> UPCOMING_CLASS_STATUSES =
       Set.of(ClassStatus.DRAFT, ClassStatus.OPEN);
-  private static final Set<EnrollmentStatus> RESERVED_STATUSES =
-      Set.of(EnrollmentStatus.PENDING, EnrollmentStatus.CONFIRMED);
 
   private final StudentRepository students;
   private final TeacherRepository teachers;
@@ -148,15 +150,25 @@ public class DashboardServiceImpl implements DashboardService {
   @Override
   public List<UpcomingClassReportResponse> getUpcomingClasses(LocalDate from, LocalDate to) {
     validateRange(from, to);
-    return classes.findByStartDateBetweenAndStatusInOrderByStartDateAsc(
-            dateOnly(from), dateOnly(to), UPCOMING_CLASS_STATUSES).stream()
-        .map(this::toUpcomingClass)
+    List<Courseclass> upcomingClasses =
+        classes.findByStartDateBetweenAndStatusInOrderByStartDateAsc(
+            dateOnly(from), dateOnly(to), UPCOMING_CLASS_STATUSES);
+    List<Integer> classIds = upcomingClasses.stream().map(Courseclass::getId).toList();
+    Map<Integer, Long> reservedByClass = classIds.isEmpty()
+        ? Map.of()
+        : enrollments
+            .countByCourseClassIdsAndEnrollmentStatusIn(
+                classIds, CAPACITY_RESERVED_STATUSES)
+            .stream()
+            .collect(Collectors.toMap(
+                value -> value.getCourseClassId(),
+                value -> value.getEnrollmentCount()));
+    return upcomingClasses.stream()
+        .map(value -> toUpcomingClass(value, reservedByClass.getOrDefault(value.getId(), 0L)))
         .toList();
   }
 
-  private UpcomingClassReportResponse toUpcomingClass(Courseclass value) {
-    long reserved = enrollments.countByCourseClassId_IdAndEnrollmentStatusIn(
-        value.getId(), RESERVED_STATUSES);
+  private UpcomingClassReportResponse toUpcomingClass(Courseclass value, long reserved) {
     String teacher = value.getTeacherId() == null ? null : value.getTeacherId().getUserId().getFullName();
     return new UpcomingClassReportResponse(value.getId(), value.getClassCode(), value.getClassName(),
         value.getCourseId().getId(), value.getCourseId().getCourseName(), teacher,
@@ -191,8 +203,7 @@ public class DashboardServiceImpl implements DashboardService {
   }
 
   private LocalDate toLocalDate(Date value) {
-    return value instanceof java.sql.Date sqlDate ? sqlDate.toLocalDate()
-        : value.toInstant().atZone(zoneId).toLocalDate();
+    return ApplicationDateTimeUtils.toLocalDate(value, zoneId);
   }
 
   private Number number(Object value) {

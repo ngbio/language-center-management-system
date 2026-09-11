@@ -25,6 +25,7 @@ import com.ntt.language_center_management.repository.StudentRepository;
 import com.ntt.language_center_management.repository.TeacherRepository;
 import com.ntt.language_center_management.repository.UserRepository;
 import com.ntt.language_center_management.service.UserService;
+import com.ntt.language_center_management.security.CurrentUserResolver;
 import java.security.Principal;
 import java.util.Date;
 import java.util.List;
@@ -37,6 +38,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+
+import static com.ntt.language_center_management.util.TextUtils.trimToNull;
 
 @Service
 @Transactional
@@ -54,6 +57,7 @@ public class UserServiceImpl implements UserService {
   private final RoleRepository roleRepository;
   private final UserMapper userMapper;
   private final PasswordEncoder passwordEncoder;
+  private final CurrentUserResolver currentUserResolver;
 
   public UserServiceImpl(
       UserRepository userRepository,
@@ -61,13 +65,15 @@ public class UserServiceImpl implements UserService {
       TeacherRepository teacherRepository,
       RoleRepository roleRepository,
       UserMapper userMapper,
-      PasswordEncoder passwordEncoder) {
+      PasswordEncoder passwordEncoder,
+      CurrentUserResolver currentUserResolver) {
     this.userRepository = userRepository;
     this.studentRepository = studentRepository;
     this.teacherRepository = teacherRepository;
     this.roleRepository = roleRepository;
     this.userMapper = userMapper;
     this.passwordEncoder = passwordEncoder;
+    this.currentUserResolver = currentUserResolver;
   }
 
   @Override
@@ -304,11 +310,7 @@ public class UserServiceImpl implements UserService {
   }
 
   private Student findCurrentStudent(Principal principal) {
-    if (principal == null || !StringUtils.hasText(principal.getName())) {
-      throw new UnauthorizedException("Không thể xác định học viên hiện tại");
-    }
-    return studentRepository.findByUserId_EmailIgnoreCase(principal.getName())
-        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hồ sơ học viên"));
+    return currentUserResolver.requireStudent(principal);
   }
 
   private StudentProfileResponse toStudentProfile(Student student) {
@@ -321,16 +323,8 @@ public class UserServiceImpl implements UserService {
         user.getCreatedAt(), user.getUpdatedAt());
   }
 
-  private String trimToNull(String value) {
-    return StringUtils.hasText(value) ? value.trim() : null;
-  }
-
   private User validateAndGetCurrentUser(Principal principal) {
-    if (principal == null || !StringUtils.hasText(principal.getName())) {
-      throw new UnauthorizedException("Không thể xác định người dùng hiện tại");
-    }
-
-    return getUserEntityByEmail(principal.getName());
+    return currentUserResolver.requireUser(principal);
   }
 
   @Override

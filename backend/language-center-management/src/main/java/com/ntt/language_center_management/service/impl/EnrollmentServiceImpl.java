@@ -16,6 +16,7 @@ import com.ntt.language_center_management.dto.response.CourseClassResponse;
 import com.ntt.language_center_management.dto.response.ClassScheduleResponse;
 import com.ntt.language_center_management.dto.response.PageResponse;
 import com.ntt.language_center_management.entity.Courseclass;
+import com.ntt.language_center_management.entity.Classschedule;
 import com.ntt.language_center_management.entity.Enrollment;
 import com.ntt.language_center_management.entity.Student;
 import com.ntt.language_center_management.entity.User;
@@ -32,11 +33,14 @@ import com.ntt.language_center_management.repository.EnrollmentRepository;
 import com.ntt.language_center_management.repository.StudentRepository;
 import com.ntt.language_center_management.repository.UserRepository;
 import com.ntt.language_center_management.service.EnrollmentService;
+import com.ntt.language_center_management.security.CurrentUserResolver;
 import java.security.Principal;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -45,12 +49,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import static com.ntt.language_center_management.policy.EnrollmentPolicy.CAPACITY_RESERVED_STATUSES;
+
 @Service
 @Transactional
 public class EnrollmentServiceImpl implements EnrollmentService {
 
-  private static final Set<EnrollmentStatus> ACTIVE_STATUSES =
-      Set.of(EnrollmentStatus.PENDING, EnrollmentStatus.CONFIRMED);
   private static final Set<String> ENROLLMENT_SORT_FIELDS =
       Set.of("id", "enrollmentDate", "paymentDeadline", "amountDue", "enrollmentStatus", "paymentStatus");
 
@@ -63,6 +67,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
   private final CourseClassMapper courseClassMapper;
   private final ClassScheduleMapper classScheduleMapper;
   private final ClassScheduleRepository classScheduleRepository;
+  private final CurrentUserResolver currentUserResolver;
 
   public EnrollmentServiceImpl(
       EnrollmentRepository enrollmentRepository,
@@ -73,7 +78,8 @@ public class EnrollmentServiceImpl implements EnrollmentService {
       CourseMapper courseMapper,
       CourseClassMapper courseClassMapper,
       ClassScheduleMapper classScheduleMapper,
-      ClassScheduleRepository classScheduleRepository) {
+      ClassScheduleRepository classScheduleRepository,
+      CurrentUserResolver currentUserResolver) {
     this.enrollmentRepository = enrollmentRepository;
     this.courseClassRepository = courseClassRepository;
     this.studentRepository = studentRepository;
@@ -83,6 +89,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     this.courseClassMapper = courseClassMapper;
     this.classScheduleMapper = classScheduleMapper;
     this.classScheduleRepository = classScheduleRepository;
+    this.currentUserResolver = currentUserResolver;
   }
 
   @Override
@@ -161,11 +168,28 @@ public class EnrollmentServiceImpl implements EnrollmentService {
   @Transactional(readOnly = true)
   public List<CourseClassResponse> getMyClasses(Principal principal) {
     Student student = findCurrentStudent(principal);
-    return enrollmentRepository.findAccessibleClassesByStudentId(student.getId()).stream()
-        .map(
-            courseClass ->
-                courseClassMapper.toResponse(
-                    courseClass, countActiveEnrollments(courseClass.getId())))
+    List<Courseclass> classes = enrollmentRepository.findAccessibleClassesByStudentId(student.getId());
+    if (classes.isEmpty()) {
+      return List.of();
+    }
+    List<Integer> classIds = classes.stream().map(Courseclass::getId).toList();
+    Map<Integer, Long> enrollmentCounts = enrollmentRepository
+        .countByCourseClassIdsAndEnrollmentStatusIn(classIds, CAPACITY_RESERVED_STATUSES)
+        .stream()
+        .collect(Collectors.toMap(
+            count -> count.getCourseClassId(),
+            count -> count.getEnrollmentCount()));
+    Map<Integer, List<Classschedule>> schedulesByClass = classScheduleRepository
+        .findByCourseClassId_IdInOrderByCourseClassId_IdAscDayOfWeekAscStartTimeAsc(classIds)
+        .stream()
+        .collect(Collectors.groupingBy(schedule -> schedule.getCourseClassId().getId()));
+    return classes.stream()
+        .map(courseClass -> courseClassMapper.toResponse(
+            courseClass,
+            enrollmentCounts.getOrDefault(courseClass.getId(), 0L),
+            schedulesByClass.getOrDefault(courseClass.getId(), List.of()).stream()
+                .map(classScheduleMapper::toResponse)
+                .toList()))
         .toList();
   }
 
@@ -337,7 +361,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
   private void validateNoScheduleConflict(Integer studentId, Integer courseClassId) {
     if (enrollmentRepository.existsScheduleConflict(
-        studentId, courseClassId, ACTIVE_STATUSES)) {
+        studentId, courseClassId, CAPACITY_RESERVED_STATUSES)) {
       throw new IllegalArgumentException("Lớp học bị trùng thời gian với đăng ký hiện tại");
     }
   }
@@ -398,7 +422,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
   private long countActiveEnrollments(Integer courseClassId) {
     return enrollmentRepository.countByCourseClassId_IdAndEnrollmentStatusIn(
-        courseClassId, ACTIVE_STATUSES);
+        courseClassId, CAPACITY_RESERVED_STATUSES);
   }
 
   private Courseclass[] lockClassesInOrder(Integer firstId, Integer secondId) {
@@ -437,12 +461,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
   }
 
   private User findCurrentUser(Principal principal) {
-    if (principal == null || !StringUtils.hasText(principal.getName())) {
-      throw new ForbiddenException("Không xác định được người dùng hiện tại");
-    }
-    return userRepository
-        .findByEmailIgnoreCase(principal.getName())
-        .orElseThrow(() -> new ForbiddenException("Không tìm thấy người dùng hiện tại"));
+    return currentUserResolver.requireUser(principal);
   }
 
   private Courseclass findClass(Integer id) {

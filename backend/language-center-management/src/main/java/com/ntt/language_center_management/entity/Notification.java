@@ -17,8 +17,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.NamedQueries;
-import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
@@ -33,8 +31,6 @@ import java.util.Date;
  */
 @Entity
 @Table(name = "notification")
-@NamedQueries({
-    @NamedQuery(name = "Notification.findAll", query = "SELECT n FROM Notification n")})
 public class Notification implements Serializable {
 
     private static final long serialVersionUID = 1L;

@@ -5,7 +5,7 @@ import com.cloudinary.utils.ObjectUtils;
 import com.ntt.language_center_management.dto.response.ImageUploadResponse;
 import com.ntt.language_center_management.entity.User;
 import com.ntt.language_center_management.exception.ForbiddenException;
-import com.ntt.language_center_management.repository.UserRepository;
+import com.ntt.language_center_management.security.CurrentUserResolver;
 import com.ntt.language_center_management.service.ImageUploadService;
 import java.io.IOException;
 import java.security.Principal;
@@ -23,17 +23,17 @@ public class CloudinaryImageUploadService implements ImageUploadService {
       Set.of("image/jpeg", "image/png", "image/webp", "image/gif");
 
   private final Cloudinary cloudinary;
-  private final UserRepository userRepository;
+  private final CurrentUserResolver currentUserResolver;
   private final String cloudinaryUrl;
   private final long maxSizeBytes;
 
   public CloudinaryImageUploadService(
       Cloudinary cloudinary,
-      UserRepository userRepository,
+      CurrentUserResolver currentUserResolver,
       @Value("${cloudinary.url:}") String cloudinaryUrl,
       @Value("${cloudinary.image.max-size-bytes:5242880}") long maxSizeBytes) {
     this.cloudinary = cloudinary;
-    this.userRepository = userRepository;
+    this.currentUserResolver = currentUserResolver;
     this.cloudinaryUrl = cloudinaryUrl;
     this.maxSizeBytes = maxSizeBytes;
   }
@@ -78,12 +78,7 @@ public class CloudinaryImageUploadService implements ImageUploadService {
   }
 
   private User currentUser(Principal principal) {
-    if (principal == null || !StringUtils.hasText(principal.getName())) {
-      throw new ForbiddenException("Bạn cần đăng nhập để tải ảnh lên");
-    }
-    return userRepository
-        .findByEmailIgnoreCase(principal.getName())
-        .orElseThrow(() -> new ForbiddenException("Không tìm thấy người dùng hiện tại"));
+    return currentUserResolver.requireUser(principal);
   }
 
   private String normalizePurpose(String purpose) {

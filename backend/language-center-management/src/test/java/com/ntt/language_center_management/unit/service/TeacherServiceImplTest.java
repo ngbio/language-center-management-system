@@ -15,6 +15,9 @@ import com.ntt.language_center_management.exception.ResourceNotFoundException;
 import com.ntt.language_center_management.exception.UnauthorizedException;
 import com.ntt.language_center_management.mapper.TeacherMapper;
 import com.ntt.language_center_management.repository.TeacherRepository;
+import com.ntt.language_center_management.repository.StudentRepository;
+import com.ntt.language_center_management.repository.UserRepository;
+import com.ntt.language_center_management.security.CurrentUserResolver;
 import com.ntt.language_center_management.service.impl.TeacherServiceImpl;
 import java.security.Principal;
 import java.util.Date;
@@ -36,7 +39,11 @@ class TeacherServiceImplTest {
 
   @BeforeEach
   void setUp() {
-    teacherService = new TeacherServiceImpl(teacherRepository, teacherMapper);
+    teacherService = new TeacherServiceImpl(teacherRepository, teacherMapper,
+        new CurrentUserResolver(
+            org.mockito.Mockito.mock(UserRepository.class),
+            org.mockito.Mockito.mock(StudentRepository.class),
+            teacherRepository));
   }
 
   @Test

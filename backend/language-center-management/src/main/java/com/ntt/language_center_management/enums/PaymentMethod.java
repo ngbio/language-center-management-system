@@ -1,6 +1,6 @@
 package com.ntt.language_center_management.enums;
 
 public enum PaymentMethod {
-  MOMO,
-  ZALOPAY
+  MOMO,   // Thanh toán qua cổng MoMo.
+  ZALOPAY // Thanh toán qua cổng ZaloPay.
 }

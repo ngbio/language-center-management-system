@@ -16,12 +16,12 @@ import com.ntt.language_center_management.exception.PaymentGatewayException;
 import com.ntt.language_center_management.exception.UnauthorizedException;
 import com.ntt.language_center_management.repository.EnrollmentRepository;
 import com.ntt.language_center_management.repository.PaymentRepository;
-import com.ntt.language_center_management.repository.StudentRepository;
+import com.ntt.language_center_management.security.CurrentUserResolver;
+import com.ntt.language_center_management.transaction.TransactionExecutor;
 import com.ntt.language_center_management.service.PaymentService;
 import com.ntt.language_center_management.service.EnrollmentExpirationService;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.nio.charset.StandardCharsets;
 import java.net.URI;
 import java.security.Principal;
 import java.time.LocalDate;
@@ -32,8 +32,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -49,17 +47,22 @@ import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
+import static com.ntt.language_center_management.util.PaymentGatewayUtils.constantEquals;
+import static com.ntt.language_center_management.util.PaymentGatewayUtils.hmacSha256;
+import static com.ntt.language_center_management.util.PaymentGatewayUtils.requireConfig;
+import static com.ntt.language_center_management.util.PaymentGatewayUtils.stringValue;
+
 @Service
-@Transactional
 public class PaymentServiceImpl implements PaymentService {
   private static final ZoneId VIETNAM_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
   private final PaymentRepository paymentRepository;
   private final EnrollmentRepository enrollmentRepository;
-  private final StudentRepository studentRepository;
+  private final CurrentUserResolver currentUserResolver;
   private final ObjectMapper objectMapper;
   private final RestClient restClient;
   private final EnrollmentExpirationService enrollmentExpirationService;
+  private final TransactionExecutor transactionExecutor;
 
   @Value("${payment.momo.endpoint}") private String momoEndpoint;
   @Value("${payment.momo.partner-code}") private String momoPartnerCode;
@@ -78,30 +81,41 @@ public class PaymentServiceImpl implements PaymentService {
   public PaymentServiceImpl(
       PaymentRepository paymentRepository,
       EnrollmentRepository enrollmentRepository,
-      StudentRepository studentRepository,
+      CurrentUserResolver currentUserResolver,
       ObjectMapper objectMapper,
-      EnrollmentExpirationService enrollmentExpirationService) {
-    this(paymentRepository, enrollmentRepository, studentRepository, objectMapper,
-        enrollmentExpirationService, RestClient.builder().build());
+      EnrollmentExpirationService enrollmentExpirationService,
+      TransactionExecutor transactionExecutor) {
+    this(paymentRepository, enrollmentRepository, currentUserResolver, objectMapper,
+        enrollmentExpirationService, transactionExecutor, RestClient.builder().build());
   }
 
   public PaymentServiceImpl(
       PaymentRepository paymentRepository,
       EnrollmentRepository enrollmentRepository,
-      StudentRepository studentRepository,
+      CurrentUserResolver currentUserResolver,
       ObjectMapper objectMapper,
       EnrollmentExpirationService enrollmentExpirationService,
+      TransactionExecutor transactionExecutor,
       RestClient restClient) {
     this.paymentRepository = paymentRepository;
     this.enrollmentRepository = enrollmentRepository;
-    this.studentRepository = studentRepository;
+    this.currentUserResolver = currentUserResolver;
     this.objectMapper = objectMapper;
     this.enrollmentExpirationService = enrollmentExpirationService;
+    this.transactionExecutor = transactionExecutor;
     this.restClient = restClient;
   }
 
   @Override
   public PaymentResponse createPayment(CreatePaymentRequest request, Principal principal) {
+    PaymentPreparation preparation = transactionExecutor.required(
+        () -> preparePayment(request, principal));
+    return preparation.method() == PaymentMethod.MOMO
+        ? createMomo(preparation.enrollment(), preparation.student())
+        : createZaloPay(preparation.enrollment(), preparation.student());
+  }
+
+  private PaymentPreparation preparePayment(CreatePaymentRequest request, Principal principal) {
     Student student = currentStudent(principal);
     if (enrollmentExpirationService.expireIfOverdue(request.enrollmentId())) {
       throw new IllegalArgumentException("Đăng ký đã hết hạn thanh toán 48 giờ");
@@ -124,10 +138,7 @@ public class PaymentServiceImpl implements PaymentService {
       throw new IllegalArgumentException("Đăng ký miễn phí không cần tạo giao dịch thanh toán");
     }
 
-    PaymentMethod method = request.method();
-    return method == PaymentMethod.MOMO
-        ? createMomo(enrollment, student)
-        : createZaloPay(enrollment, student);
+    return new PaymentPreparation(enrollment, student, request.method());
   }
 
   @Override
@@ -167,7 +178,7 @@ public class PaymentServiceImpl implements PaymentService {
     body.put("requestId", requestId);
     body.put("extraData", extraData);
     body.put("lang", "vi");
-    body.put("signature", hmac(raw, momoSecretKey));
+    body.put("signature", hmacSha256(raw, momoSecretKey));
 
     JsonNode response;
     try {
@@ -213,7 +224,7 @@ public class PaymentServiceImpl implements PaymentService {
     form.add("description", "Thanh toan khoa hoc " + enrollment.getCourseClassId().getClassCode());
     form.add("bank_code", "");
     form.add("callback_url", zaloPayCallbackUrl);
-    form.add("mac", hmac(macInput, zaloPayKey1));
+    form.add("mac", hmacSha256(macInput, zaloPayKey1));
 
     JsonNode response;
     try {
@@ -236,38 +247,40 @@ public class PaymentServiceImpl implements PaymentService {
   }
 
   @Override
+  @Transactional
   public Map<String, Object> handleMomoIpn(Map<String, Object> payload) {
     requireConfig(momoAccessKey, "MOMO_ACCESS_KEY");
     requireConfig(momoSecretKey, "MOMO_SECRET_KEY");
-    String signature = text(payload.get("signature"));
-    String raw = "accessKey=" + momoAccessKey + "&amount=" + text(payload.get("amount"))
-        + "&extraData=" + value(payload.get("extraData")) + "&message=" + text(payload.get("message"))
-        + "&orderId=" + text(payload.get("orderId")) + "&orderInfo=" + text(payload.get("orderInfo"))
-        + "&orderType=" + text(payload.get("orderType")) + "&partnerCode=" + text(payload.get("partnerCode"))
-        + "&payType=" + text(payload.get("payType")) + "&requestId=" + text(payload.get("requestId"))
-        + "&responseTime=" + text(payload.get("responseTime")) + "&resultCode=" + text(payload.get("resultCode"))
-        + "&transId=" + text(payload.get("transId"));
-    if (!constantEquals(signature, hmac(raw, momoSecretKey))) {
+    String signature = stringValue(payload.get("signature"));
+    String raw = "accessKey=" + momoAccessKey + "&amount=" + stringValue(payload.get("amount"))
+        + "&extraData=" + stringValue(payload.get("extraData")) + "&message=" + stringValue(payload.get("message"))
+        + "&orderId=" + stringValue(payload.get("orderId")) + "&orderInfo=" + stringValue(payload.get("orderInfo"))
+        + "&orderType=" + stringValue(payload.get("orderType")) + "&partnerCode=" + stringValue(payload.get("partnerCode"))
+        + "&payType=" + stringValue(payload.get("payType")) + "&requestId=" + stringValue(payload.get("requestId"))
+        + "&responseTime=" + stringValue(payload.get("responseTime")) + "&resultCode=" + stringValue(payload.get("resultCode"))
+        + "&transId=" + stringValue(payload.get("transId"));
+    if (!constantEquals(signature, hmacSha256(raw, momoSecretKey))) {
       throw new IllegalArgumentException("Chữ ký callback MoMo không hợp lệ");
     }
-    Payment payment = findPayment(text(payload.get("orderId")), PaymentMethod.MOMO);
-    int resultCode = Integer.parseInt(text(payload.get("resultCode")));
-    if (resultCode == 0) complete(payment, Long.parseLong(text(payload.get("amount"))), text(payload.get("transId")));
-    else fail(payment, text(payload.get("message")));
+    Payment payment = findPayment(stringValue(payload.get("orderId")), PaymentMethod.MOMO);
+    int resultCode = Integer.parseInt(stringValue(payload.get("resultCode")));
+    if (resultCode == 0) complete(payment, Long.parseLong(stringValue(payload.get("amount"))), stringValue(payload.get("transId")));
+    else fail(payment, stringValue(payload.get("message")));
     return Map.of("resultCode", 0, "message", "Received");
   }
 
   @Override
+  @Transactional
   public Map<String, Object> handleZaloPayCallback(Map<String, Object> payload) {
     requireConfig(zaloPayKey2, "ZALOPAY_KEY2");
-    String data = text(payload.get("data"));
-    if (!constantEquals(text(payload.get("mac")), hmac(data, zaloPayKey2))) {
+    String data = stringValue(payload.get("data"));
+    if (!constantEquals(stringValue(payload.get("mac")), hmacSha256(data, zaloPayKey2))) {
       return Map.of("return_code", -1, "return_message", "invalid signature");
     }
     try {
       Map<String, Object> callback = objectMapper.readValue(data, new TypeReference<>() {});
-      Payment payment = findPayment(text(callback.get("app_trans_id")), PaymentMethod.ZALOPAY);
-      complete(payment, Long.parseLong(text(callback.get("amount"))), text(callback.get("zp_trans_id")));
+      Payment payment = findPayment(stringValue(callback.get("app_trans_id")), PaymentMethod.ZALOPAY);
+      complete(payment, Long.parseLong(stringValue(callback.get("amount"))), stringValue(callback.get("zp_trans_id")));
       return Map.of("return_code", 1, "return_message", "success");
     } catch (Exception exception) {
       return Map.of("return_code", 0, "return_message", exception.getMessage());
@@ -315,10 +328,11 @@ public class PaymentServiceImpl implements PaymentService {
   }
 
   private Student currentStudent(Principal principal) {
-    if (principal == null || !StringUtils.hasText(principal.getName())) throw new UnauthorizedException("Chưa đăng nhập");
-    return studentRepository.findByUserId_EmailIgnoreCase(principal.getName())
-        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy học viên"));
+    return currentUserResolver.requireStudent(principal);
   }
+
+  private record PaymentPreparation(
+      Enrollment enrollment, Student student, PaymentMethod method) {}
 
   private PaymentResponse toResponse(Payment payment, String url) {
     return new PaymentResponse(payment.getId(), payment.getEnrollmentId().getId(),
@@ -328,10 +342,6 @@ public class PaymentServiceImpl implements PaymentService {
 
   private long amount(Enrollment enrollment) {
     return enrollment.getAmountDue().setScale(0, RoundingMode.UNNECESSARY).longValueExact();
-  }
-
-  private void requireConfig(String value, String name) {
-    if (!StringUtils.hasText(value) || value.startsWith("CHANGE_ME")) throw new IllegalArgumentException("Thiếu cấu hình " + name);
   }
 
   private void requirePublicCallback(String value, String name) {
@@ -374,19 +384,4 @@ public class PaymentServiceImpl implements PaymentService {
     return null;
   }
 
-  private String hmac(String value, String key) {
-    try {
-      Mac mac = Mac.getInstance("HmacSHA256");
-      mac.init(new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-      return java.util.HexFormat.of().formatHex(mac.doFinal(value.getBytes(StandardCharsets.UTF_8)));
-    } catch (Exception exception) {
-      throw new IllegalStateException("Không thể tạo chữ ký thanh toán", exception);
-    }
-  }
-
-  private boolean constantEquals(String left, String right) {
-    return left != null && java.security.MessageDigest.isEqual(left.getBytes(StandardCharsets.UTF_8), right.getBytes(StandardCharsets.UTF_8));
-  }
-  private String text(Object value) { return value == null ? "" : String.valueOf(value); }
-  private String value(Object value) { return value == null ? "" : String.valueOf(value); }
 }

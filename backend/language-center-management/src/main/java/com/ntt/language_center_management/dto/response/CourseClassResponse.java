@@ -4,6 +4,7 @@ import com.ntt.language_center_management.enums.ClassStatus;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
 public record CourseClassResponse(
     Integer id,
@@ -25,4 +26,5 @@ public record CourseClassResponse(
     String teacherCode,
     String teacherName,
     Date createdAt,
-    Date updatedAt) {}
+    Date updatedAt,
+    List<ClassScheduleResponse> schedules) {}

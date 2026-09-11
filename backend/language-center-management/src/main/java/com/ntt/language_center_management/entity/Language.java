@@ -15,8 +15,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.NamedQueries;
-import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
@@ -30,8 +28,6 @@ import java.util.List;
  */
 @Entity
 @Table(name = "language")
-@NamedQueries({
-    @NamedQuery(name = "Language.findAll", query = "SELECT l FROM Language l")})
 public class Language implements Serializable {
 
     private static final long serialVersionUID = 1L;
