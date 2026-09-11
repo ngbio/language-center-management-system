@@ -107,7 +107,7 @@ export default function MyClassesScreen() {
 }
 
 function EmptyLearning({ title, text }) {
-  return <div className="learning-empty"><span aria-hidden="true">学</span><h2>{title}</h2><p>{text}</p><Link className="primary-cta" to="/#courses">Khám phá lớp học</Link></div>;
+  return <div className="learning-empty"><span aria-hidden="true">学</span><h2>{title}</h2><p>{text}</p><Link className="primary-cta" to="/lop-hoc">Khám phá lớp học</Link></div>;
 }
 
 const formatRoom = (item) => item.roomName
