@@ -82,7 +82,6 @@ function App() {
           <Route path="classes" element={<ClassListScreen />} />
           <Route path="enrollments" element={<EnrollmentManagementScreen />} />
           <Route path="refunds" element={<RefundManagementScreen />} />
-          <Route path="chat" element={<ConsultantChatScreen />} />
           <Route path="system-logs" element={<SystemLogsScreen />} />
           <Route path="profile" element={<AccountProfileScreen />} />
           <Route path="change-password" element={<ChangePasswordScreen />} />
@@ -93,6 +92,7 @@ function App() {
           <Route index element={<Navigate to="enrollments" replace />} />
           <Route path="enrollments" element={<EnrollmentManagementScreen />} />
           <Route path="refunds" element={<RefundManagementScreen />} />
+          <Route path="chat" element={<ConsultantChatScreen />} />
           <Route path="profile" element={<AccountProfileScreen />} />
           <Route path="change-password" element={<ChangePasswordScreen />} />
         </Route>
