@@ -108,6 +108,7 @@ public class InvoicePdfServiceImpl implements InvoicePdfService {
     return List.of(
             "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
             "/usr/share/fonts/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf",
             "C:/Windows/Fonts/arial.ttf")
         .stream()
         .map(Path::of)
