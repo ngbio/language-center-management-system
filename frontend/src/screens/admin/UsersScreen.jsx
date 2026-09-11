@@ -9,6 +9,7 @@ import {
   StatusBadge,
 } from "../../components/AdminUi";
 import { apiData, apiError, formatDate } from "../../utils/api";
+import useDebouncedValue from "../../hooks/useDebouncedValue";
 
 const statuses = ["ACTIVE", "INACTIVE", "LOCKED"];
 
@@ -24,6 +25,7 @@ export default function UsersScreen() {
     roleCode: "",
     status: "",
   });
+  const debouncedKeyword = useDebouncedValue(filters.keyword);
   const [selected, setSelected] = useState(null);
   const [sorting, setSorting] = useState("createdAt:desc");
   const [loading, setLoading] = useState(true);
@@ -39,7 +41,7 @@ export default function UsersScreen() {
           apiData(
             await authApis().get(endpoints["admin-users"], {
               params: {
-                keyword: filters.keyword || undefined,
+                keyword: debouncedKeyword || undefined,
                 roleCode: filters.roleCode || undefined,
                 status: filters.status || undefined,
                 page,
@@ -56,7 +58,7 @@ export default function UsersScreen() {
         setLoading(false);
       }
     },
-    [filters, sorting],
+    [debouncedKeyword, filters.roleCode, filters.status, sorting],
   );
 
   useEffect(() => {
