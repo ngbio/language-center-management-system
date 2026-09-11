@@ -17,7 +17,7 @@ export default function StudentChatBubble() {
   const [text, setText] = useState("");
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
-  const bottomRef = useRef(null);
+  const messagesRef = useRef(null);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -45,7 +45,10 @@ export default function StudentChatBubble() {
     };
   }, [open]);
 
-  useEffect(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), [messages]);
+  useEffect(() => {
+    const container = messagesRef.current;
+    if (container) container.scrollTop = container.scrollHeight;
+  }, [messages]);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -69,7 +72,7 @@ export default function StudentChatBubble() {
             <div><strong>Tư vấn trực tuyến</strong><small>{session?.identity.consultantName || "Đang kết nối..."}</small></div>
             <button type="button" onClick={() => setOpen(false)} aria-label="Đóng chat">×</button>
           </header>
-          <div className="chat-messages">
+          <div className="chat-messages" ref={messagesRef}>
             {!error && !session && <p className="chat-state">Đang kết nối...</p>}
             {error && <p className="chat-error">{error}</p>}
             {session && messages.length === 0 && <p className="chat-state">Hãy gửi câu hỏi, nhân viên tư vấn sẽ phản hồi tại đây.</p>}
@@ -78,7 +81,6 @@ export default function StudentChatBubble() {
                 <small>{message.senderName}</small><p>{message.text}</p>
               </article>
             ))}
-            <span ref={bottomRef} />
           </div>
           <form onSubmit={submit}>
             <textarea value={text} maxLength={2000} rows={2} placeholder="Nhập nội dung cần tư vấn..." onChange={(event) => setText(event.target.value)} disabled={!session || sending} />

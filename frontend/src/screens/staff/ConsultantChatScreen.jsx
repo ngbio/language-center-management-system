@@ -16,7 +16,8 @@ export default function ConsultantChatScreen() {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [error, setError] = useState("");
-  const bottomRef = useRef(null);
+  const [sending, setSending] = useState(false);
+  const messagesRef = useRef(null);
 
   useEffect(() => {
     let unsubscribe;
@@ -38,16 +39,23 @@ export default function ConsultantChatScreen() {
     return unsubscribe;
   }, [session, selected]);
 
-  useEffect(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), [messages]);
+  useEffect(() => {
+    const container = messagesRef.current;
+    if (container) container.scrollTop = container.scrollHeight;
+  }, [messages]);
 
   const submit = async (event) => {
     event.preventDefault();
-    if (!session || !selected || !text.trim()) return;
+    if (!session || !selected || !text.trim() || sending) return;
     try {
+      setSending(true);
+      setError("");
       await sendChatMessage(session, selected.studentUid, text);
       setText("");
     } catch (chatError) {
       setError(apiError(chatError));
+    } finally {
+      setSending(false);
     }
   };
 
@@ -72,11 +80,10 @@ export default function ConsultantChatScreen() {
           {!selected && <p className="chat-state">Chọn một học viên để bắt đầu hỗ trợ.</p>}
           {selected && <>
             <header><strong>{selected.studentName}</strong><small>{selected.studentEmail}</small></header>
-            <div className="chat-messages">
+            <div className="chat-messages" ref={messagesRef}>
               {messages.map((message) => <article key={message.id} className={message.senderUid === session?.identity.uid ? "mine" : "theirs"}><small>{message.senderName}</small><p>{message.text}</p></article>)}
-              <span ref={bottomRef} />
             </div>
-            <form onSubmit={submit}><textarea rows={2} maxLength={2000} value={text} placeholder="Nhập câu trả lời..." onChange={(event) => setText(event.target.value)} /><button type="submit" disabled={!text.trim()}>Gửi</button></form>
+            <form onSubmit={submit}><textarea rows={2} maxLength={2000} value={text} placeholder="Nhập câu trả lời..." onChange={(event) => setText(event.target.value)} disabled={sending} /><button type="submit" disabled={sending || !text.trim()}>{sending ? "Đang gửi..." : "Gửi"}</button></form>
           </>}
         </div>
       </section>
