@@ -469,7 +469,7 @@ Chỉ hủy trước ngày khai giảng và khi chưa phát sinh thanh toán.
 - PDF gồm thông tin học viên, khóa/lớp, học phí, tổng đã thu, đã hoàn, thực thu, trạng thái và lịch sử payment/refund.
 - PDF được tạo trực tiếp bằng PDFBox và nhúng font Unicode để hiển thị tiếng Việt.
 - Giao diện lịch sử đăng ký và thanh toán của Student có nút **Xem hóa đơn** và **Tải hóa đơn** đối với đăng ký `PAID` hoặc `REFUNDED`.
-- Font tiếng Việt lấy từ biến môi trường `INVOICE_PDF_FONT_PATH`.
+- Font tiếng Việt Noto Sans được đóng gói trong backend; `INVOICE_PDF_FONT_PATH` chỉ dùng khi cần ghi đè bằng font riêng.
 
 ### POST `/payments/momo/ipn`
 

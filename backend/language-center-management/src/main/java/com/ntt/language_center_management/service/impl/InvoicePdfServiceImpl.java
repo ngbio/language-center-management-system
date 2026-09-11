@@ -8,6 +8,7 @@ import com.ntt.language_center_management.service.InvoicePdfService;
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.Principal;
@@ -42,9 +43,8 @@ public class InvoicePdfServiceImpl implements InvoicePdfService {
   @Transactional(readOnly = true)
   public byte[] createInvoicePdf(Integer enrollmentId, Principal principal) {
     InvoiceResponse invoice = billingService.getInvoice(enrollmentId, principal);
-    Path path = resolveFontPath();
     try (PDDocument document = new PDDocument();
-         var fontStream = Files.newInputStream(path);
+         InputStream fontStream = resolveFontStream();
          ByteArrayOutputStream output = new ByteArrayOutputStream()) {
       PDType0Font font = PDType0Font.load(document, fontStream);
       PageWriter writer = new PageWriter(document, font);
@@ -98,14 +98,18 @@ public class InvoicePdfServiceImpl implements InvoicePdfService {
     return value == null ? "-" : new SimpleDateFormat("dd/MM/yyyy HH:mm").format(value);
   }
 
-  private Path resolveFontPath() {
+  private InputStream resolveFontStream() throws IOException {
     if (StringUtils.hasText(fontPath)) {
       Path configuredPath = Path.of(fontPath);
-      if (Files.isRegularFile(configuredPath)) return configuredPath;
+      if (Files.isRegularFile(configuredPath)) return Files.newInputStream(configuredPath);
       throw new IllegalStateException("Không tìm thấy font Unicode xuất PDF: " + fontPath);
     }
 
-    return List.of(
+    InputStream bundledFont = InvoicePdfServiceImpl.class
+        .getResourceAsStream("/fonts/NotoSans-Regular.ttf");
+    if (bundledFont != null) return bundledFont;
+
+    Path systemFont = List.of(
             "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
             "/usr/share/fonts/dejavu/DejaVuSans.ttf",
             "/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf",
@@ -116,6 +120,7 @@ public class InvoicePdfServiceImpl implements InvoicePdfService {
         .findFirst()
         .orElseThrow(() -> new IllegalStateException(
             "Không tìm thấy font Unicode xuất PDF; hãy cấu hình INVOICE_PDF_FONT_PATH"));
+    return Files.newInputStream(systemFont);
   }
 
   private static final class PageWriter {
