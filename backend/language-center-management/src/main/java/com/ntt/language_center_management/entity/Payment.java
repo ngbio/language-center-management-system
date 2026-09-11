@@ -78,7 +78,9 @@ public class Payment implements Serializable {
     @Size(max = 500)
     @Column(name = "error_message")
     private String errorMessage;
-    @Column(name = "successful_enrollment_id")
+    // MySQL computes this generated column from status and enrollment_id.
+    // It is read-only in JPA and must never be included in INSERT/UPDATE statements.
+    @Column(name = "successful_enrollment_id", insertable = false, updatable = false)
     private Integer successfulEnrollmentId;
     @JoinColumn(name = "enrollment_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
