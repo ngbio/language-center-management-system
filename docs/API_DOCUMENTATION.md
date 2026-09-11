@@ -460,12 +460,15 @@ Chỉ hủy trước ngày khai giảng và khi chưa phát sinh thanh toán.
 - Trả dữ liệu hóa đơn dạng JSON gồm học viên, khóa/lớp, học phí, tổng đã thu, tổng đã hoàn, thực thu và toàn bộ payment/refund.
 - Đây là dữ liệu nguồn JSON để hiển thị hoặc đối soát hóa đơn.
 
-### GET `/enrollments/{id}/invoice.pdf`
+### GET `/enrollments/{id}/invoice.pdf?download={boolean}`
 
 - Quyền: Student sở hữu enrollment hoặc ADMIN/CONSULTANT.
-- Trả trực tiếp `application/pdf` dưới dạng file đính kèm.
+- Trả trực tiếp nội dung `application/pdf`.
+- `download=false` (mặc định): trả `Content-Disposition: inline` để xem trước trên trình duyệt.
+- `download=true`: trả `Content-Disposition: attachment` để tải file xuống.
 - PDF gồm thông tin học viên, khóa/lớp, học phí, tổng đã thu, đã hoàn, thực thu, trạng thái và lịch sử payment/refund.
-- Giao diện lịch sử đăng ký và thanh toán của Student có nút **Tải hóa đơn PDF** đối với đăng ký `PAID` hoặc `REFUNDED`.
+- PDF được tạo trực tiếp bằng PDFBox và nhúng font Unicode để hiển thị tiếng Việt.
+- Giao diện lịch sử đăng ký và thanh toán của Student có nút **Xem hóa đơn** và **Tải hóa đơn** đối với đăng ký `PAID` hoặc `REFUNDED`.
 - Font tiếng Việt lấy từ biến môi trường `INVOICE_PDF_FONT_PATH`.
 
 ### POST `/payments/momo/ipn`

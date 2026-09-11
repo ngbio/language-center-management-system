@@ -171,143 +171,155 @@ Checklist này theo dõi Unit Test cho các class có logic trong backend hiện
 
 ## 13. EnrollmentServiceImpl và expiration
 
-- [ ] Student tự enroll thành công và deadline bằng hai ngày theo rule hiện tại.
-- [ ] Staff enroll bằng email Student thành công.
-- [ ] Student/User INACTIVE bị từ chối.
-- [ ] Lớp không OPEN hoặc đã FULL bị từ chối.
-- [ ] Enrollment trùng bị từ chối.
-- [ ] Xung đột lịch Student bị từ chối.
-- [ ] Đếm capacity chỉ gồm các enrollment status hợp lệ.
-- [ ] Khi đủ chỗ cuối cùng, class chuyển FULL.
-- [ ] Request cancel chỉ cho chính chủ và đúng thời hạn/chính sách.
-- [ ] Staff change status chỉ chấp nhận transition hợp lệ.
-- [ ] Transfer chỉ sang lớp cùng Course.
-- [ ] Transfer kiểm tra capacity và schedule conflict.
-- [ ] Transfer khóa hai class theo thứ tự ID để tránh deadlock.
-- [ ] Transfer mở lại lớp nguồn và cập nhật FULL cho lớp đích khi cần.
+- [x] Student tự enroll thành công và deadline bằng hai ngày theo rule hiện tại.
+- [x] Staff enroll bằng email Student thành công.
+- [x] Student/User INACTIVE bị từ chối.
+- [x] Lớp không OPEN hoặc đã FULL bị từ chối.
+- [x] Enrollment trùng bị từ chối.
+- [x] Xung đột lịch Student bị từ chối.
+- [x] Đếm capacity chỉ gồm các enrollment status hợp lệ.
+- [x] Khi đủ chỗ cuối cùng, class chuyển FULL.
+- [x] Request cancel chỉ cho chính chủ và đúng thời hạn/chính sách.
+- [x] Staff change status chỉ chấp nhận transition hợp lệ.
+- [x] Transfer chỉ sang lớp cùng Course.
+- [x] Transfer kiểm tra capacity và schedule conflict.
+- [x] Transfer khóa hai class theo thứ tự ID để tránh deadlock.
+- [x] Transfer mở lại lớp nguồn và cập nhật FULL cho lớp đích khi cần.
+- [x] Search Staff enrollment validate filter/page/size và áp dụng sort/pagination.
+- [x] Student chỉ lấy enrollment, course, class và schedule của chính mình.
+- [x] Danh sách học viên trong lớp chỉ cho ADMIN/CONSULTANT hoặc Teacher được phân công.
+- [x] Lấy chi tiết enrollment cho Staff xử lý đúng trường hợp tồn tại/không tồn tại.
 - [x] Enrollment quá hạn bị CANCELLED và lớp FULL được mở lại.
 - [x] Enrollment chưa đến deadline không bị hủy.
 - [x] ID enrollment không tồn tại được expiration job bỏ qua an toàn.
-- [ ] Expiration chỉ xử lý CONFIRMED + payment PENDING.
-- [ ] EnrollmentMapper map deadline/status/payment status đúng.
+- [x] Expiration chỉ xử lý CONFIRMED + payment PENDING.
+- [x] EnrollmentMapper map deadline/status/payment status đúng.
 
 ## 14. PaymentServiceImpl
 
-- [ ] Chỉ chính Student tạo payment cho enrollment của mình.
-- [ ] Enrollment quá deadline hoặc sai trạng thái bị từ chối.
-- [ ] Số tiền được chuyển sang đơn vị gateway đúng.
-- [ ] Thiếu cấu hình MoMo/ZaloPay báo lỗi rõ nhưng không lộ secret.
-- [ ] Callback URL localhost/non-HTTPS bị từ chối theo rule hiện tại.
-- [ ] Tạo pending Payment trước khi gọi gateway.
-- [ ] MoMo request có raw signature đúng thứ tự trường.
-- [ ] ZaloPay request có MAC đúng.
-- [ ] Gateway HTTP/network error cập nhật trạng thái theo nghiệp vụ hiện tại.
-- [ ] MoMo IPN sai chữ ký không cập nhật payment/enrollment.
-- [ ] ZaloPay callback sai MAC không cập nhật dữ liệu.
-- [ ] Callback thành công cập nhật Payment PAID và Enrollment CONFIRMED + PAID.
-- [ ] Callback thất bại lưu Payment FAILED nhưng Enrollment vẫn PENDING.
-- [ ] Callback lặp lại idempotent.
-- [ ] Sai số tiền không được complete payment.
-- [ ] Constant-time signature comparison xử lý null/invalid input.
+- [x] Chỉ chính Student tạo payment cho enrollment của mình.
+- [x] Enrollment quá deadline hoặc sai trạng thái bị từ chối.
+- [x] Số tiền được chuyển sang đơn vị gateway đúng.
+- [x] Thiếu cấu hình MoMo/ZaloPay báo lỗi rõ nhưng không lộ secret.
+- [x] Callback URL localhost/non-HTTPS bị từ chối theo rule hiện tại.
+- [x] Chỉ lưu Payment PENDING sau khi gateway tạo URL thanh toán thành công.
+- [x] MoMo request có raw signature đúng thứ tự trường.
+- [x] ZaloPay request có MAC đúng.
+- [x] Gateway HTTP/network error không tạo Payment PENDING và được bọc thành lỗi an toàn.
+- [x] MoMo IPN sai chữ ký không cập nhật payment/enrollment.
+- [x] ZaloPay callback sai MAC không cập nhật dữ liệu.
+- [x] Callback thành công cập nhật Payment PAID và Enrollment CONFIRMED + PAID.
+- [x] Callback thất bại lưu Payment FAILED nhưng Enrollment vẫn PENDING.
+- [x] Callback lặp lại idempotent.
+- [x] Sai số tiền không được complete payment.
+- [x] Constant-time signature comparison xử lý null/invalid input.
 
 ## 15. BillingServiceImpl, refund và invoice
 
-- [ ] Owner hoặc Staff xem được payment/refund; người khác bị Forbidden.
-- [ ] Staff validation chỉ chấp nhận ADMIN/CONSULTANT.
-- [ ] Chỉ refund Payment PAID thuộc enrollment đã thanh toán.
-- [ ] Idempotency key trùng trả kết quả cũ hoặc bị từ chối đúng rule.
-- [ ] Không refund vượt số tiền còn lại.
-- [ ] MoMo/ZaloPay refund request và signature đúng.
-- [ ] Refund thành công chuyển COMPLETED và cập nhật quyền học.
-- [ ] Refund bị từ chối lưu FAILED, không đổi quyền học.
-- [ ] Timeout giữ PENDING để refresh/đối soát.
-- [ ] Refresh refund gọi đúng gateway theo PaymentMethod.
-- [ ] Invoice tính paid/refunded/net amount đúng.
-- [ ] Không tìm thấy Enrollment/Payment/Refund trả exception phù hợp.
+- [x] Owner hoặc Staff xem được payment/refund; người khác bị Forbidden.
+- [x] Staff validation chỉ chấp nhận ADMIN/CONSULTANT.
+- [x] Chỉ refund Payment PAID thuộc enrollment đã thanh toán.
+- [x] Idempotency key trùng trả kết quả cũ hoặc bị từ chối đúng rule.
+- [x] Không refund vượt số tiền còn lại.
+- [x] MoMo/ZaloPay refund request có đủ dữ liệu và signature/MAC.
+- [x] Refund thành công chuyển COMPLETED và cập nhật quyền học.
+- [x] Refund bị từ chối lưu FAILED, không đổi quyền học.
+- [x] Timeout giữ PENDING để refresh/đối soát.
+- [x] Refresh refund gọi đúng gateway theo PaymentMethod.
+- [x] Invoice tính paid/refunded/net amount đúng.
+- [x] Không tìm thấy Enrollment/Payment/Refund trả exception phù hợp.
 
 ## 16. InvoicePdfServiceImpl
 
-- [ ] Gọi BillingService lấy invoice đúng enrollment/principal.
-- [ ] PDF sinh ra không rỗng và bắt đầu bằng header `%PDF`.
-- [ ] Hiển thị đúng mã hóa đơn, Student, Course, Class và tiền.
-- [ ] Amount/date null được format an toàn.
-- [ ] Font không tồn tại hoặc lỗi PDF được xử lý đúng.
+- [x] Gọi BillingService lấy invoice đúng enrollment/principal.
+- [x] PDF sinh ra không rỗng và bắt đầu bằng header `%PDF`.
+- [x] Hiển thị đúng mã hóa đơn, Student, Course, Class và tiền.
+- [x] Amount/date null được format an toàn.
+- [x] Font không tồn tại hoặc lỗi PDF được xử lý đúng.
 
 ## 17. AttendanceServiceImpl
 
-- [ ] Chỉ Teacher được phân công mới lấy/lưu sheet.
-- [ ] Class hoặc Lesson CANCELLED bị từ chối.
-- [ ] Sheet chỉ chứa enrollment CONFIRMED + PAID.
-- [ ] Bulk attendance tạo record mới đúng status/note/time.
-- [ ] Bulk update dùng attendance hiện có và cập nhật updatedAt.
-- [ ] Không thay đổi attendanceTime khi sửa.
-- [ ] Student không thuộc lớp bị từ chối.
-- [ ] Trùng Student trong request bị từ chối.
-- [ ] Item lỗi không gọi saveAll.
-- [ ] PATCH attendance chỉ cho Teacher phụ trách.
-- [ ] Chặn update quá bảy ngày sau ngày học.
-- [ ] Student getMine chỉ trả dữ liệu chính mình.
-- [ ] Summary đếm PRESENT/LATE/ABSENT/EXCUSED đúng.
-- [ ] Attendance rate không chia cho 0 và bỏ lesson CANCELLED.
+- [x] Chỉ Teacher được phân công mới lấy/lưu sheet.
+- [x] Class hoặc Lesson CANCELLED bị từ chối.
+- [x] Sheet chỉ chứa enrollment CONFIRMED + PAID.
+- [x] Bulk attendance tạo record mới đúng status/note/time.
+- [x] Bulk update dùng attendance hiện có và cập nhật updatedAt.
+- [x] Không thay đổi attendanceTime khi sửa.
+- [x] Student không thuộc lớp bị từ chối.
+- [x] Trùng Student trong request bị từ chối.
+- [x] Item lỗi không gọi saveAll.
+- [x] PATCH attendance chỉ cho Teacher phụ trách.
+- [x] Chặn update quá bảy ngày sau ngày học.
+- [x] Student getMine chỉ trả dữ liệu chính mình.
+- [x] Summary đếm PRESENT/LATE/ABSENT/EXCUSED đúng.
+- [x] Attendance rate không chia cho 0 và bỏ lesson CANCELLED.
 
 ## 18. DashboardServiceImpl
 
-- [ ] Summary thay null aggregate bằng zero.
-- [ ] Validate from không sau to.
-- [ ] Khoảng ngày mặc định được tính đúng.
-- [ ] Revenue nhóm YearMonth và trừ refund đúng.
-- [ ] Enrollment report map các cột native query đúng kiểu Number.
-- [ ] Popular course giới hạn số lượng hợp lệ.
-- [ ] Teacher load map active classes/generated/completed lessons đúng.
-- [ ] Upcoming classes map Teacher null và ngày đúng.
+- [x] Summary thay null aggregate bằng zero.
+- [x] Validate from không sau to.
+- [x] Khoảng ngày mặc định được tính đúng.
+- [x] Revenue nhóm YearMonth và trừ refund đúng.
+- [x] Enrollment report map các cột native query đúng kiểu Number.
+- [x] Popular course giới hạn số lượng hợp lệ.
+- [x] Teacher load map active classes/generated/completed lessons đúng.
+- [x] Upcoming classes map Teacher null và ngày đúng.
 
 ## 19. CloudinaryImageUploadService
 
-- [ ] File null/rỗng bị từ chối.
-- [ ] File vượt max size bị từ chối.
-- [ ] MIME type không bắt đầu bằng `image/` bị từ chối.
-- [ ] Purpose được normalize và kiểm tra whitelist.
-- [ ] ADMIN/STUDENT được upload đúng purpose theo rule hiện tại.
-- [ ] Role không có quyền bị Forbidden.
-- [ ] Principal hoặc User không tồn tại bị từ chối.
-- [ ] Upload options gửi folder/resource type đúng.
-- [ ] Cloudinary response map URL/publicId/width/height/bytes đúng kiểu.
-- [ ] Cloudinary exception được bọc thành lỗi nghiệp vụ an toàn.
+- [x] File null/rỗng bị từ chối.
+- [x] File vượt max size bị từ chối.
+- [x] MIME type ngoài whitelist ảnh bị từ chối.
+- [x] Purpose được normalize và kiểm tra whitelist.
+- [x] ADMIN/STUDENT được upload đúng purpose theo rule hiện tại.
+- [x] Role không có quyền bị Forbidden.
+- [x] Principal hoặc User không tồn tại bị từ chối.
+- [x] Upload options gửi folder/resource type đúng.
+- [x] Cloudinary response map URL/publicId/width/height/bytes đúng kiểu.
+- [x] Cloudinary exception được bọc thành lỗi nghiệp vụ an toàn.
 
 ## 20. Security, JWT và exception handler
 
 - [x] JwtFilter không có Authorization header thì tiếp tục filter chain.
 - [x] Authorization header sai định dạng trả Unauthorized và không chạy chain.
-- [ ] Bearer token hợp lệ thiết lập Authentication và authorities đúng.
-- [ ] Token hết hạn/sai chữ ký trả JSON 401.
-- [ ] User từ token không tồn tại hoặc không ACTIVE bị từ chối.
-- [ ] SecurityContext không bị ghi đè khi đã xác thực.
-- [ ] JwtUtils generate/parse subject thành công.
-- [ ] JwtUtils từ chối secret quá ngắn, token hết hạn và token bị sửa.
+- [x] Bearer token hợp lệ thiết lập Authentication và authorities đúng.
+- [x] Token hết hạn/sai chữ ký trả JSON 401.
+- [x] User từ token không tồn tại hoặc không ACTIVE bị từ chối.
+- [x] SecurityContext không bị ghi đè khi đã xác thực.
+- [x] JwtUtils generate/parse subject thành công.
+- [x] JwtUtils từ chối secret quá ngắn, token hết hạn và token bị sửa.
 - [x] Domain exception được map sang 400/401/403/404/409/502 đúng.
 - [x] JSON enum/body không đọc được trả 400 và không lộ parser detail.
 - [x] File quá lớn trả 413.
 - [x] Unexpected exception trả 500 với message tổng quát.
-- [ ] Validation errors được distinct và ghép đúng field/message.
-- [ ] Thiếu request part/parameter và type mismatch trả 400.
+- [x] Validation errors được distinct và ghép đúng field/message.
+- [x] Thiếu request part/parameter và type mismatch trả 400.
 
-## 21. Controller unit test
+## 21. SystemLogServiceImpl
+
+- [x] Validate page, size, khoảng ngày và log level.
+- [x] Search chuẩn hóa filter, sắp xếp `createdAt DESC` và map response.
+- [x] HTTP 401/403 tạo WARN + AUTHENTICATION_FAILURE.
+- [x] HTTP 5xx tạo ERROR + HTTP_REQUEST_FAILED.
+- [x] Lỗi lưu SystemLog không làm hỏng request nghiệp vụ chính.
+
+## 22. Controller unit test
 
 Controller chỉ cần Unit Test khi có logic ngoài việc gọi service và đóng gói response.
 Các kiểm tra HTTP mapping, validation và role ưu tiên đặt ở Integration Test.
 
 - [x] ApiUserController login tạo JWT và trả response nhất quán.
 - [x] AdminLanguageApiController create xóa ID do client cung cấp và trả 201.
-- [ ] Controller có nhánh Principal null được kiểm tra nếu logic nằm trực tiếp trong controller.
-- [ ] Controller tạo header PDF filename/content type được kiểm tra riêng.
-- [ ] Không tạo Unit Test lặp lại cho controller chỉ chuyển tiếp một lời gọi service.
+- [x] Không có controller cần lặp lại nhánh Principal null; authorization được kiểm tra ở service/security test.
+- [x] Controller tạo header PDF filename/content type được kiểm tra riêng.
+- [x] Không tạo Unit Test lặp lại cho controller chỉ chuyển tiếp một lời gọi service.
 
-## 22. Thứ tự triển khai đề xuất
+## 23. Thứ tự triển khai đề xuất
 
-1. EnrollmentServiceImpl và ClassScheduleServiceImpl.
-2. PaymentServiceImpl và BillingServiceImpl.
-3. AttendanceServiceImpl và LessonServiceImpl.
-4. CourseClassServiceImpl và CourseServiceImpl.
-5. UserServiceImpl còn thiếu.
-6. Dashboard, Cloudinary, PDF, JWT và mapper có logic.
-7. Chạy `mvn verify`, đọc JaCoCo theo class và bổ sung branch còn thiếu.
+1. [x] EnrollmentServiceImpl và ClassScheduleServiceImpl.
+2. [x] PaymentServiceImpl và BillingServiceImpl.
+3. [x] AttendanceServiceImpl và LessonServiceImpl.
+4. [x] CourseClassServiceImpl và CourseServiceImpl.
+5. [x] UserServiceImpl.
+6. [x] Dashboard, Cloudinary, PDF, JWT, SystemLog và mapper có logic.
+7. [x] Chạy `mvn verify`, đọc JaCoCo theo class và bổ sung branch quan trọng còn thiếu.
