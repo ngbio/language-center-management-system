@@ -74,14 +74,19 @@ public class BillingApiController {
   }
 
   @GetMapping(value = "/enrollments/{id}/invoice.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
-  public ResponseEntity<byte[]> invoicePdf(@PathVariable Integer id, Principal principal) {
+  public ResponseEntity<byte[]> invoicePdf(
+      @PathVariable Integer id,
+      @RequestParam(defaultValue = "false") boolean download,
+      Principal principal) {
     byte[] pdf = invoicePdfService.createInvoicePdf(id, principal);
     String filename = "invoice-enrollment-" + id + ".pdf";
+    ContentDisposition disposition = download
+        ? ContentDisposition.attachment().filename(filename).build()
+        : ContentDisposition.inline().filename(filename).build();
     return ResponseEntity.ok()
         .contentType(MediaType.APPLICATION_PDF)
         .contentLength(pdf.length)
-        .header(HttpHeaders.CONTENT_DISPOSITION,
-            ContentDisposition.attachment().filename(filename).build().toString())
+        .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
         .body(pdf);
   }
 }

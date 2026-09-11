@@ -1,6 +1,6 @@
 # BÁO CÁO KIỂM THỬ
 
-Ngày cập nhật: **10/09/2026**
+Ngày cập nhật: **11/09/2026**
 
 ## 1. Mục tiêu
 
@@ -16,26 +16,30 @@ Báo cáo ghi nhận kết quả kiểm thử tự động của backend hệ th
 - JaCoCo đo độ bao phủ mã nguồn.
 - Tên test theo mẫu `shouldExpectedResultWhenCondition`.
 
-## 3. Kết quả unit test
+## 3. Kết quả kiểm thử
 
 Lệnh xác minh:
 
 ```powershell
 cd backend/language-center-management
-mvn.cmd clean verify '-Dtest=com.ntt.language_center_management.unit.**'
+mvn.cmd verify
 ```
 
-Kết quả ngày 10/09/2026:
+Kết quả ngày 11/09/2026:
 
 | Chỉ số | Kết quả |
 |---|---:|
-| Tổng unit test | 116 |
-| Thành công | 116 |
+| Test class | 36 |
+| Unit test | 205 |
+| Integration test | 90 |
+| Spring context test | 1 |
+| Tổng test | 296 |
+| Thành công | 296 |
 | Failure | 0 |
 | Error | 0 |
 | Skipped | 0 |
 
-Các service thuộc mục 3–6:
+Các nhóm unit test:
 
 | Nhóm test | Số test | Kết quả |
 |---|---:|---|
@@ -49,6 +53,18 @@ Các service thuộc mục 3–6:
 | `CourseClassServiceImplTest` | 13 | Pass |
 | `ClassScheduleServiceImplTest` | 8 | Pass |
 | `LessonServiceImplTest` | 11 | Pass |
+| `EnrollmentServiceImplTest` | 15 | Pass |
+| `EnrollmentExpirationServiceImplTest` | 4 | Pass |
+| `PaymentServiceImplTest` | 19 | Pass |
+| `BillingServiceImplTest` | 14 | Pass |
+| `AttendanceServiceImplTest` | 9 | Pass |
+| `DashboardServiceImplTest` | 6 | Pass |
+| `CloudinaryImageUploadServiceTest` | 6 | Pass |
+| `InvoicePdfServiceImplTest` | 3 | Pass |
+| `SystemLogServiceImplTest` | 4 | Pass |
+| `JwtFilterTest` | 6 | Pass |
+| `JwtUtilsTest` | 3 | Pass |
+| Mapper, controller và exception handler | 11 | Pass |
 
 ## 4. Phạm vi nghiệp vụ đã kiểm thử
 
@@ -133,17 +149,41 @@ Các service thuộc mục 3–6:
 - Scheduler hoàn thành cả Lesson `SCHEDULED` và `IN_PROGRESS` đã qua giờ kết thúc theo timezone cấu hình.
 - Mapper lấy ngày, giờ, phòng và meeting URL từ ClassSchedule.
 
+### Enrollment và thời hạn thanh toán
+
+- Student và Staff đăng ký theo đúng quyền, trạng thái lớp, sức chứa và lịch trùng.
+- Hạn thanh toán được tạo sau hai ngày; enrollment miễn phí được xác nhận ngay.
+- Hủy đăng ký, mở lại lớp `FULL`, chuyển lớp cùng khóa học và khóa bản ghi theo thứ tự an toàn.
+- Kiểm tra quyền xem enrollment của Student, Teacher phụ trách và Staff.
+- Scheduler chỉ hết hạn enrollment đủ điều kiện và đã quá hạn.
+
+### Payment, refund và hóa đơn
+
+- Kiểm tra điều kiện thanh toán, quyền sở hữu, hạn thanh toán và cấu hình callback public.
+- Xác minh chữ ký/MAC, số tiền, tính idempotent và callback thành công/thất bại của MoMo/ZaloPay.
+- Không tạo Payment `PENDING` nếu gateway chưa trả URL thanh toán hợp lệ.
+- Hoàn tiền thành công, bị từ chối, timeout, đối soát lại và bảo toàn quyền học khi chưa `COMPLETED`.
+- Xuất PDF có nội dung hợp lệ, xử lý dữ liệu nullable và lỗi font cấu hình.
+
+### Attendance, dashboard, media và security
+
+- Điểm danh hàng loạt không N+1, cập nhật giữ nguyên `attendanceTime`, kiểm tra cửa sổ bảy ngày và quyền Teacher.
+- Tổng hợp tiến độ/chuyên cần dùng đúng mẫu số và bỏ qua lesson bị hủy.
+- Dashboard kiểm tra các chỉ số tổng hợp và khoảng ngày báo cáo.
+- Cloudinary kiểm tra loại file, kích thước, phản hồi thiếu URL và xóa ảnh khi upload lỗi.
+- JWT filter/util kiểm tra token hợp lệ, hết hạn/sai chữ ký, tài khoản không hoạt động và không ghi đè SecurityContext.
+- System log kiểm tra filter, phân trang, mapping và cơ chế không làm hỏng nghiệp vụ chính khi ghi log thất bại.
+
 Chi tiết từng trường hợp được theo dõi tại [UNIT_TEST_CHECKLIST.md](UNIT_TEST_CHECKLIST.md).
 
 ## 5. Độ bao phủ JaCoCo
 
-Độ bao phủ hiện tại được tính trên toàn bộ mã nguồn backend trong lần chạy unit test:
+Độ bao phủ hiện tại được tính trên toàn bộ mã nguồn backend trong lần chạy `mvn verify`, gồm unit test và integration test:
 
 | Loại coverage | Covered | Tổng | Tỷ lệ |
 |---|---:|---:|---:|
-| Instruction | 7.038 | 20.918 | 33,65% |
-| Branch | 356 | 1.302 | 27,34% |
-| Line | 1.803 | 4.505 | 40,02% |
+| Branch | 728 | 1.316 | 55,32% |
+| Line | 3.492 | 4.511 | 77,41% |
 
 Báo cáo HTML được sinh tại:
 
@@ -151,7 +191,7 @@ Báo cáo HTML được sinh tại:
 backend/language-center-management/target/site/jacoco/index.html
 ```
 
-Tỷ lệ tổng thể còn thấp vì checklist unit test của nhiều service phía sau chưa hoàn thành. Coverage hiện tại là số liệu nền để tiếp tục cải thiện, chưa được dùng làm quality gate.
+Checklist đã bao phủ các nhánh nghiệp vụ chính. Coverage tổng thể không được đẩy lên bằng các test getter/setter, DTO hoặc cấu hình không có logic; hiện chưa dùng coverage làm quality gate bắt buộc.
 
 ## 6. Lỗi nghiệp vụ phát hiện trong quá trình test
 
@@ -162,6 +202,7 @@ Tỷ lệ tổng thể còn thấp vì checklist unit test của nhiều service
 - Truy vấn lớp của Teacher trước đây có thể phát sinh `NullPointerException` khi Principal null. Luồng hiện dùng chung bước kiểm tra Principal/profile an toàn.
 - Chuyển đổi `java.sql.Date` trong kiểm tra lịch từng gây `UnsupportedOperationException`; service hiện xử lý riêng kiểu ngày JDBC.
 - Các thao tác lịch và Lesson quan trọng trước đây chỉ đọc bản ghi thông thường. Repository/service hiện dùng `PESSIMISTIC_WRITE` để ngăn hai transaction cùng sửa hoặc cùng sinh dữ liệu dựa trên trạng thái cũ.
+- Luồng hủy/chuyển enrollment từng so sánh `ClassStatus` với tập `String`, khiến lớp `OPEN`/`FULL` hợp lệ vẫn có thể bị từ chối. Service hiện so sánh trực tiếp bằng enum.
 
 ## 7. Kiểm thử transaction đồng thời
 
@@ -183,10 +224,9 @@ Unit test dùng Mockito không thể chứng minh transaction thứ hai thực s
 
 Một stack trace `Unexpected API error` có thể xuất hiện khi chạy `GlobalExceptionHandlerTest`. Đây là exception giả lập để kiểm tra việc che giấu thông tin nhạy cảm; test vẫn hợp lệ nếu Maven kết thúc với `Failures: 0, Errors: 0`.
 
-## 8. Giới hạn và công việc tiếp theo
+## 9. Giới hạn và công việc tiếp theo
 
-- Hoàn thiện các mục unit test còn chưa đánh dấu trong checklist.
-- Chạy toàn bộ integration test bằng môi trường database test ổn định.
-- Tăng coverage cho các service có nhiều nhánh nghiệp vụ và các trường hợp transaction rollback.
+- Bổ sung Testcontainers MySQL để chứng minh hành vi chờ lock và rollback ở database thật.
+- Tăng branch coverage cho các lớp còn nhiều nhánh tích hợp bên ngoài khi có môi trường sandbox ổn định.
 - Cân nhắc đặt quality gate JaCoCo sau khi phạm vi test chính đã hoàn thành.
 - Không phụ thuộc duy nhất vào coverage: assertion phải kiểm tra đúng kết quả và side effect nghiệp vụ.

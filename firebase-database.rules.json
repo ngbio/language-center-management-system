@@ -1,0 +1,25 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "chats": {
+      "$consultantUid": {
+        ".read": "auth != null && auth.token.role === 'CONSULTANT' && auth.uid === $consultantUid",
+        "$studentUid": {
+          ".read": "auth != null && ((auth.token.role === 'STUDENT' && auth.uid === $studentUid && auth.token.consultantUid === $consultantUid) || (auth.token.role === 'CONSULTANT' && auth.uid === $consultantUid))",
+          "metadata": {
+            ".write": "newData.exists() && auth != null && ((auth.token.role === 'STUDENT' && auth.uid === $studentUid && auth.token.consultantUid === $consultantUid) || (auth.token.role === 'CONSULTANT' && auth.uid === $consultantUid))",
+            ".validate": "newData.hasChildren(['studentUid', 'studentName', 'studentEmail', 'lastMessageAt']) && newData.child('studentUid').val() === $studentUid && newData.child('consultantUid').val() === $consultantUid"
+          },
+          "messages": {
+            ".indexOn": ["createdAt"],
+            "$messageId": {
+              ".write": "!data.exists() && newData.exists() && auth != null && ((auth.token.role === 'STUDENT' && auth.uid === $studentUid && auth.token.consultantUid === $consultantUid) || (auth.token.role === 'CONSULTANT' && auth.uid === $consultantUid))",
+              ".validate": "newData.hasChildren(['senderUid', 'senderRole', 'senderName', 'text', 'createdAt']) && newData.child('senderUid').val() === auth.uid && newData.child('senderRole').val() === auth.token.role && newData.child('text').isString() && newData.child('text').val().length > 0 && newData.child('text').val().length <= 2000"
+            }
+          }
+        }
+      }
+    }
+  }
+}

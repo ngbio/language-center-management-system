@@ -6,6 +6,8 @@ import {
   clearSession,
   isTokenActive,
 } from "../../utils/authSession";
+import StudentChatBubble from "../chat/StudentChatBubble";
+import { disconnectFirebaseChat } from "../../services/firebaseChat";
 
 export default function PublicLayout() {
   const navigate = useNavigate();
@@ -31,6 +33,7 @@ export default function PublicLayout() {
   };
 
   const logout = () => {
+    disconnectFirebaseChat();
     clearSession();
     setAccountMenuOpen(false);
     navigate("/");
@@ -123,6 +126,8 @@ export default function PublicLayout() {
       </header>
 
       <main><Outlet /></main>
+
+      {sessionAuthenticated && session.role === "STUDENT" && <StudentChatBubble />}
 
       <footer className="public-footer">
         <div className="public-container footer-grid">

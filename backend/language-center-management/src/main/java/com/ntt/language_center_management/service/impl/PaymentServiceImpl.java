@@ -35,6 +35,7 @@ import java.util.UUID;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -73,18 +74,30 @@ public class PaymentServiceImpl implements PaymentService {
   @Value("${payment.zalopay.callback-url}") private String zaloPayCallbackUrl;
   @Value("${payment.zalopay.redirect-url}") private String zaloPayRedirectUrl;
 
+  @Autowired
   public PaymentServiceImpl(
       PaymentRepository paymentRepository,
       EnrollmentRepository enrollmentRepository,
       StudentRepository studentRepository,
       ObjectMapper objectMapper,
       EnrollmentExpirationService enrollmentExpirationService) {
+    this(paymentRepository, enrollmentRepository, studentRepository, objectMapper,
+        enrollmentExpirationService, RestClient.builder().build());
+  }
+
+  public PaymentServiceImpl(
+      PaymentRepository paymentRepository,
+      EnrollmentRepository enrollmentRepository,
+      StudentRepository studentRepository,
+      ObjectMapper objectMapper,
+      EnrollmentExpirationService enrollmentExpirationService,
+      RestClient restClient) {
     this.paymentRepository = paymentRepository;
     this.enrollmentRepository = enrollmentRepository;
     this.studentRepository = studentRepository;
     this.objectMapper = objectMapper;
     this.enrollmentExpirationService = enrollmentExpirationService;
-    this.restClient = RestClient.builder().build();
+    this.restClient = restClient;
   }
 
   @Override

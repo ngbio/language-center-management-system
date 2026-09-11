@@ -13,6 +13,7 @@ export const endpoints = {
   teachers: "/teachers",
   profile: "/auth/me",
   "change-password": "/auth/change-password",
+  "firebase-chat-token": "/chat/firebase-token",
   "admin-teachers": "/admin/teachers",
   "admin-users": "/admin/users",
   "admin-user-details": (userId) => `/admin/users/${userId}`,

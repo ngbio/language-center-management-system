@@ -69,6 +69,26 @@ class EnrollmentExpirationServiceImplTest {
     assertFalse(service.expireIfOverdue(10));
   }
 
+  @Test
+  void shouldOnlyExpireConfirmedEnrollmentWithPendingPaymentAndPastDeadline() {
+    Courseclass courseClass = courseClass(5);
+    Date past = new Date(System.currentTimeMillis() - 60_000);
+    Enrollment pendingEnrollment = enrollment(courseClass, past);
+    pendingEnrollment.setEnrollmentStatus(EnrollmentStatus.PENDING);
+    Enrollment paidEnrollment = enrollment(courseClass, past);
+    paidEnrollment.setPaymentStatus(EnrollmentPaymentStatus.PAID);
+    Enrollment noDeadline = enrollment(courseClass, null);
+
+    when(enrollmentRepository.lockById(1)).thenReturn(Optional.of(pendingEnrollment));
+    when(enrollmentRepository.lockById(2)).thenReturn(Optional.of(paidEnrollment));
+    when(enrollmentRepository.lockById(3)).thenReturn(Optional.of(noDeadline));
+
+    assertFalse(service.expireIfOverdue(1));
+    assertFalse(service.expireIfOverdue(2));
+    assertFalse(service.expireIfOverdue(3));
+    verify(enrollmentRepository, never()).saveAndFlush(org.mockito.ArgumentMatchers.any());
+  }
+
   private Enrollment enrollment(Courseclass courseClass, Date deadline) {
     Enrollment enrollment =
         com.ntt.language_center_management.unit.fixture.TestFixtures.enrollment(10);

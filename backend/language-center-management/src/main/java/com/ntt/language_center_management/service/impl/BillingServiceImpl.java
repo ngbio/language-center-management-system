@@ -33,6 +33,7 @@ import java.util.UUID;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,13 +62,20 @@ public class BillingServiceImpl implements BillingService {
   @Value("${payment.zalopay.app-id}") private String zaloPayAppId;
   @Value("${payment.zalopay.key1}") private String zaloPayKey1;
 
+  @Autowired
   public BillingServiceImpl(EnrollmentRepository enrollmentRepository, PaymentRepository paymentRepository,
       RefundRepository refundRepository, UserRepository userRepository) {
+    this(enrollmentRepository, paymentRepository, refundRepository, userRepository,
+        RestClient.builder().build());
+  }
+
+  public BillingServiceImpl(EnrollmentRepository enrollmentRepository, PaymentRepository paymentRepository,
+      RefundRepository refundRepository, UserRepository userRepository, RestClient restClient) {
     this.enrollmentRepository = enrollmentRepository;
     this.paymentRepository = paymentRepository;
     this.refundRepository = refundRepository;
     this.userRepository = userRepository;
-    this.restClient = RestClient.builder().build();
+    this.restClient = restClient;
   }
 
   @Override @Transactional(readOnly = true)

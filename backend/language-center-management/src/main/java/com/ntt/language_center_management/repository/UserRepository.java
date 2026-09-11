@@ -4,6 +4,7 @@ import com.ntt.language_center_management.enums.AccountStatus;
 
 import com.ntt.language_center_management.entity.User;
 import java.util.Optional;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -22,6 +23,9 @@ public interface UserRepository
     Optional<User> findByUsername(String username);
 
     boolean existsByUsernameIgnoreCase(String username);
+
+    List<User> findAllByRoleId_RoleCodeIgnoreCaseAndStatusOrderByIdAsc(
+        String roleCode, AccountStatus status);
 
     @Query("""
         select user

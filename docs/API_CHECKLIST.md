@@ -214,7 +214,7 @@ Cập nhật: **06/09/2026**
 | ✅ | GET | `/api/staff/refunds` | Staff xem và lọc toàn bộ yêu cầu hoàn tiền |
 | ✅ | POST | `/api/staff/refunds/{id}/refresh` | Đồng bộ trạng thái hoàn tiền từ cổng thanh toán |
 | ✅ | GET | `/api/enrollments/{id}/invoice` | Dữ liệu hóa đơn gồm tổng thu, hoàn và thực thu |
-| ✅ | GET | `/api/enrollments/{id}/invoice.pdf` | Xuất file PDF; Student tải hóa đơn của mình từ lịch sử đăng ký và thanh toán |
+| ✅ | GET | `/api/enrollments/{id}/invoice.pdf?download={boolean}` | Xuất PDF dạng inline để xem trước hoặc attachment để Student tải hóa đơn |
 
 ## Các việc nên ưu tiên tiếp theo
 

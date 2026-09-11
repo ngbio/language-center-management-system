@@ -344,7 +344,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
   private void validateCancellationPolicy(Enrollment enrollment) {
     Courseclass courseClass = enrollment.getCourseClassId();
-    if (!Set.of("OPEN", "FULL").contains(courseClass.getStatus())) {
+    if (!Set.of(ClassStatus.OPEN, ClassStatus.FULL).contains(courseClass.getStatus())) {
       throw new IllegalArgumentException("Không thể hủy đăng ký khi lớp đã bắt đầu hoặc kết thúc");
     }
     if (!courseClass.getStartDate().after(new Date())) {
@@ -357,7 +357,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
   }
 
   private void validateTransferPolicy(Courseclass sourceClass) {
-    if (!Set.of("OPEN", "FULL").contains(sourceClass.getStatus())) {
+    if (!Set.of(ClassStatus.OPEN, ClassStatus.FULL).contains(sourceClass.getStatus())) {
       throw new IllegalArgumentException("Không thể chuyển khi lớp hiện tại đã bắt đầu hoặc kết thúc");
     }
     if (!sourceClass.getStartDate().after(new Date())) {

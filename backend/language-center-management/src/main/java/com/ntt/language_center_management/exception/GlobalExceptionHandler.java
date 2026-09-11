@@ -63,6 +63,13 @@ public class GlobalExceptionHandler {
     return error(HttpStatus.BAD_GATEWAY, exception.getMessage());
   }
 
+  @ExceptionHandler(ChatUnavailableException.class)
+  public ResponseEntity<ApiResponse<Void>> handleChatUnavailable(
+      ChatUnavailableException exception) {
+    LOGGER.warn("Firebase chat unavailable: {}", exception.getMessage());
+    return error(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage());
+  }
+
   @ExceptionHandler(HttpMessageNotReadableException.class)
   public ResponseEntity<ApiResponse<Void>> handleUnreadableRequest(
       HttpMessageNotReadableException exception) {

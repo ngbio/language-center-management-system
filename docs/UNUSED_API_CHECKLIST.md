@@ -75,7 +75,7 @@ Tài liệu này đối chiếu controller backend với các lời gọi API tr
 | ✅ | GET | `/api/staff/refunds` | Đã dùng tại màn quản lý hoàn tiền của Staff/Admin |
 | ✅ | POST | `/api/staff/refunds/{id}/refresh` | Đã có nút đồng bộ refund đang PENDING |
 | ✅ | GET | `/api/enrollments/{id}/invoice` | Modal chi tiết đăng ký hiển thị tổng học phí, đã trả, đã hoàn và thực thu |
-| ✅ | GET | `/api/enrollments/{id}/invoice.pdf` | Nút “Tải hóa đơn PDF” đã tích hợp trong lịch sử đăng ký và thanh toán của Student |
+| ✅ | GET | `/api/enrollments/{id}/invoice.pdf?download={boolean}` | Hai nút “Xem hóa đơn” và “Tải hóa đơn” đã tích hợp trong lịch sử đăng ký và thanh toán của Student |
 | ✅ | POST | `/api/enrollments/{id}/cancel-request` | Đã có nút yêu cầu hủy tại trang lịch sử riêng |
 | ✅ | GET | `/api/classes/{classId}/lessons` | Đã dùng tại trang điểm danh để Student xem từng buổi học |
 | ✅ | GET | `/api/students/me/attendance` | Đã có trang kết quả và tỷ lệ chuyên cần theo lớp |

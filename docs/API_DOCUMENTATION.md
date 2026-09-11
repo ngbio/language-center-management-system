@@ -460,12 +460,15 @@ Chỉ hủy trước ngày khai giảng và khi chưa phát sinh thanh toán.
 - Trả dữ liệu hóa đơn dạng JSON gồm học viên, khóa/lớp, học phí, tổng đã thu, tổng đã hoàn, thực thu và toàn bộ payment/refund.
 - Đây là dữ liệu nguồn JSON để hiển thị hoặc đối soát hóa đơn.
 
-### GET `/enrollments/{id}/invoice.pdf`
+### GET `/enrollments/{id}/invoice.pdf?download={boolean}`
 
 - Quyền: Student sở hữu enrollment hoặc ADMIN/CONSULTANT.
-- Trả trực tiếp `application/pdf` dưới dạng file đính kèm.
+- Trả trực tiếp nội dung `application/pdf`.
+- `download=false` (mặc định): trả `Content-Disposition: inline` để xem trước trên trình duyệt.
+- `download=true`: trả `Content-Disposition: attachment` để tải file xuống.
 - PDF gồm thông tin học viên, khóa/lớp, học phí, tổng đã thu, đã hoàn, thực thu, trạng thái và lịch sử payment/refund.
-- Giao diện lịch sử đăng ký và thanh toán của Student có nút **Tải hóa đơn PDF** đối với đăng ký `PAID` hoặc `REFUNDED`.
+- PDF được tạo trực tiếp bằng PDFBox và nhúng font Unicode để hiển thị tiếng Việt.
+- Giao diện lịch sử đăng ký và thanh toán của Student có nút **Xem hóa đơn** và **Tải hóa đơn** đối với đăng ký `PAID` hoặc `REFUNDED`.
 - Font tiếng Việt lấy từ biến môi trường `INVOICE_PDF_FONT_PATH`.
 
 ### POST `/payments/momo/ipn`
@@ -1048,3 +1051,13 @@ Quy tắc: `from <= to`, tối đa 366 ngày; doanh thu chỉ cộng payment `PA
 ### Quản lý giáo trình Admin
 
 Admin quản lý section qua `/api/admin/courses/{courseId}/sections`, `/api/admin/sections/{id}` và `/api/admin/sections/reorder`; quản lý content qua `/api/admin/sections/{sectionId}/contents`, `/api/admin/contents/{id}`, `/api/admin/contents/{id}/publication-status` và `/api/admin/contents/reorder`. Payload reorder có dạng `{ "ids": [3, 1, 2] }` và phải chứa đầy đủ, không trùng ID, thuộc cùng một khóa học hoặc section. Content mới luôn bắt đầu ở trạng thái `DRAFT`.
+# Realtime chat
+
+## Khởi tạo phiên Firebase Chat
+
+```http
+POST /api/chat/firebase-token
+Authorization: Bearer <jwt>
+```
+
+Chỉ hỗ trợ role `STUDENT` và `CONSULTANT`. API trả Firebase custom token cùng UID và Consultant được phân công. Dữ liệu tin nhắn được trao đổi trực tiếp với Firebase Realtime Database theo rules trong `firebase-database.rules.json`.

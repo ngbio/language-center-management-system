@@ -1,9 +1,11 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { SESSION_KEYS, clearSession } from "../utils/authSession";
+import { disconnectFirebaseChat } from "../services/firebaseChat";
 
 export default function StaffLayout() {
   const navigate = useNavigate();
   const logout = () => {
+    disconnectFirebaseChat();
     clearSession();
     navigate("/staff/login", { replace: true });
   };
@@ -24,6 +26,9 @@ export default function StaffLayout() {
           </NavLink>
           <NavLink to="/staff/refunds">
             <span className="nav-icon">↩</span>Hoàn tiền
+          </NavLink>
+          <NavLink to="/staff/chat">
+            <span className="nav-icon">C</span>Tin nhắn học viên
           </NavLink>
           <NavLink to="/staff/change-password">
             <span className="nav-icon">🔒</span>Đổi mật khẩu

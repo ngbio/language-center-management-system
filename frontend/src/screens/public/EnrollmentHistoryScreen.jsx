@@ -15,6 +15,7 @@ export default function EnrollmentHistoryScreen() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [payingId, setPayingId] = useState(null);
+  const [previewingId, setPreviewingId] = useState(null);
   const [downloadingId, setDownloadingId] = useState(null);
   const [methods, setMethods] = useState({});
   const [detail, setDetail] = useState(null);
@@ -65,10 +66,50 @@ export default function EnrollmentHistoryScreen() {
     } catch (requestError) { setError(apiError(requestError)); }
   };
 
+  const setInvoiceRequestError = async (requestError) => {
+    const responseBody = requestError.response?.data;
+    if (responseBody instanceof Blob) {
+      try {
+        const payload = JSON.parse(await responseBody.text());
+        setError(payload.message || apiError(requestError));
+        return;
+      } catch {
+        // The response is not a JSON API error; use the shared fallback below.
+      }
+    }
+    setError(apiError(requestError));
+  };
+
+  const viewInvoice = async (enrollment) => {
+    const previewWindow = window.open("about:blank", "_blank");
+    if (!previewWindow) {
+      setError("Trình duyệt đang chặn cửa sổ xem hóa đơn. Vui lòng cho phép mở tab mới.");
+      return;
+    }
+    previewWindow.opener = null;
+    previewWindow.document.title = "Đang tải hóa đơn...";
+    setPreviewingId(enrollment.id); setError(""); setNotice("");
+    try {
+      const response = await authApis().get(endpoints["enrollment-invoice-pdf"](enrollment.id), {
+        params: { download: false },
+        responseType: "blob",
+      });
+      const url = URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
+      previewWindow.location.replace(url);
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (requestError) {
+      previewWindow.close();
+      await setInvoiceRequestError(requestError);
+    } finally {
+      setPreviewingId(null);
+    }
+  };
+
   const downloadInvoice = async (enrollment) => {
     setDownloadingId(enrollment.id); setError(""); setNotice("");
     try {
       const response = await authApis().get(endpoints["enrollment-invoice-pdf"](enrollment.id), {
+        params: { download: true },
         responseType: "blob",
       });
       const url = URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
@@ -78,19 +119,9 @@ export default function EnrollmentHistoryScreen() {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      URL.revokeObjectURL(url);
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
     } catch (requestError) {
-      const responseBody = requestError.response?.data;
-      if (responseBody instanceof Blob) {
-        try {
-          const payload = JSON.parse(await responseBody.text());
-          setError(payload.message || apiError(requestError));
-        } catch {
-          setError(apiError(requestError));
-        }
-      } else {
-        setError(apiError(requestError));
-      }
+      await setInvoiceRequestError(requestError);
     } finally {
       setDownloadingId(null);
     }
@@ -133,7 +164,7 @@ export default function EnrollmentHistoryScreen() {
                 {canPay && <><select value={methods[item.id] || "MOMO"} onChange={(event) => setMethods((current) => ({ ...current, [item.id]: event.target.value }))}><option value="MOMO">MoMo</option><option value="ZALOPAY">ZaloPay</option></select><button className="pay-enrollment-button" disabled={payingId === item.id} onClick={() => pay(item)}>{payingId === item.id ? "Đang tạo..." : "Thanh toán"}</button></>}
                 {canCancel && <button type="button" onClick={() => cancel(item)}>Hủy đăng ký</button>}
                 <button type="button" disabled={detailLoadingId === item.id} onClick={() => viewDetail(item)}>{detailLoadingId === item.id ? "Đang tải..." : "Xem chi tiết"}</button>
-                {["PAID", "REFUNDED"].includes(item.paymentStatus) && <button type="button" className="pay-enrollment-button" disabled={downloadingId === item.id} onClick={() => downloadInvoice(item)}>{downloadingId === item.id ? "Đang xuất..." : "Tải hóa đơn PDF"}</button>}
+                {["PAID", "REFUNDED"].includes(item.paymentStatus) && <><button type="button" disabled={previewingId === item.id} onClick={() => viewInvoice(item)}>{previewingId === item.id ? "Đang mở..." : "Xem hóa đơn"}</button><button type="button" className="pay-enrollment-button" disabled={downloadingId === item.id} onClick={() => downloadInvoice(item)}>{downloadingId === item.id ? "Đang tải..." : "Tải hóa đơn"}</button></>}
               </div></td></tr>;
             }) : <tr><td colSpan="7">Bạn chưa có đăng ký lớp học nào.</td></tr>}
           </tbody></table>
