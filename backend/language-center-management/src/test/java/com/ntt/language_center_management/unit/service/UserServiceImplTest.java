@@ -14,6 +14,7 @@ import com.ntt.language_center_management.exception.*;
 import com.ntt.language_center_management.mapper.UserMapper;
 import com.ntt.language_center_management.repository.*;
 import com.ntt.language_center_management.service.impl.UserServiceImpl;
+import com.ntt.language_center_management.security.CurrentUserResolver;
 import java.security.Principal;
 import java.util.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,7 +39,8 @@ class UserServiceImplTest {
     teachers = mock(TeacherRepository.class);
     roles = mock(RoleRepository.class);
     encoder = mock(PasswordEncoder.class);
-    service = new UserServiceImpl(users, students, teachers, roles, new UserMapper(), encoder);
+    service = new UserServiceImpl(users, students, teachers, roles, new UserMapper(), encoder,
+        new CurrentUserResolver(users, students, teachers));
   }
 
   @Test

@@ -5,6 +5,7 @@ import com.ntt.language_center_management.enums.ClassStatus;
 
 import com.ntt.language_center_management.entity.Lesson;
 import com.ntt.language_center_management.repository.LessonRepository;
+import com.ntt.language_center_management.util.ApplicationDateTimeUtils;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -52,21 +53,8 @@ public class LessonCompletionScheduler {
 
   private LocalDateTime endTimeOf(Lesson lesson) {
     return LocalDateTime.of(
-        toLocalDate(lesson.getLessonDate()),
-        toLocalTime(lesson.getClassScheduleId().getEndTime()));
-  }
-
-  private LocalDate toLocalDate(Date value) {
-    if (value instanceof java.sql.Date sqlDate) {
-      return sqlDate.toLocalDate();
-    }
-    return value.toInstant().atZone(applicationZone).toLocalDate();
-  }
-
-  private LocalTime toLocalTime(Date value) {
-    if (value instanceof java.sql.Time sqlTime) {
-      return sqlTime.toLocalTime();
-    }
-    return value.toInstant().atZone(applicationZone).toLocalTime();
+        ApplicationDateTimeUtils.toLocalDate(lesson.getLessonDate(), applicationZone),
+        ApplicationDateTimeUtils.toLocalTime(
+            lesson.getClassScheduleId().getEndTime(), applicationZone));
   }
 }

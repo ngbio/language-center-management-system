@@ -2,7 +2,7 @@ package com.ntt.language_center_management.mapper;
 
 import com.ntt.language_center_management.dto.response.LessonResponse;
 import com.ntt.language_center_management.entity.Lesson;
-import java.time.Instant;
+import com.ntt.language_center_management.util.ApplicationDateTimeUtils;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -44,23 +44,14 @@ public class LessonMapper {
   }
 
   private LocalDate toLocalDate(java.util.Date value) {
-    if (value == null) {
-      return null;
-    }
-    if (value instanceof java.sql.Date sqlDate) {
-      return sqlDate.toLocalDate();
-    }
-    return Instant.ofEpochMilli(value.getTime()).atZone(applicationZone).toLocalDate();
+    return ApplicationDateTimeUtils.toLocalDate(value, applicationZone);
   }
 
   private LocalTime toLocalTime(java.util.Date value) {
-    if (value instanceof java.sql.Time sqlTime) {
-      return sqlTime.toLocalTime();
-    }
-    return Instant.ofEpochMilli(value.getTime()).atZone(applicationZone).toLocalTime();
+    return ApplicationDateTimeUtils.toLocalTime(value, applicationZone);
   }
 
   private LocalDateTime toLocalDateTime(java.util.Date value) {
-    return value == null ? null : Instant.ofEpochMilli(value.getTime()).atZone(applicationZone).toLocalDateTime();
+    return ApplicationDateTimeUtils.toLocalDateTime(value, applicationZone);
   }
 }

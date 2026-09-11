@@ -3,6 +3,7 @@ package com.ntt.language_center_management.repository;
 import com.ntt.language_center_management.enums.ClassStatus;
 
 import com.ntt.language_center_management.entity.Courseclass;
+import com.ntt.language_center_management.entity.Course;
 import jakarta.persistence.LockModeType;
 import java.util.Collection;
 import java.util.Date;
@@ -28,6 +29,14 @@ public interface CourseClassRepository
   Optional<Courseclass> lockById(@Param("id") Integer id);
 
   java.util.List<Courseclass> findByTeacherId_IdOrderByStartDateDesc(Integer teacherId);
+
+  @Query("""
+      select distinct cc.courseId
+      from Courseclass cc
+      where cc.teacherId.id = :teacherId
+      order by cc.courseId.courseName asc
+      """)
+  java.util.List<Course> findDistinctCoursesByTeacherId(@Param("teacherId") Integer teacherId);
 
   long countByStatusIn(Collection<ClassStatus> statuses);
 

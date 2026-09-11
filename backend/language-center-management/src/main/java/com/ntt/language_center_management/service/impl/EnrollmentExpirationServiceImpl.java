@@ -10,16 +10,15 @@ import com.ntt.language_center_management.repository.CourseClassRepository;
 import com.ntt.language_center_management.repository.EnrollmentRepository;
 import com.ntt.language_center_management.service.EnrollmentExpirationService;
 import java.util.Date;
-import java.util.Set;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import static com.ntt.language_center_management.policy.EnrollmentPolicy.CAPACITY_RESERVED_STATUSES;
+
 @Service
 public class EnrollmentExpirationServiceImpl implements EnrollmentExpirationService {
-  private static final Set<EnrollmentStatus> ACTIVE_STATUSES =
-      Set.of(EnrollmentStatus.PENDING, EnrollmentStatus.CONFIRMED);
   private final EnrollmentRepository enrollmentRepository;
   private final CourseClassRepository courseClassRepository;
 
@@ -58,7 +57,7 @@ public class EnrollmentExpirationServiceImpl implements EnrollmentExpirationServ
     enrollmentRepository.saveAndFlush(enrollment);
     Courseclass courseClass = enrollment.getCourseClassId();
     long occupied = enrollmentRepository.countByCourseClassId_IdAndEnrollmentStatusIn(
-        courseClass.getId(), ACTIVE_STATUSES);
+        courseClass.getId(), CAPACITY_RESERVED_STATUSES);
     if (courseClass.getStatus() == ClassStatus.FULL && occupied < courseClass.getMaxStudents()) {
       courseClass.setStatus(ClassStatus.OPEN);
       courseClassRepository.save(courseClass);

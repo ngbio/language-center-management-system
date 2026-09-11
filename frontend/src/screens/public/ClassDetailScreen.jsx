@@ -28,8 +28,8 @@ export default function ClassDetailScreen() {
     : null;
   useEffect(() => {
     let active = true;
-    Promise.all([api.get(endpoints["class-details"](id)), api.get(endpoints["class-schedules"](id))])
-      .then(([classResponse, scheduleResponse]) => { if (active) { setItem(apiData(classResponse)); setSchedules(apiData(scheduleResponse) || []); } })
+    api.get(endpoints["class-details"](id))
+      .then((classResponse) => { if (active) { const value = apiData(classResponse); setItem(value); setSchedules(value?.schedules || []); } })
       .catch((error) => active && setMessage(apiError(error)))
       .finally(() => active && setLoading(false));
     return () => { active = false; };

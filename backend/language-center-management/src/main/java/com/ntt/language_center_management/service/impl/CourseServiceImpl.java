@@ -23,6 +23,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import static com.ntt.language_center_management.util.TextUtils.trimToNull;
+
 @Service
 @Transactional
 public class CourseServiceImpl implements CourseService {
@@ -241,7 +243,4 @@ public class CourseServiceImpl implements CourseService {
     return status;
   }
 
-  private String trimToNull(String value) {
-    return StringUtils.hasText(value) ? value.trim() : null;
-  }
 }

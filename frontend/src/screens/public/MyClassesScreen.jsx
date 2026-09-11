@@ -26,20 +26,17 @@ export default function MyClassesScreen() {
     const api = authApis();
     Promise.all([
       api.get(endpoints["my-classes"]),
-      api.get(endpoints["my-schedules"]),
       api.get(endpoints["my-attendance"]),
+      api.get(endpoints["my-lessons"]),
     ])
-      .then(async ([classResponse, scheduleResponse, attendanceResponse]) => {
+      .then(([classResponse, attendanceResponse, lessonResponse]) => {
         if (!active) return;
         const classList = apiData(classResponse) || [];
-        const lessonResponses = await Promise.all(
-          classList.map((item) => api.get(endpoints["class-lessons"](item.id))),
-        );
-        if (!active) return;
+        const lessonList = apiData(lessonResponse) || [];
         setClasses(classList);
-        setSchedules(apiData(scheduleResponse) || []);
+        setSchedules(classList.flatMap((item) => item.schedules || []));
         setAttendance(apiData(attendanceResponse) || []);
-        setLessonsByClass(Object.fromEntries(classList.map((item, index) => [item.id, apiData(lessonResponses[index]) || []])));
+        setLessonsByClass(groupByClassId(lessonList));
       })
       .catch((requestError) => { if (active) setError(apiError(requestError)); })
       .finally(() => { if (active) setLoading(false); });
@@ -130,3 +127,8 @@ const attendanceRate = (classId, lessonsByClass, attendance) => {
   const attended = completed.filter((lesson) => ["PRESENT", "LATE"].includes(records.get(lesson.id))).length;
   return Math.round((attended * 100) / completed.length);
 };
+
+const groupByClassId = (lessons) => lessons.reduce((result, lesson) => {
+  (result[lesson.courseClassId] ||= []).push(lesson);
+  return result;
+}, {});

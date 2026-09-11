@@ -49,18 +49,16 @@ export default function TeacherAttendanceScreen() {
   useEffect(() => {
     if (!classId) return undefined;
     let active = true;
-    Promise.all([
-      authApis().get(endpoints["class-lessons"](classId)),
-      authApis().get(endpoints["class-schedules"](classId)),
-    ])
-      .then(([lessonResponse, scheduleResponse]) => {
+    authApis().get(endpoints["class-lessons"](classId))
+      .then((lessonResponse) => {
         if (!active) return;
         setLessons(apiData(lessonResponse) || []);
-        setSchedules(apiData(scheduleResponse) || []);
+        const selectedClass = classes.find((item) => String(item.id) === String(classId));
+        setSchedules(selectedClass?.schedules || []);
       })
       .catch((requestError) => { if (active) setError(apiError(requestError)); });
     return () => { active = false; };
-  }, [classId]);
+  }, [classId, classes]);
 
   const refreshLessons = async () => {
     const response = await authApis().get(endpoints["class-lessons"](classId));

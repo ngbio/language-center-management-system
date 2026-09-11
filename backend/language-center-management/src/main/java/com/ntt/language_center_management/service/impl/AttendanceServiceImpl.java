@@ -29,6 +29,7 @@ import com.ntt.language_center_management.repository.LessonRepository;
 import com.ntt.language_center_management.repository.StudentRepository;
 import com.ntt.language_center_management.repository.TeacherRepository;
 import com.ntt.language_center_management.service.AttendanceService;
+import com.ntt.language_center_management.util.ApplicationDateTimeUtils;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -47,6 +48,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+
+import static com.ntt.language_center_management.util.TextUtils.trimToNull;
 
 @Service
 @Transactional
@@ -272,10 +275,12 @@ public class AttendanceServiceImpl implements AttendanceService {
 
   private void ensureCanUpdateAttendance(Lesson lesson) {
     ensureAttendanceAllowed(lesson);
-    LocalDate lessonDate = toLocalDate(lesson.getLessonDate());
+    LocalDate lessonDate = ApplicationDateTimeUtils.toLocalDate(lesson.getLessonDate(), applicationZone);
     LocalDateTime now = LocalDateTime.now(applicationZone);
     LocalDateTime lessonStart =
-        LocalDateTime.of(lessonDate, toLocalTime(lesson.getClassScheduleId().getStartTime()));
+        LocalDateTime.of(lessonDate,
+            ApplicationDateTimeUtils.toLocalTime(
+                lesson.getClassScheduleId().getStartTime(), applicationZone));
     if (now.isBefore(lessonStart)) {
       throw new IllegalArgumentException("Chỉ được điểm danh sau thời gian bắt đầu buổi học");
     }
@@ -314,21 +319,4 @@ public class AttendanceServiceImpl implements AttendanceService {
     return principal.getName();
   }
 
-  private LocalDate toLocalDate(Date value) {
-    if (value instanceof java.sql.Date sqlDate) {
-      return sqlDate.toLocalDate();
-    }
-    return value.toInstant().atZone(applicationZone).toLocalDate();
-  }
-
-  private LocalTime toLocalTime(Date value) {
-    if (value instanceof java.sql.Time sqlTime) {
-      return sqlTime.toLocalTime();
-    }
-    return value.toInstant().atZone(applicationZone).toLocalTime();
-  }
-
-  private String trimToNull(String value) {
-    return StringUtils.hasText(value) ? value.trim() : null;
-  }
 }

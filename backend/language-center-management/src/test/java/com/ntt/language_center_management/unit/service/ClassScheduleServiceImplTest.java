@@ -31,7 +31,8 @@ class ClassScheduleServiceImplTest {
     schedules = mock(ClassScheduleRepository.class); classes = mock(CourseClassRepository.class);
     lessons = mock(LessonRepository.class); rooms = mock(RoomRepository.class);
     mapper = mock(ClassScheduleMapper.class);
-    service = new ClassScheduleServiceImpl(schedules, classes, lessons, rooms, mapper);
+    service = new ClassScheduleServiceImpl(
+        schedules, classes, lessons, rooms, mapper, "Asia/Ho_Chi_Minh");
   }
 
   @Test

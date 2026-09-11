@@ -11,6 +11,7 @@ import {
 } from "../AdminUi";
 import { apiData, apiError, formatMoney } from "../../utils/api";
 import ImageUploadField from "../ImageUploadField";
+import useDebouncedValue from "../../hooks/useDebouncedValue";
 
 const definitions = {
   languages: {
@@ -154,6 +155,7 @@ export default function AdminCatalogScreen({ type }) {
   const [levels, setLevels] = useState([]);
   const [form, setForm] = useState(null);
   const [keyword, setKeyword] = useState("");
+  const debouncedKeyword = useDebouncedValue(keyword);
   const [statusFilter, setStatusFilter] = useState("");
   const [languageFilter, setLanguageFilter] = useState("");
   const [levelFilter, setLevelFilter] = useState("");
@@ -175,7 +177,7 @@ export default function AdminCatalogScreen({ type }) {
           params: {
             ...(type === "courses" ? {
               page: coursePage, size: 10,
-              keyword: keyword || undefined,
+              keyword: debouncedKeyword || undefined,
               languageId: languageFilter || undefined,
               levelId: levelFilter || undefined,
               sort,
@@ -199,7 +201,7 @@ export default function AdminCatalogScreen({ type }) {
     } finally {
       setLoading(false);
     }
-  }, [type, statusFilter, keyword, languageFilter, levelFilter, courseSort, coursePage]);
+  }, [type, statusFilter, debouncedKeyword, languageFilter, levelFilter, courseSort, coursePage]);
 
   useEffect(() => {
     // Fetch lại danh mục khi loại màn hình thay đổi.

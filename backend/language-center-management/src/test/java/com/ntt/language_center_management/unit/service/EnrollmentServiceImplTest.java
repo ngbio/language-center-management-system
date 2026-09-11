@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
@@ -45,6 +46,8 @@ import com.ntt.language_center_management.repository.CourseClassRepository;
 import com.ntt.language_center_management.repository.EnrollmentRepository;
 import com.ntt.language_center_management.repository.StudentRepository;
 import com.ntt.language_center_management.repository.UserRepository;
+import com.ntt.language_center_management.repository.TeacherRepository;
+import com.ntt.language_center_management.security.CurrentUserResolver;
 import com.ntt.language_center_management.service.impl.EnrollmentServiceImpl;
 import java.math.BigDecimal;
 import java.security.Principal;
@@ -73,6 +76,7 @@ class EnrollmentServiceImplTest {
   private ClassScheduleMapper scheduleMapper;
   private ClassScheduleRepository schedules;
   private EnrollmentServiceImpl service;
+  private CurrentUserResolver currentUserResolver;
   private EnrollmentResponse response;
 
   @BeforeEach
@@ -86,8 +90,9 @@ class EnrollmentServiceImplTest {
     classMapper = mock(CourseClassMapper.class);
     scheduleMapper = mock(ClassScheduleMapper.class);
     schedules = mock(ClassScheduleRepository.class);
+    currentUserResolver = new CurrentUserResolver(users, students, mock(TeacherRepository.class));
     service = new EnrollmentServiceImpl(enrollments, classes, students, users, mapper,
-        courseMapper, classMapper, scheduleMapper, schedules);
+        courseMapper, classMapper, scheduleMapper, schedules, currentUserResolver);
     response = mock(EnrollmentResponse.class);
     when(mapper.toResponse(any(Enrollment.class))).thenReturn(response);
     when(enrollments.saveAndFlush(any(Enrollment.class)))
@@ -331,7 +336,7 @@ class EnrollmentServiceImplTest {
     when(schedules.findAccessibleSchedulesByStudentId(7)).thenReturn(List.of(schedule));
     when(mapper.toSummaryResponse(enrollment)).thenReturn(summary);
     when(courseMapper.toResponse(course)).thenReturn(courseResponse);
-    when(classMapper.toResponse(eq(courseClass), anyLong())).thenReturn(classResponse);
+    when(classMapper.toResponse(eq(courseClass), eq(0L), anyList())).thenReturn(classResponse);
     when(scheduleMapper.toResponse(schedule)).thenReturn(scheduleResponse);
 
     assertThat(service.getMyEnrollments(principal())).containsExactly(summary);

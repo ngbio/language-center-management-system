@@ -355,6 +355,15 @@ Response `data`:
 - Công dụng: lấy các lớp học đã được kích hoạt của học viên hiện tại.
 - Điều kiện: enrollment `CONFIRMED`, payment `PAID`, lớp không `CANCELLED`, khóa học `ACTIVE + PUBLISHED`.
 - Trả về: `CourseClassResponse[]`, sắp xếp theo ngày bắt đầu mới nhất.
+- Mỗi lớp có sẵn trường `schedules`; frontend không cần gọi lịch riêng cho từng lớp.
+
+### GET `/students/me/lessons`
+
+- Quyền: STUDENT.
+- Công dụng: lấy toàn bộ buổi học thuộc các enrollment `CONFIRMED + PAID` của học viên trong một request.
+- Không trả lesson của lớp `CANCELLED`.
+- Trả về: `LessonResponse[]`, sắp xếp theo ngày và giờ học.
+- Được dùng tại “Lớp học của tôi” và “Kết quả điểm danh” để tránh N request `/classes/{classId}/lessons`.
 
 ### GET `/students/me/schedules`
 
@@ -362,6 +371,7 @@ Response `data`:
 - Công dụng: lấy thời khóa biểu hàng tuần của các lớp đã được kích hoạt.
 - Điều kiện quyền giống `/students/me/classes`.
 - Trả về: `ClassScheduleResponse[]`, sắp xếp theo thứ và giờ bắt đầu.
+- Giữ lại để tương thích với client cũ và trường hợp chỉ cần thời khóa biểu; giao diện hiện tại đọc lịch đã gộp trong `/students/me/classes`.
 
 ### POST `/enrollments/{id}/cancel-request`
 

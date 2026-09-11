@@ -15,6 +15,9 @@ import com.ntt.language_center_management.entity.Role;
 import com.ntt.language_center_management.entity.User;
 import com.ntt.language_center_management.exception.ForbiddenException;
 import com.ntt.language_center_management.repository.UserRepository;
+import com.ntt.language_center_management.repository.StudentRepository;
+import com.ntt.language_center_management.repository.TeacherRepository;
+import com.ntt.language_center_management.security.CurrentUserResolver;
 import com.ntt.language_center_management.service.impl.CloudinaryImageUploadService;
 import java.io.IOException;
 import java.security.Principal;
@@ -31,13 +34,16 @@ class CloudinaryImageUploadServiceTest {
   private UserRepository users;
   private CloudinaryImageUploadService service;
   private MultipartFile file;
+  private CurrentUserResolver currentUserResolver;
 
   @BeforeEach
   void setUp() {
     cloudinary = mock(Cloudinary.class);
     uploader = mock(Uploader.class);
     users = mock(UserRepository.class);
-    service = new CloudinaryImageUploadService(cloudinary, users,
+    currentUserResolver = new CurrentUserResolver(
+        users, mock(StudentRepository.class), mock(TeacherRepository.class));
+    service = new CloudinaryImageUploadService(cloudinary, currentUserResolver,
         "cloudinary://key:secret@demo", 5 * 1024 * 1024L);
     file = mock(MultipartFile.class);
     when(cloudinary.uploader()).thenReturn(uploader);
@@ -84,12 +90,14 @@ class CloudinaryImageUploadServiceTest {
   @Test
   void shouldRejectMissingPrincipalUserAndConfiguration() {
     assertThatThrownBy(() -> service.upload(file, "STUDENT_AVATAR", null))
-        .isInstanceOf(ForbiddenException.class);
+        .isInstanceOf(com.ntt.language_center_management.exception.UnauthorizedException.class);
     assertThatThrownBy(() -> service.upload(file, "STUDENT_AVATAR", () -> "missing@example.com"))
-        .isInstanceOf(ForbiddenException.class).hasMessageContaining("Không tìm thấy");
+        .isInstanceOf(com.ntt.language_center_management.exception.ResourceNotFoundException.class)
+        .hasMessageContaining("Không tìm thấy");
 
     CloudinaryImageUploadService unconfigured =
-        new CloudinaryImageUploadService(cloudinary, users, "", 5 * 1024 * 1024L);
+        new CloudinaryImageUploadService(
+            cloudinary, currentUserResolver, "", 5 * 1024 * 1024L);
     assertThatThrownBy(() -> unconfigured.upload(file, "STUDENT_AVATAR", studentPrincipal()))
         .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("CLOUDINARY_URL");
   }

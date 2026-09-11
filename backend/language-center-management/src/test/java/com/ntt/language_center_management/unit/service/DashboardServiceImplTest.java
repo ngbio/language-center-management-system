@@ -20,6 +20,7 @@ import com.ntt.language_center_management.repository.PaymentRepository;
 import com.ntt.language_center_management.repository.RefundRepository;
 import com.ntt.language_center_management.repository.StudentRepository;
 import com.ntt.language_center_management.repository.TeacherRepository;
+import com.ntt.language_center_management.repository.projection.CourseClassEnrollmentCount;
 import com.ntt.language_center_management.service.impl.DashboardServiceImpl;
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -148,8 +149,14 @@ class DashboardServiceImplTest {
     Courseclass assigned = upcomingClass(11, "Teacher B");
     when(classes.findByStartDateBetweenAndStatusInOrderByStartDateAsc(any(), any(), any()))
         .thenReturn(List.of(noTeacher, assigned));
-    when(enrollments.countByCourseClassId_IdAndEnrollmentStatusIn(anyInt(), any()))
-        .thenReturn(12L, 40L);
+    CourseClassEnrollmentCount firstCount = mock(CourseClassEnrollmentCount.class);
+    CourseClassEnrollmentCount secondCount = mock(CourseClassEnrollmentCount.class);
+    when(firstCount.getCourseClassId()).thenReturn(10);
+    when(firstCount.getEnrollmentCount()).thenReturn(12L);
+    when(secondCount.getCourseClassId()).thenReturn(11);
+    when(secondCount.getEnrollmentCount()).thenReturn(40L);
+    when(enrollments.countByCourseClassIdsAndEnrollmentStatusIn(any(), any()))
+        .thenReturn(List.of(firstCount, secondCount));
 
     assertThat(service.getTeacherLoad(from, to)).singleElement().satisfies(value -> {
       assertThat(value.teacherCode()).isEqualTo("GV004");

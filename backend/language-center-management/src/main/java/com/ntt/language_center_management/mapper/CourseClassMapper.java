@@ -2,10 +2,12 @@ package com.ntt.language_center_management.mapper;
 
 import com.ntt.language_center_management.dto.request.CourseClassRequest;
 import com.ntt.language_center_management.dto.response.CourseClassResponse;
+import com.ntt.language_center_management.dto.response.ClassScheduleResponse;
 import com.ntt.language_center_management.entity.Course;
 import com.ntt.language_center_management.entity.Courseclass;
 import com.ntt.language_center_management.entity.Teacher;
 import org.springframework.stereotype.Component;
+import java.util.List;
 
 @Component
 public class CourseClassMapper {
@@ -23,6 +25,13 @@ public class CourseClassMapper {
   }
 
   public CourseClassResponse toResponse(Courseclass value, long enrolledStudents) {
+    return toResponse(value, enrolledStudents, List.of());
+  }
+
+  public CourseClassResponse toResponse(
+      Courseclass value,
+      long enrolledStudents,
+      List<ClassScheduleResponse> schedules) {
     var course = value.getCourseId();
     var level = course.getLevelId();
     var teacher = value.getTeacherId();
@@ -47,6 +56,7 @@ public class CourseClassMapper {
         teacher == null ? null : teacher.getTeacherCode(),
         teacher == null ? null : teacher.getUserId().getFullName(),
         value.getCreatedAt(),
-        value.getUpdatedAt());
+        value.getUpdatedAt(),
+        schedules == null ? List.of() : List.copyOf(schedules));
   }
 }

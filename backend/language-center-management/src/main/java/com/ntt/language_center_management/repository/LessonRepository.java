@@ -22,6 +22,23 @@ public interface LessonRepository extends JpaRepository<Lesson, Integer> {
   List<Lesson> findByClassScheduleId_CourseClassId_IdOrderByLessonDateAsc(
       Integer courseClassId);
 
+  @Query(
+      """
+      select distinct lesson from Lesson lesson
+      join lesson.classScheduleId schedule
+      join schedule.courseClassId courseClass
+      where exists (
+        select enrollment.id from Enrollment enrollment
+        where enrollment.courseClassId.id = courseClass.id
+          and lower(enrollment.studentId.userId.email) = lower(:email)
+          and enrollment.enrollmentStatus = 'CONFIRMED'
+          and enrollment.paymentStatus = 'PAID'
+      )
+        and courseClass.status <> 'CANCELLED'
+      order by lesson.lessonDate asc, schedule.startTime asc
+      """)
+  List<Lesson> findAccessibleLessonsByStudentEmail(@Param("email") String email);
+
   boolean existsByClassScheduleId_Id(Integer scheduleId);
 
   boolean existsByClassScheduleId_IdAndLessonDate(Integer scheduleId, Date lessonDate);

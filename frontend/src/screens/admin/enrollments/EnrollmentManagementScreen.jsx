@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { authApis, endpoints } from "../../../configs/Apis";
 import { EmptyState, ErrorAlert, LoadingRows, Modal, PageTitle, StatusBadge } from "../../../components/AdminUi";
 import { apiData, apiError, formatDate, formatDateTime, formatMoney } from "../../../utils/api";
+import useDebouncedValue from "../../../hooks/useDebouncedValue";
 
 export default function EnrollmentManagementScreen() {
   const [classes, setClasses] = useState([]);
@@ -9,6 +10,7 @@ export default function EnrollmentManagementScreen() {
   const [classId, setClassId] = useState("");
   const [result, setResult] = useState({ content: [], page: 0, totalPages: 0, totalElements: 0 });
   const [keyword, setKeyword] = useState("");
+  const debouncedKeyword = useDebouncedValue(keyword);
   const [enrollmentStatus, setEnrollmentStatus] = useState("");
   const [paymentStatus, setPaymentStatus] = useState("");
   const [details, setDetails] = useState(null);
@@ -45,7 +47,7 @@ export default function EnrollmentManagementScreen() {
     setError("");
     try {
       const response = await authApis().get(endpoints["staff-enrollments"], { params: {
-        keyword: keyword || undefined, courseId: courseId || undefined,
+        keyword: debouncedKeyword || undefined, courseId: courseId || undefined,
         classId: selectedId || undefined, enrollmentStatus: enrollmentStatus || undefined,
         paymentStatus: paymentStatus || undefined, page, size: 20,
         sort: "enrollmentDate", direction: "desc",
@@ -56,7 +58,7 @@ export default function EnrollmentManagementScreen() {
     } finally {
       setLoading(false);
     }
-  }, [keyword, courseId, enrollmentStatus, paymentStatus]);
+  }, [debouncedKeyword, courseId, enrollmentStatus, paymentStatus]);
 
   useEffect(() => {
     let active = true;

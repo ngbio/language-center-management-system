@@ -25,6 +25,8 @@ import com.ntt.language_center_management.repository.LessonRepository;
 import com.ntt.language_center_management.repository.StudentRepository;
 import com.ntt.language_center_management.repository.UserRepository;
 import com.ntt.language_center_management.service.LessonService;
+import com.ntt.language_center_management.util.ApplicationDateTimeUtils;
+import com.ntt.language_center_management.security.CurrentUserResolver;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -50,7 +52,7 @@ public class LessonServiceImpl implements LessonService {
   private final AttendanceRepository attendanceRepository;
   private final EnrollmentRepository enrollmentRepository;
   private final StudentRepository studentRepository;
-  private final UserRepository userRepository;
+  private final CurrentUserResolver currentUserResolver;
   private final LessonMapper lessonMapper;
   private final ZoneId applicationZone;
 
@@ -61,7 +63,7 @@ public class LessonServiceImpl implements LessonService {
       AttendanceRepository attendanceRepository,
       EnrollmentRepository enrollmentRepository,
       StudentRepository studentRepository,
-      UserRepository userRepository,
+      CurrentUserResolver currentUserResolver,
       LessonMapper lessonMapper,
       @Value("${app.time-zone:Asia/Ho_Chi_Minh}") String applicationTimeZone) {
     this.lessonRepository = lessonRepository;
@@ -70,7 +72,7 @@ public class LessonServiceImpl implements LessonService {
     this.attendanceRepository = attendanceRepository;
     this.enrollmentRepository = enrollmentRepository;
     this.studentRepository = studentRepository;
-    this.userRepository = userRepository;
+    this.currentUserResolver = currentUserResolver;
     this.lessonMapper = lessonMapper;
     this.applicationZone = ZoneId.of(applicationTimeZone);
   }
@@ -80,7 +82,7 @@ public class LessonServiceImpl implements LessonService {
     Courseclass courseClass = lockClass(classId);
     User editor = ensureCanEditContent(courseClass, principal);
     if ("TEACHER".equals(editor.getRoleId().getRoleCode())
-        && LocalDate.now().isBefore(toLocalDate(courseClass.getStartDate()))) {
+        && LocalDate.now(applicationZone).isBefore(toLocalDate(courseClass.getStartDate()))) {
       throw new IllegalArgumentException(
           "Giảng viên chỉ được sinh buổi học từ ngày khai giảng của lớp");
     }
@@ -148,6 +150,17 @@ public class LessonServiceImpl implements LessonService {
     ensureClassMember(courseClass, principal);
     return lessonRepository.findByClassScheduleId_CourseClassId_IdOrderByLessonDateAsc(classId)
         .stream()
+        .map(lessonMapper::toResponse)
+        .toList();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<LessonResponse> getMyLessons(Principal principal) {
+    if (principal == null || !StringUtils.hasText(principal.getName())) {
+      throw new ForbiddenException("Không xác định được học viên hiện tại");
+    }
+    return lessonRepository.findAccessibleLessonsByStudentEmail(principal.getName()).stream()
         .map(lessonMapper::toResponse)
         .toList();
   }
@@ -280,12 +293,7 @@ public class LessonServiceImpl implements LessonService {
   }
 
   private User findUser(Principal principal) {
-    if (principal == null || !StringUtils.hasText(principal.getName())) {
-      throw new ForbiddenException("Không xác định được người dùng hiện tại");
-    }
-    return userRepository
-        .findByEmailIgnoreCase(principal.getName())
-        .orElseThrow(() -> new ForbiddenException("Không tìm thấy người dùng hiện tại"));
+    return currentUserResolver.requireUser(principal);
   }
 
   private void ensureNoAttendance(Lesson lesson) {
@@ -334,16 +342,10 @@ public class LessonServiceImpl implements LessonService {
   }
 
   private LocalDate toLocalDate(Date value) {
-    if (value instanceof java.sql.Date sqlDate) {
-      return sqlDate.toLocalDate();
-    }
-    return value.toInstant().atZone(applicationZone).toLocalDate();
+    return ApplicationDateTimeUtils.toLocalDate(value, applicationZone);
   }
 
   private LocalTime toLocalTime(Date value) {
-    if (value instanceof java.sql.Time sqlTime) {
-      return sqlTime.toLocalTime();
-    }
-    return value.toInstant().atZone(applicationZone).toLocalTime();
+    return ApplicationDateTimeUtils.toLocalTime(value, applicationZone);
   }
 }

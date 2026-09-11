@@ -19,6 +19,17 @@ public interface RefundRepository extends JpaRepository<Refund, Integer> {
   List<Refund> findByStatusOrderByCreatedAtDesc(
       RefundStatus status);
 
+  boolean existsByEnrollment_IdAndStatus(Integer enrollmentId, RefundStatus status);
+
+  @Query("""
+      select coalesce(sum(r.amount), 0)
+      from Refund r
+      where r.enrollment.id = :enrollmentId and r.status = :status
+      """)
+  BigDecimal sumAmountByEnrollmentIdAndStatus(
+      @Param("enrollmentId") Integer enrollmentId,
+      @Param("status") RefundStatus status);
+
   @Query("select coalesce(sum(r.amount), 0) from Refund r where r.status = 'COMPLETED'")
   BigDecimal sumCompletedAmount();
 

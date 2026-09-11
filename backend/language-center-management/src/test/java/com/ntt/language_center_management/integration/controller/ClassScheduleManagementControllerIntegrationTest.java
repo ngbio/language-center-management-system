@@ -60,6 +60,15 @@ class ClassScheduleManagementControllerIntegrationTest {
   @MockitoBean private JwtUtils jwtUtils;
 
   @Test
+  @WithMockUser(roles = "STUDENT")
+  void studentCanLoadAllOwnedLessonsInOneRequest() throws Exception {
+    when(lessonService.getMyLessons(any())).thenReturn(List.of());
+
+    mockMvc.perform(get("/api/students/me/lessons")).andExpect(status().isOk());
+    verify(lessonService).getMyLessons(any());
+  }
+
+  @Test
   @WithMockUser(roles = "ADMIN")
   void classCrudAndRequestValidationAreExposed() throws Exception {
     mockMvc.perform(get("/api/admin/classes")).andExpect(status().isOk());

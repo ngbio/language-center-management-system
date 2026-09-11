@@ -31,6 +31,10 @@ import com.ntt.language_center_management.repository.EnrollmentRepository;
 import com.ntt.language_center_management.repository.PaymentRepository;
 import com.ntt.language_center_management.repository.RefundRepository;
 import com.ntt.language_center_management.repository.UserRepository;
+import com.ntt.language_center_management.repository.StudentRepository;
+import com.ntt.language_center_management.repository.TeacherRepository;
+import com.ntt.language_center_management.security.CurrentUserResolver;
+import com.ntt.language_center_management.transaction.TransactionExecutor;
 import com.ntt.language_center_management.service.impl.BillingServiceImpl;
 import java.math.BigDecimal;
 import java.security.Principal;
@@ -53,6 +57,8 @@ class BillingServiceImplTest {
   private RefundRepository refunds;
   private UserRepository users;
   private BillingServiceImpl service;
+  private CurrentUserResolver currentUserResolver;
+  private TransactionExecutor transactionExecutor;
   private User owner;
   private Enrollment enrollment;
 
@@ -62,7 +68,11 @@ class BillingServiceImplTest {
     payments = mock(PaymentRepository.class);
     refunds = mock(RefundRepository.class);
     users = mock(UserRepository.class);
-    service = new BillingServiceImpl(enrollments, payments, refunds, users);
+    currentUserResolver = new CurrentUserResolver(
+        users, mock(StudentRepository.class), mock(TeacherRepository.class));
+    transactionExecutor = new TransactionExecutor();
+    service = new BillingServiceImpl(
+        enrollments, payments, refunds, currentUserResolver, transactionExecutor);
     owner = user(70, "student@example.com", "STUDENT");
     enrollment = enrollment(owner);
     when(enrollments.findById(15)).thenReturn(Optional.of(enrollment));
@@ -186,7 +196,8 @@ class BillingServiceImplTest {
     Payment paid = payment("TX15", "3200000", PaymentTransactionStatus.PAID);
     RestClient.Builder builder = RestClient.builder();
     MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-    service = new BillingServiceImpl(enrollments, payments, refunds, users, builder.build());
+    service = new BillingServiceImpl(enrollments, payments, refunds, currentUserResolver,
+        transactionExecutor, builder.build());
     configureMomoRefund();
     AtomicReference<Refund> created = prepareRefund(paid);
     server.expect(requestTo("https://momo.example.com/refund"))
@@ -218,7 +229,8 @@ class BillingServiceImplTest {
     paid.setMethod(PaymentMethod.ZALOPAY);
     RestClient.Builder builder = RestClient.builder();
     MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-    service = new BillingServiceImpl(enrollments, payments, refunds, users, builder.build());
+    service = new BillingServiceImpl(enrollments, payments, refunds, currentUserResolver,
+        transactionExecutor, builder.build());
     configureZaloRefund();
     AtomicReference<Refund> created = prepareRefund(paid);
     server.expect(requestTo("https://zalo.example.com/refund"))
@@ -248,7 +260,8 @@ class BillingServiceImplTest {
     Payment paid = payment("TX15", "3200000", PaymentTransactionStatus.PAID);
     RestClient.Builder builder = RestClient.builder();
     MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-    service = new BillingServiceImpl(enrollments, payments, refunds, users, builder.build());
+    service = new BillingServiceImpl(enrollments, payments, refunds, currentUserResolver,
+        transactionExecutor, builder.build());
     configureMomoRefund();
     AtomicReference<Refund> created = prepareRefund(paid);
     server.expect(requestTo("https://momo.example.com/refund"))
@@ -287,7 +300,8 @@ class BillingServiceImplTest {
     when(refunds.findByEnrollment_IdOrderByCreatedAtDesc(15)).thenReturn(List.of(pending));
     RestClient.Builder builder = RestClient.builder();
     MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-    service = new BillingServiceImpl(enrollments, payments, refunds, users, builder.build());
+    service = new BillingServiceImpl(enrollments, payments, refunds, currentUserResolver,
+        transactionExecutor, builder.build());
     configureMomoRefund();
     ReflectionTestUtils.setField(service, "momoRefundQueryEndpoint", "https://momo.example.com/query");
     server.expect(requestTo("https://momo.example.com/query"))
@@ -315,7 +329,8 @@ class BillingServiceImplTest {
     when(refunds.findByEnrollment_IdOrderByCreatedAtDesc(15)).thenReturn(List.of(pending));
     RestClient.Builder builder = RestClient.builder();
     MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-    service = new BillingServiceImpl(enrollments, payments, refunds, users, builder.build());
+    service = new BillingServiceImpl(enrollments, payments, refunds, currentUserResolver,
+        transactionExecutor, builder.build());
     configureZaloRefund();
     ReflectionTestUtils.setField(service, "zaloPayRefundQueryEndpoint", "https://zalo.example.com/query");
     server.expect(requestTo("https://zalo.example.com/query"))
@@ -361,8 +376,12 @@ class BillingServiceImplTest {
     AtomicReference<Refund> created = new AtomicReference<>();
     when(payments.findByEnrollmentId_IdAndStatusOrderByCompletedAtDesc(
         15, PaymentTransactionStatus.PAID)).thenReturn(List.of(paid));
-    when(refunds.findByEnrollment_IdOrderByCreatedAtDesc(15)).thenAnswer(invocation ->
-        created.get() == null ? List.of() : List.of(created.get()));
+    when(refunds.existsByEnrollment_IdAndStatus(15, RefundStatus.PENDING)).thenReturn(false);
+    when(refunds.sumAmountByEnrollmentIdAndStatus(15, RefundStatus.COMPLETED))
+        .thenAnswer(invocation -> created.get() != null
+                && created.get().getStatus() == RefundStatus.COMPLETED
+            ? created.get().getAmount()
+            : BigDecimal.ZERO);
     when(refunds.saveAndFlush(org.mockito.ArgumentMatchers.any(Refund.class)))
         .thenAnswer(invocation -> {
           Refund value = invocation.getArgument(0);

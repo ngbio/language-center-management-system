@@ -13,8 +13,11 @@ import com.ntt.language_center_management.enums.*;
 import com.ntt.language_center_management.exception.*;
 import com.ntt.language_center_management.mapper.CourseClassMapper;
 import com.ntt.language_center_management.mapper.CourseMapper;
+import com.ntt.language_center_management.mapper.ClassScheduleMapper;
 import com.ntt.language_center_management.repository.*;
+import com.ntt.language_center_management.repository.projection.CourseClassEnrollmentCount;
 import com.ntt.language_center_management.service.impl.CourseClassServiceImpl;
+import com.ntt.language_center_management.security.CurrentUserResolver;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -33,7 +36,9 @@ class CourseClassServiceImplTest {
   private ClassScheduleRepository schedules;
   private CourseClassMapper mapper;
   private CourseMapper courseMapper;
+  private ClassScheduleMapper scheduleMapper;
   private CourseClassServiceImpl service;
+  private CurrentUserResolver currentUserResolver;
 
   @BeforeEach
   void setUp() {
@@ -41,8 +46,11 @@ class CourseClassServiceImplTest {
     teachers = mock(TeacherRepository.class); enrollments = mock(EnrollmentRepository.class);
     schedules = mock(ClassScheduleRepository.class); mapper = mock(CourseClassMapper.class);
     courseMapper = mock(CourseMapper.class);
+    scheduleMapper = mock(ClassScheduleMapper.class);
+    currentUserResolver = new CurrentUserResolver(
+        mock(UserRepository.class), mock(StudentRepository.class), teachers);
     service = new CourseClassServiceImpl(classes, courses, teachers, enrollments, schedules,
-        mapper, courseMapper);
+        mapper, courseMapper, scheduleMapper, "Asia/Ho_Chi_Minh", currentUserResolver);
   }
 
   @Test
@@ -51,8 +59,12 @@ class CourseClassServiceImplTest {
     CourseClassResponse response = mock(CourseClassResponse.class);
     when(classes.findAll(any(Specification.class), any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of(value)));
-    when(mapper.toResponse(value, 2)).thenReturn(response);
-    when(enrollments.countByCourseClassId_IdAndEnrollmentStatusIn(eq(1), any())).thenReturn(2L);
+    CourseClassEnrollmentCount count = mock(CourseClassEnrollmentCount.class);
+    when(count.getCourseClassId()).thenReturn(1);
+    when(count.getEnrollmentCount()).thenReturn(2L);
+    when(enrollments.countByCourseClassIdsAndEnrollmentStatusIn(anyList(), any()))
+        .thenReturn(List.of(count));
+    when(mapper.toResponse(eq(value), eq(2L), anyList())).thenReturn(response);
     ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
 
     var result = service.searchOpenClasses(" english ", 3, 2, null, -1, 500,
@@ -216,20 +228,22 @@ class CourseClassServiceImplTest {
     when(teachers.findByUserId_EmailIgnoreCase("teacher@example.com"))
         .thenReturn(Optional.of(teacher));
     when(classes.findByTeacherId_IdOrderByStartDateDesc(7)).thenReturn(List.of(assigned));
+    when(classes.findDistinctCoursesByTeacherId(7)).thenReturn(List.of(assigned.getCourseId()));
     when(mapper.toResponse(eq(assigned), anyLong())).thenReturn(mock(CourseClassResponse.class));
     when(courseMapper.toResponse(assigned.getCourseId())).thenReturn(mock(CourseResponse.class));
 
     assertThat(service.getTeacherClasses(() -> "teacher@example.com")).hasSize(1);
     assertThat(service.getTeacherCourses(() -> "teacher@example.com")).hasSize(1);
-    verify(classes, times(2)).findByTeacherId_IdOrderByStartDateDesc(7);
+    verify(classes).findByTeacherId_IdOrderByStartDateDesc(7);
+    verify(classes).findDistinctCoursesByTeacherId(7);
   }
 
   @Test
   void shouldRejectTeacherQueriesWhenPrincipalOrProfileIsInvalid() {
     assertThatThrownBy(() -> service.getTeacherClasses(null))
-        .isInstanceOf(ResourceNotFoundException.class);
+        .isInstanceOf(UnauthorizedException.class);
     assertThatThrownBy(() -> service.getTeacherCourses(() -> "  "))
-        .isInstanceOf(ResourceNotFoundException.class);
+        .isInstanceOf(UnauthorizedException.class);
     when(teachers.findByUserId_EmailIgnoreCase("missing@example.com")).thenReturn(Optional.empty());
     assertThatThrownBy(() -> service.getTeacherClasses(() -> "missing@example.com"))
         .isInstanceOf(ResourceNotFoundException.class);

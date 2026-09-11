@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { authApis, endpoints } from "../../../configs/Apis";
+import useDebouncedValue from "../../../hooks/useDebouncedValue";
 import {
   EmptyState,
   ErrorAlert,
@@ -59,6 +60,7 @@ export default function ClassListScreen() {
   const [rescheduleForm, setRescheduleForm] = useState(null);
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [keyword, setKeyword] = useState("");
+  const debouncedKeyword = useDebouncedValue(keyword);
   const [statusFilter, setStatusFilter] = useState("");
   const [courseFilter, setCourseFilter] = useState("");
   const [levelFilter, setLevelFilter] = useState("");
@@ -79,7 +81,7 @@ export default function ClassListScreen() {
           await Promise.all([
             api.get(endpoints["admin-classes"], {
               params: {
-                keyword,
+                keyword: debouncedKeyword || undefined,
                 status: statusFilter || undefined,
                 courseId: courseFilter || undefined,
                 levelId: levelFilter || undefined,
@@ -107,7 +109,7 @@ export default function ClassListScreen() {
         setLoading(false);
       }
     },
-    [keyword, statusFilter, courseFilter, levelFilter, sorting],
+    [debouncedKeyword, statusFilter, courseFilter, levelFilter, sorting],
   );
 
   useEffect(() => {

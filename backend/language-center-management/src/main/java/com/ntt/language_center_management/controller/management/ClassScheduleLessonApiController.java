@@ -102,6 +102,12 @@ public class ClassScheduleLessonApiController {
         200, "Lấy danh sách buổi học thành công", lessonService.getByClassId(classId, principal));
   }
 
+  @GetMapping("/students/me/lessons")
+  public ApiResponse<List<LessonResponse>> getMyLessons(Principal principal) {
+    return new ApiResponse<>(
+        200, "Lấy danh sách buổi học của tôi thành công", lessonService.getMyLessons(principal));
+  }
+
   @PutMapping("/lessons/{id}")
   public ApiResponse<LessonResponse> updateLesson(
       @PathVariable Integer id,

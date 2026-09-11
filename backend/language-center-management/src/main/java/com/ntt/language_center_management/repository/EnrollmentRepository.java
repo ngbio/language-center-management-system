@@ -7,6 +7,7 @@ import com.ntt.language_center_management.enums.EnrollmentStatus;
 import com.ntt.language_center_management.entity.Enrollment;
 import com.ntt.language_center_management.entity.Course;
 import com.ntt.language_center_management.entity.Courseclass;
+import com.ntt.language_center_management.repository.projection.CourseClassEnrollmentCount;
 import jakarta.persistence.LockModeType;
 import java.util.Collection;
 import java.util.List;
@@ -31,6 +32,18 @@ public interface EnrollmentRepository
   long countByCourseClassId_IdAndEnrollmentStatusIn(
       Integer courseClassId,
       Collection<EnrollmentStatus> statuses);
+
+  @Query(
+      """
+      select e.courseClassId.id as courseClassId, count(e.id) as enrollmentCount
+      from Enrollment e
+      where e.courseClassId.id in :courseClassIds
+        and e.enrollmentStatus in :statuses
+      group by e.courseClassId.id
+      """)
+  List<CourseClassEnrollmentCount> countByCourseClassIdsAndEnrollmentStatusIn(
+      @Param("courseClassIds") Collection<Integer> courseClassIds,
+      @Param("statuses") Collection<EnrollmentStatus> statuses);
 
   boolean existsByStudentId_IdAndCourseClassId_IdAndEnrollmentStatusIn(
       Integer studentId, Integer courseClassId,

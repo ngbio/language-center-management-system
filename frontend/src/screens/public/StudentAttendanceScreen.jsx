@@ -28,16 +28,17 @@ export default function StudentAttendanceScreen() {
     if (!isTokenActive(token) || role !== "STUDENT") return undefined;
     let active = true;
     const api = authApis();
-    Promise.all([api.get(endpoints["my-classes"]), api.get(endpoints["my-attendance"])])
-      .then(async ([classResponse, attendanceResponse]) => {
+    Promise.all([
+      api.get(endpoints["my-classes"]),
+      api.get(endpoints["my-attendance"]),
+      api.get(endpoints["my-lessons"]),
+    ])
+      .then(([classResponse, attendanceResponse, lessonResponse]) => {
         const classList = apiData(classResponse) || [];
-        const lessonResponses = await Promise.all(
-          classList.map((item) => api.get(endpoints["class-lessons"](item.id))),
-        );
         if (!active) return;
         setClasses(classList);
         setAttendance(apiData(attendanceResponse) || []);
-        setLessonsByClass(Object.fromEntries(classList.map((item, index) => [item.id, apiData(lessonResponses[index]) || []])));
+        setLessonsByClass(groupByClassId(apiData(lessonResponse) || []));
         const requestedClass = classList.find((item) => String(item.id) === requestedClassId);
         setSelectedClassId(requestedClass?.id || classList[0]?.id || null);
       })
@@ -92,3 +93,8 @@ export default function StudentAttendanceScreen() {
     </div>
   </section>;
 }
+
+const groupByClassId = (lessons) => lessons.reduce((result, lesson) => {
+  (result[lesson.courseClassId] ||= []).push(lesson);
+  return result;
+}, {});
