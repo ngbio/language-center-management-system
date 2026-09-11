@@ -27,13 +27,12 @@ export default function TeacherClassesScreen() {
     let active = true;
     const api = authApis();
     api.get(endpoints["teacher-classes"])
-      .then(async (response) => {
+      .then((response) => {
         const assigned = apiData(response) || [];
         const visible = courseId ? assigned.filter((item) => String(item.courseId) === courseId) : assigned;
         if (!active) return;
         setClasses(visible);
-        const scheduleResponses = await Promise.all(visible.map((item) => api.get(endpoints["class-schedules"](item.id)).catch(() => null)));
-        if (active) setSchedules(scheduleResponses.flatMap((item) => item ? apiData(item) || [] : []));
+        setSchedules(visible.flatMap((item) => item.schedules || []));
       })
       .catch((requestError) => { if (active) setError(apiError(requestError)); })
       .finally(() => { if (active) setLoading(false); });

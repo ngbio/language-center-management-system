@@ -15,10 +15,22 @@ export default function CoursesScreen() {
   const [error, setError] = useState("");
   const languageId = searchParams.get("languageId") || "";
   const keyword = searchParams.get("keyword") || "";
+  const [keywordInput, setKeywordInput] = useState(keyword);
   const levelId = searchParams.get("levelId") || "";
   const sort = searchParams.get("sort") || "courseName";
   const direction = searchParams.get("direction") || "asc";
   const page = Math.max(Number(searchParams.get("page") || 0), 0);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (keywordInput === keyword) return;
+      const next = Object.fromEntries(searchParams.entries());
+      if (keywordInput) next.keyword = keywordInput; else delete next.keyword;
+      delete next.page;
+      setSearchParams(next, { replace: true });
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [keywordInput, keyword, searchParams, setSearchParams]);
 
   useEffect(() => {
     api.get(endpoints.languages).then((response) => setLanguages(apiData(response) || [])).catch(() => {});
@@ -52,7 +64,7 @@ export default function CoursesScreen() {
     <div className="public-container">
       <div className="catalog-hero"><span className="section-kicker">CHƯƠNG TRÌNH ĐÀO TẠO</span><h1>{selectedLanguage ? `Khóa học ${selectedLanguage.languageName}` : "Tất cả khóa học"}</h1><p>Khám phá khóa học theo ngôn ngữ và chọn lộ trình phù hợp với mục tiêu của bạn.</p></div>
       <div className="catalog-toolbar">
-        <input value={keyword} placeholder="Tìm tên hoặc mã khóa học..." onChange={(event) => updateFilters({ keyword: event.target.value })} />
+        <input value={keywordInput} placeholder="Tìm tên hoặc mã khóa học..." onChange={(event) => setKeywordInput(event.target.value)} />
         <select value={languageId} onChange={(event) => updateFilters({ languageId: event.target.value, levelId: "" })}><option value="">Tất cả ngôn ngữ</option>{languages.map((language) => <option value={language.id} key={language.id}>{language.languageName}</option>)}</select>
         <select value={levelId} onChange={(event) => updateFilters({ levelId: event.target.value })}><option value="">Tất cả trình độ</option>{levels.map((level) => <option value={level.id} key={level.id}>{level.levelCode} · {level.levelName}</option>)}</select>
         <select value={`${sort}:${direction}`} onChange={(event) => { const [nextSort, nextDirection] = event.target.value.split(":"); updateFilters({ sort: nextSort, direction: nextDirection }); }}><option value="courseName:asc">Tên A–Z</option><option value="courseName:desc">Tên Z–A</option><option value="tuitionFee:asc">Học phí thấp nhất</option><option value="tuitionFee:desc">Học phí cao nhất</option><option value="createdAt:desc">Khóa học mới nhất</option></select>

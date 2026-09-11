@@ -105,15 +105,9 @@ export default function CourseDetailScreen() {
     }
   };
 
-  const chooseClass = async (item) => {
+  const chooseClass = (item) => {
     setSelectedClass(item);
-    setSelectedSchedules([]);
-    try {
-      const response = await api.get(endpoints["class-schedules"](item.id));
-      setSelectedSchedules(apiData(response) || []);
-    } catch (requestError) {
-      setEnrollmentMessage(apiError(requestError));
-    }
+    setSelectedSchedules(item.schedules || []);
   };
 
   const confirmEnrollment = async () => {
