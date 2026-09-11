@@ -16,6 +16,8 @@ WORKDIR /app
 RUN microdnf install -y dejavu-sans-fonts \
     && microdnf clean all
 
+ENV INVOICE_PDF_FONT_PATH=/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf
+
 COPY --from=build --chown=1001:0 \
     /workspace/target/language-center-management-*.jar /app/app.jar
 

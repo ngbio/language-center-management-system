@@ -49,7 +49,7 @@ export default function MyCoursesScreen() {
       <div className="public-container my-courses-content">
         <div className="my-courses-heading">
           <div><strong>{loading ? "—" : purchasedCourses.length + freeCourses.length}</strong><span>Khóa học dành cho bạn</span></div>
-          <Link to="/#courses">Khám phá thêm khóa học →</Link>
+          <Link to="/khoa-hoc">Khám phá thêm khóa học →</Link>
         </div>
         {error && <div className="public-alert">{error}</div>}
         {loading && <div className="course-grid">{placeholders.map((_, index) => <div className="course-card course-skeleton" key={index} />)}</div>}

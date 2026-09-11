@@ -42,7 +42,7 @@ export default function PublicLayout() {
   const sessionAuthenticated =
     isTokenActive(session.token) && ["STUDENT", "TEACHER", "ADMIN", "CONSULTANT"].includes(session.role);
   const publicAuthenticated =
-    sessionAuthenticated && ["STUDENT", "TEACHER", "ADMIN"].includes(session.role);
+    sessionAuthenticated && ["STUDENT", "TEACHER", "ADMIN", "CONSULTANT"].includes(session.role);
 
   useEffect(() => {
     if (!accountMenuOpen) return undefined;
@@ -97,7 +97,7 @@ export default function PublicLayout() {
                   <span className="account-avatar" aria-hidden="true">{accountLabel.charAt(0).toUpperCase()}</span>
                   <span className="account-summary">
                     <strong>{accountLabel}</strong>
-                    <small>{session.role === "STUDENT" ? "Học viên" : session.role === "TEACHER" ? "Giáo viên" : "Quản trị viên"}</small>
+                    <small>{session.role === "STUDENT" ? "Học viên" : session.role === "TEACHER" ? "Giáo viên" : session.role === "CONSULTANT" ? "Nhân viên tư vấn" : "Quản trị viên"}</small>
                   </span>
                   <span className={`account-chevron ${accountMenuOpen ? "open" : ""}`} aria-hidden="true">⌄</span>
                 </button>
@@ -113,6 +113,7 @@ export default function PublicLayout() {
                     {session.role === "TEACHER" && <Link role="menuitem" to="/giao-vien/diem-danh" onClick={() => setAccountMenuOpen(false)}><span aria-hidden="true">✓</span> Quản lý buổi học & điểm danh</Link>}
                     {session.role === "TEACHER" && <Link role="menuitem" to="/giao-vien/thong-tin-ca-nhan" onClick={() => setAccountMenuOpen(false)}><span aria-hidden="true">◎</span> Thông tin cá nhân</Link>}
                     {session.role === "ADMIN" && <Link role="menuitem" to="/admin" onClick={() => setAccountMenuOpen(false)}><span aria-hidden="true">▦</span> Trang quản trị</Link>}
+                    {session.role === "CONSULTANT" && <Link role="menuitem" to="/staff" onClick={() => setAccountMenuOpen(false)}><span aria-hidden="true">C</span> Cổng nhân viên tư vấn</Link>}
                     {session.role === "STUDENT" && <Link role="menuitem" to="/thong-tin-ca-nhan" onClick={() => setAccountMenuOpen(false)}><span aria-hidden="true">◎</span> Thông tin cá nhân</Link>}
                     <Link role="menuitem" to="/doi-mat-khau" onClick={() => setAccountMenuOpen(false)}><span aria-hidden="true">🔒</span> Đổi mật khẩu</Link>
                     <a role="menuitem" href="mailto:hello@linguacenter.vn"><span aria-hidden="true">?</span> Hỗ trợ học tập</a>
