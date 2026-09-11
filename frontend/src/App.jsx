@@ -38,6 +38,7 @@ import ClassDetailScreen from "./screens/public/ClassDetailScreen";
 import ChangePasswordScreen from "./screens/ChangePasswordScreen";
 import SystemLogsScreen from "./screens/admin/SystemLogsScreen";
 import AccountProfileScreen from "./screens/AccountProfileScreen";
+import ConsultantChatScreen from "./screens/staff/ConsultantChatScreen";
 import CourseCurriculumAdminScreen from "./screens/admin/courses/CourseCurriculumAdminScreen";
 import "./App.css";
 
@@ -81,6 +82,7 @@ function App() {
           <Route path="classes" element={<ClassListScreen />} />
           <Route path="enrollments" element={<EnrollmentManagementScreen />} />
           <Route path="refunds" element={<RefundManagementScreen />} />
+          <Route path="chat" element={<ConsultantChatScreen />} />
           <Route path="system-logs" element={<SystemLogsScreen />} />
           <Route path="profile" element={<AccountProfileScreen />} />
           <Route path="change-password" element={<ChangePasswordScreen />} />

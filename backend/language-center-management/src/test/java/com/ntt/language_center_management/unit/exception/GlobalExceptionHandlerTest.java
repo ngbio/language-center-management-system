@@ -5,6 +5,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.ntt.language_center_management.dto.response.ApiResponse;
+import com.ntt.language_center_management.exception.ChatUnavailableException;
 import com.ntt.language_center_management.exception.DuplicateResourceException;
 import com.ntt.language_center_management.exception.ForbiddenException;
 import com.ntt.language_center_management.exception.GlobalExceptionHandler;
@@ -53,6 +54,10 @@ class GlobalExceptionHandlerTest {
         handler.handlePaymentGateway(new PaymentGatewayException("gateway")),
         HttpStatus.BAD_GATEWAY,
         "gateway");
+    assertError(
+        handler.handleChatUnavailable(new ChatUnavailableException("chat unavailable")),
+        HttpStatus.SERVICE_UNAVAILABLE,
+        "chat unavailable");
   }
 
   @Test

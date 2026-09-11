@@ -156,6 +156,8 @@ public class SecurityConfig {
                     .authenticated()
                     .requestMatchers(HttpMethod.PUT, "/api/auth/change-password")
                     .authenticated()
+                    .requestMatchers("/api/chat/**")
+                    .hasAnyRole("STUDENT", "CONSULTANT")
                     .requestMatchers("/api/auth/**")
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/teachers")

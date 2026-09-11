@@ -303,7 +303,16 @@ Checklist này theo dõi Unit Test cho các class có logic trong backend hiện
 - [x] HTTP 5xx tạo ERROR + HTTP_REQUEST_FAILED.
 - [x] Lỗi lưu SystemLog không làm hỏng request nghiệp vụ chính.
 
-## 22. Controller unit test
+## 22. FirebaseChatServiceImpl
+
+- [x] Chỉ Student và Consultant được nhận Firebase custom token.
+- [x] Principal thiếu bị từ chối.
+- [x] Student được gán đúng một Consultant ACTIVE và nhận claim `consultantUid`.
+- [x] Consultant dùng UID của chính mình và không chạy truy vấn phân công.
+- [x] Không có Consultant ACTIVE trả thông báo dịch vụ chưa sẵn sàng.
+- [x] Firebase chưa cấu hình trả lỗi 503 rõ ràng.
+
+## 23. Controller unit test
 
 Controller chỉ cần Unit Test khi có logic ngoài việc gọi service và đóng gói response.
 Các kiểm tra HTTP mapping, validation và role ưu tiên đặt ở Integration Test.
@@ -314,7 +323,7 @@ Các kiểm tra HTTP mapping, validation và role ưu tiên đặt ở Integrati
 - [x] Controller tạo header PDF filename/content type được kiểm tra riêng.
 - [x] Không tạo Unit Test lặp lại cho controller chỉ chuyển tiếp một lời gọi service.
 
-## 23. Thứ tự triển khai đề xuất
+## 24. Thứ tự triển khai đề xuất
 
 1. [x] EnrollmentServiceImpl và ClassScheduleServiceImpl.
 2. [x] PaymentServiceImpl và BillingServiceImpl.

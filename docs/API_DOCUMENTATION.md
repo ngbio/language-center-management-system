@@ -1051,3 +1051,13 @@ Quy tắc: `from <= to`, tối đa 366 ngày; doanh thu chỉ cộng payment `PA
 ### Quản lý giáo trình Admin
 
 Admin quản lý section qua `/api/admin/courses/{courseId}/sections`, `/api/admin/sections/{id}` và `/api/admin/sections/reorder`; quản lý content qua `/api/admin/sections/{sectionId}/contents`, `/api/admin/contents/{id}`, `/api/admin/contents/{id}/publication-status` và `/api/admin/contents/reorder`. Payload reorder có dạng `{ "ids": [3, 1, 2] }` và phải chứa đầy đủ, không trùng ID, thuộc cùng một khóa học hoặc section. Content mới luôn bắt đầu ở trạng thái `DRAFT`.
+# Realtime chat
+
+## Khởi tạo phiên Firebase Chat
+
+```http
+POST /api/chat/firebase-token
+Authorization: Bearer <jwt>
+```
+
+Chỉ hỗ trợ role `STUDENT` và `CONSULTANT`. API trả Firebase custom token cùng UID và Consultant được phân công. Dữ liệu tin nhắn được trao đổi trực tiếp với Firebase Realtime Database theo rules trong `firebase-database.rules.json`.
