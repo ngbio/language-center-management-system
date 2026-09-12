@@ -214,7 +214,6 @@ public class UserServiceImpl implements UserService {
     eventPublisher.publishEvent(
         new AccountCreatedMailEvent(savedUser.getEmail(), savedUser.getFullName()));
 
-    // TODO: Gửi email xác nhận sau khi transaction commit khi đã cấu hình email service.
     return userMapper.toResponse(savedUser);
   }
 

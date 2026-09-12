@@ -1,7 +1,9 @@
 package com.ntt.language_center_management.unit.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -11,6 +13,7 @@ import com.ntt.language_center_management.event.AccountCreatedMailEvent;
 import com.ntt.language_center_management.event.ClassOpenedMailEvent;
 import com.ntt.language_center_management.event.PaymentSucceededMailEvent;
 import com.ntt.language_center_management.repository.UserRepository;
+import com.ntt.language_center_management.service.MailGateway;
 import com.ntt.language_center_management.service.impl.MailNotificationEventListener;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -19,23 +22,20 @@ import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 
 class MailNotificationEventListenerTest {
-  private JavaMailSender sender;
+  private MailGateway sender;
   private UserRepository users;
   private MailNotificationEventListener listener;
 
   @BeforeEach
   void setUp() {
-    sender = mock(JavaMailSender.class);
+    sender = mock(MailGateway.class);
     users = mock(UserRepository.class);
     listener = new MailNotificationEventListener(
-        sender, users, "no-reply@lingua.test", 2, "Asia/Ho_Chi_Minh");
+        sender, users, 2, "Asia/Ho_Chi_Minh");
   }
 
   @Test
@@ -45,11 +45,9 @@ class MailNotificationEventListenerTest {
         "student@example.com", "Nguyễn An", "TX-01", "English A1",
         new BigDecimal("3200000")));
 
-    ArgumentCaptor<SimpleMailMessage> messages =
-        ArgumentCaptor.forClass(SimpleMailMessage.class);
-    verify(sender, times(2)).send(messages.capture());
-    assertThat(messages.getAllValues().get(0).getSubject()).contains("Chào mừng");
-    assertThat(messages.getAllValues().get(1).getText()).contains("TX-01", "English A1");
+    verify(sender).send(eq("student@example.com"), contains("Chào mừng"), any(String.class));
+    verify(sender).send(eq("student@example.com"), contains("thanh toán"),
+        argThat(body -> body.contains("TX-01") && body.contains("English A1")));
   }
 
   @Test
@@ -68,6 +66,6 @@ class MailNotificationEventListenerTest {
 
     verify(users).findActiveStudentEmails(PageRequest.of(0, 2));
     verify(users).findActiveStudentEmails(PageRequest.of(1, 2));
-    verify(sender, times(2)).send(any(SimpleMailMessage[].class));
+    verify(sender, times(2)).sendBatch(any(List.class), contains("Lớp mới"), any(String.class));
   }
 }
