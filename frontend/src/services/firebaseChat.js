@@ -4,11 +4,8 @@ import {
   get,
   getDatabase,
   increment,
-  limitToLast,
   onValue,
-  orderByChild,
   push,
-  query,
   ref,
   serverTimestamp,
   update,
@@ -143,14 +140,16 @@ const subscribeWithRefresh = (target, onSnapshot, onError) => {
 
 export const subscribeMessages = (session, studentUid, onMessages, onError) => {
   const { database, identity } = session;
-  const messagesQuery = query(
-    ref(database, `${chatRoot(identity.consultantUid, studentUid)}/messages`),
-    orderByChild("createdAt"),
-    limitToLast(100),
+  const messagesRef = ref(
+    database,
+    `${chatRoot(identity.consultantUid, studentUid)}/messages`,
   );
-  return subscribeWithRefresh(messagesQuery, (snapshot) => {
-    const messages = [];
-    snapshot.forEach((child) => messages.push({ id: child.key, ...child.val() }));
+  return subscribeWithRefresh(messagesRef, (snapshot) => {
+    const value = snapshot.val() || {};
+    const messages = Object.entries(value)
+      .map(([id, message]) => ({ id, ...message }))
+      .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
+      .slice(-100);
     onMessages(messages);
   }, onError);
 };
@@ -158,12 +157,14 @@ export const subscribeMessages = (session, studentUid, onMessages, onError) => {
 export const subscribeConsultantConversations = (session, onConversations, onError) => {
   const conversationsRef = ref(session.database, `chats/${session.identity.uid}`);
   return subscribeWithRefresh(conversationsRef, (snapshot) => {
-    const conversations = [];
-    snapshot.forEach((child) => {
-      const metadata = child.child("metadata").val();
-      if (metadata) conversations.push({ studentUid: child.key, ...metadata });
-    });
-    conversations.sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0));
+    const value = snapshot.val() || {};
+    const conversations = Object.entries(value)
+      .map(([studentUid, conversation]) => ({
+        studentUid,
+        ...(conversation?.metadata || {}),
+      }))
+      .filter((conversation) => conversation.studentName || conversation.studentEmail)
+      .sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0));
     onConversations(conversations);
   }, onError);
 };
