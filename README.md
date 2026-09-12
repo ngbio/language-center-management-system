@@ -172,7 +172,7 @@ API Public chỉ cung cấp dữ liệu cần thiết cho việc giới thiệu 
 
 - MoMo Sandbox và ZaloPay Sandbox cho thanh toán, hoàn tiền.
 - Cloudinary cho ảnh đại diện, thumbnail và banner khóa học.
-- Resend HTTPS API cho email giao dịch khi triển khai trên Render; SMTP vẫn có thể dùng
+- Brevo HTTPS API cho email giao dịch khi triển khai trên Render; SMTP vẫn có thể dùng
   trong môi trường local.
 - PDFBox cho hóa đơn PDF hỗ trợ nội dung tiếng Việt.
 - JWT cho xác thực stateless giữa frontend và backend.
@@ -188,7 +188,7 @@ Spring Boot
    ├── Service & Transaction
    ├── Repository / Spring Data JPA
    ├── Scheduler
-   └── Integration: MoMo, ZaloPay, Cloudinary, Resend, PDF
+   └── Integration: MoMo, ZaloPay, Cloudinary, Brevo, PDF
             ↓
           MySQL
 ```
@@ -208,7 +208,7 @@ Backend được tổ chức theo các tầng Controller, Service, Repository, M
 - Bean Validation
 - PDFBox
 - Cloudinary Java SDK
-- Resend Email API qua HTTPS
+- Brevo Email API qua HTTPS
 
 ### Frontend
 
@@ -218,24 +218,24 @@ Backend được tổ chức theo các tầng Controller, Service, Repository, M
 - Vite
 - CSS responsive cho từng khu vực Public, Student, Teacher, Staff và Admin
 
-## Gửi email khi deploy Railway
+## Gửi email khi deploy Railway hoặc Render
 
-Backend hỗ trợ `smtp` và `resend`. Trên Railway nên chọn Resend để email được gửi qua
-HTTPS cổng 443. Sau khi xác minh domain và tạo API key trong Resend, cấu hình các biến
-môi trường sau trong Render:
+Backend hỗ trợ `smtp` và `brevo`. Trên Railway hoặc Render nên chọn Brevo để email được
+gửi qua HTTPS cổng 443. Sau khi xác minh địa chỉ gửi hoặc domain và tạo API key trong
+Brevo, cấu hình các biến môi trường sau trên nền tảng deploy:
 
 ```env
 MAIL_ENABLED=true
-MAIL_PROVIDER=resend
-MAIL_FROM=Lingua Center <noreply@your-verified-domain.com>
-RESEND_API_KEY=re_CHANGE_ME
-RESEND_BASE_URL=https://api.resend.com
+MAIL_PROVIDER=brevo
+MAIL_FROM=Lingua Center <your-verified-sender@example.com>
+BREVO_API_KEY=xkeysib-CHANGE_ME
+BREVO_BASE_URL=https://api.brevo.com
 ```
 
-Không đưa `RESEND_API_KEY` vào Git hoặc Docker image. Khi bật Resend mà thiếu
-`RESEND_API_KEY` hoặc `MAIL_FROM`, backend sẽ từ chối khởi động và báo rõ biến còn thiếu.
+Không đưa `BREVO_API_KEY` vào Git hoặc Docker image. Khi bật Brevo mà thiếu
+`BREVO_API_KEY` hoặc `MAIL_FROM`, backend sẽ từ chối khởi động và báo rõ biến còn thiếu.
 Email đăng ký và thanh toán được gửi bất đồng bộ sau khi transaction thành công; lỗi từ
-Resend được ghi trong log nhưng không rollback nghiệp vụ đã hoàn tất.
+Brevo được ghi trong log nhưng không rollback nghiệp vụ đã hoàn tất.
 
 ## Tài liệu dự án
 
