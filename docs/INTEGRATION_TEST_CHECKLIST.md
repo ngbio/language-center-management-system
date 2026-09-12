@@ -17,7 +17,7 @@ Tài liệu này được lập từ source backend hiện tại, gồm controll
 
 - [x] Maven chạy JUnit 5, Mockito, AssertJ và Spring MockMvc.
 - [x] JaCoCo sinh báo cáo khi chạy `mvn verify`.
-- [ ] Tạo profile `test` tách khỏi `.env` và MySQL local.
+- [x] Tạo profile `test` tách khỏi `.env` và MySQL local.
 - [ ] Cấu hình MySQL Testcontainers dùng chung cho repository/integration test.
 - [ ] Tạo fixture/builder dùng chung cho User, Course, Class, Schedule, Enrollment và Payment.
 - [ ] Tách test gateway bằng mock web server hoặc HTTP client mock.
@@ -48,8 +48,8 @@ Tài liệu này được lập từ source backend hiện tại, gồm controll
 - [x] `POST /api/admin/auth/login`: ADMIN đăng nhập thành công và nhận JWT/role đúng.
 - [x] `POST /api/staff/auth/login`: CONSULTANT đăng nhập thành công và nhận JWT/role đúng.
 - [x] Cổng Admin map tài khoản sai role thành response `401`.
-- [ ] Cổng Staff từ chối role không phù hợp.
-- [ ] Hai cổng từ chối tài khoản không ACTIVE.
+- [x] Cổng Staff từ chối role không phù hợp.
+- [x] Hai cổng từ chối tài khoản không ACTIVE.
 
 ### Student/Teacher profile
 
@@ -131,7 +131,7 @@ Tài liệu này được lập từ source backend hiện tại, gồm controll
 
 ## 9. Payment, invoice và refund
 
-- [ ] `POST /api/payments` và `/api/enrollments/{id}/payments`: chỉ chính chủ Student.
+- [x] `POST /api/payments` và `/api/enrollments/{id}/payments`: chỉ chính chủ Student.
 - [ ] Chỉ cho thanh toán enrollment còn PENDING và chưa quá deadline.
 - [ ] Tạo request MoMo/ZaloPay đúng chữ ký nhưng không gọi sandbox thật trong test.
 - [ ] Gateway timeout/từ chối: payment FAILED hoặc giữ PENDING theo nghiệp vụ hiện tại.
@@ -139,26 +139,26 @@ Tài liệu này được lập từ source backend hiện tại, gồm controll
 - [ ] ZaloPay callback hợp lệ thực hiện cùng quy tắc.
 - [ ] Callback sai chữ ký/sai số tiền/giao dịch không tồn tại không cập nhật enrollment.
 - [ ] Callback lặp lại phải idempotent; chỉ một payment PAID cho mỗi enrollment.
-- [ ] `GET /api/students/me/payments`, lịch sử từng enrollment và tra cứu transaction.
-- [ ] `GET /api/enrollments/{id}/invoice` và `.pdf`: đúng chủ sở hữu/staff, chỉ dữ liệu hợp lệ.
-- [ ] PDF trả `application/pdf`, filename và nội dung không rỗng.
+- [x] `GET /api/students/me/payments`, lịch sử từng enrollment và tra cứu transaction.
+- [x] `GET /api/enrollments/{id}/invoice` và `.pdf`: đúng chủ sở hữu/staff, chỉ dữ liệu hợp lệ.
+- [x] PDF trả `application/pdf`, filename và nội dung không rỗng.
 - [ ] Staff tạo refund cho payment PAID với idempotency key duy nhất.
 - [ ] Refund COMPLETED mới cập nhật enrollment payment status REFUNDED/quyền học.
 - [ ] Refund FAILED không làm mất quyền học; timeout giữ PENDING để đối soát.
 - [ ] Không hoàn vượt số tiền đã trả hoặc hoàn trùng.
-- [ ] Chỉ ADMIN/CONSULTANT gọi `/api/staff/refunds/**`.
+- [x] Chỉ ADMIN/CONSULTANT gọi `/api/staff/refunds/**`.
 
 ## 10. Attendance
 
-- [ ] Teacher lấy sheet chỉ cho lesson thuộc lớp mình phụ trách.
+- [x] Teacher lấy sheet chỉ cho lesson thuộc lớp mình phụ trách.
 - [ ] Sheet chỉ chứa enrollment CONFIRMED + PAID.
 - [ ] Bulk attendance tạo/cập nhật toàn bộ trong một transaction.
 - [ ] Một item sai làm rollback toàn bộ batch.
-- [ ] PATCH một attendance kiểm tra đúng lesson, Student và Teacher phụ trách.
+- [x] PATCH một attendance kiểm tra đúng lesson, Student và Teacher phụ trách.
 - [ ] Không điểm danh lớp/lesson CANCELLED.
 - [ ] Cho cập nhật trong tối đa bảy ngày sau ngày học và chặn sau thời hạn.
 - [ ] Sau giờ kết thúc lesson chuyển COMPLETED nhưng attendance vẫn cập nhật trong hạn.
-- [ ] Student chỉ xem attendance của chính mình.
+- [x] Student chỉ xem attendance của chính mình.
 - [ ] Summary bỏ lesson CANCELLED, phân biệt total/completed/marked và không chia cho 0.
 
 ## 11. Dashboard và báo cáo
@@ -169,15 +169,15 @@ Tài liệu này được lập từ source backend hiện tại, gồm controll
 - [ ] Popular courses tôn trọng khoảng ngày và giới hạn kết quả.
 - [ ] Teacher load không tính lớp/lesson CANCELLED.
 - [ ] Upcoming classes dùng timezone/ngày hiện tại đúng và validate khoảng ngày.
-- [ ] ADMIN truy cập toàn bộ report; CONSULTANT chỉ truy cập endpoint được cấp quyền.
+- [x] ADMIN truy cập toàn bộ report; CONSULTANT chỉ truy cập endpoint được cấp quyền.
 
 ## 12. Upload ảnh
 
-- [ ] ADMIN upload ảnh Course; STUDENT upload avatar đúng purpose.
-- [ ] TEACHER/CONSULTANT và purpose không hợp lệ bị từ chối theo cấu hình hiện tại.
+- [x] ADMIN upload ảnh Course; STUDENT upload avatar đúng purpose.
+- [x] TEACHER/CONSULTANT và purpose không hợp lệ bị từ chối theo cấu hình hiện tại.
 - [ ] File rỗng, quá dung lượng hoặc MIME không phải ảnh trả `400/413` phù hợp.
 - [ ] Cloudinary lỗi được chuyển thành response an toàn, không lộ credential.
-- [ ] Upload thành công trả URL, public ID, kích thước và định dạng đúng.
+- [x] Upload thành công trả URL, public ID, kích thước và định dạng đúng.
 
 ## 13. Repository integration bằng MySQL
 
@@ -193,15 +193,15 @@ Tài liệu này được lập từ source backend hiện tại, gồm controll
 
 ## 14. Security matrix chung
 
-- [ ] Public endpoint hoạt động không cần token.
+- [x] Public endpoint hoạt động không cần token.
 - [ ] Protected endpoint thiếu token hoặc token hỏng/hết hạn trả JSON `401` thống nhất.
-- [ ] Token hợp lệ nhưng sai role trả JSON `403` thống nhất.
+- [x] Token hợp lệ nhưng sai role trả JSON `403` thống nhất.
 - [ ] ADMIN không mặc nhiên truy cập endpoint chỉ dành riêng cho STUDENT/TEACHER.
 - [ ] CONSULTANT chỉ có quyền lớp, enrollment, refund và report được khai báo.
-- [ ] TEACHER không được quản trị catalog/payment/refund.
-- [ ] STUDENT không đọc/sửa dữ liệu của Student khác bằng cách đổi path ID.
+- [x] TEACHER không được quản trị catalog/payment/refund.
+- [x] STUDENT không đọc/sửa dữ liệu của Student khác bằng cách đổi path ID.
 - [ ] Callback payment public vẫn bắt buộc chữ ký gateway hợp lệ.
-- [ ] CORS OPTIONS và allowed origins hoạt động đúng cấu hình.
+- [x] CORS OPTIONS và allowed origins hoạt động đúng cấu hình.
 
 ## 15. Thứ tự triển khai đề xuất
 
@@ -216,7 +216,10 @@ Tài liệu này được lập từ source backend hiện tại, gồm controll
 
 ## 16. Trạng thái hiện tại
 
-- Integration/controller test đã có: `ApiUserControllerIntegrationTest`.
-- Tổng số test toàn backend ở lần `mvn verify` gần nhất: **39**, tất cả đều pass.
-- Ba trường hợp Integration Test đã hoàn thành chính là ba mục đổi mật khẩu được đánh dấu `[x]`.
+- Integration/controller test hiện có **11 lớp**, bao phủ authentication/profile, public/admin
+  catalog, lớp/lịch học, lesson, enrollment, payment/refund/invoice, attendance,
+  dashboard/upload và security matrix.
+- Tổng số test backend ở lần `mvn test` gần nhất: **359**; **0 failure**, **0 error**,
+  **1 skipped** (mail smoke test chỉ chạy khi được bật rõ ràng).
+- Riêng bốn lớp vừa bổ sung/mở rộng có **45 test**, tất cả đều pass.
 - Các Unit Test hiện có không được đánh dấu thay cho Integration Test trong tài liệu này.

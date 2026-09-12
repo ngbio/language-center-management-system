@@ -65,6 +65,37 @@ class StaffAdminAuthControllerIntegrationTest {
   }
 
   @Test
+  void staffLoginMapsWrongRoleToUnauthorized() throws Exception {
+    LoginRequest request = new LoginRequest("teacher@example.com", "Teacher@123");
+    when(userService.loginStaff(request))
+        .thenThrow(new UnauthorizedException("Sai cổng đăng nhập"));
+
+    mockMvc.perform(login("/api/staff/auth/login", "teacher@example.com", "Teacher@123"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.status").value(401));
+  }
+
+  @Test
+  void adminLoginRejectsInactiveAccount() throws Exception {
+    LoginRequest request = new LoginRequest("inactive-admin@example.com", "Admin@123");
+    when(userService.loginAdmin(request))
+        .thenThrow(new UnauthorizedException("Tài khoản không hoạt động"));
+
+    mockMvc.perform(login("/api/admin/auth/login", "inactive-admin@example.com", "Admin@123"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void staffLoginRejectsInactiveAccount() throws Exception {
+    LoginRequest request = new LoginRequest("inactive-staff@example.com", "Staff@123");
+    when(userService.loginStaff(request))
+        .thenThrow(new UnauthorizedException("Tài khoản không hoạt động"));
+
+    mockMvc.perform(login("/api/staff/auth/login", "inactive-staff@example.com", "Staff@123"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
   void staffLoginRejectsInvalidEmailBeforeCallingService() throws Exception {
     mockMvc.perform(login("/api/staff/auth/login", "invalid", "Staff@123"))
         .andExpect(status().isBadRequest())
