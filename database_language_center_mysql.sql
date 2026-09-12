@@ -57,7 +57,9 @@ CREATE TABLE notification (
     is_read             BOOLEAN NOT NULL DEFAULT FALSE,
     created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     read_at             DATETIME NULL,
+    dedup_key           VARCHAR(160) NULL,
     PRIMARY KEY (id),
+    CONSTRAINT uq_notification_dedup_key UNIQUE (dedup_key),
     CONSTRAINT fk_notification_user
         FOREIGN KEY (user_id) REFERENCES `user`(id),
     CONSTRAINT ck_notification_type

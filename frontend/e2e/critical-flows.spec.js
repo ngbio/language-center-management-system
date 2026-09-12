@@ -42,6 +42,39 @@ test("học viên gửi kèm lý do khi hủy đăng ký", async ({ page }) => {
   await expect.poll(() => cancellationPayload).toEqual({ cancellationReason: "Không thể tiếp tục học" });
 });
 
+test("học viên xem và đánh dấu thông báo đã đọc", async ({ page }) => {
+  await useSession(page, "STUDENT");
+  let markedNotificationId;
+  await page.route("**/api/**", async (route) => {
+    const request = route.request();
+    const path = new URL(request.url()).pathname;
+    if (path === "/api/students/me/notifications/unread-count") {
+      return json(route, { unreadCount: markedNotificationId ? 0 : 1 });
+    }
+    if (path === "/api/students/me/notifications" && request.method() === "GET") {
+      return json(route, { content: [{
+        id: 41,
+        title: "Buổi học đang bắt đầu",
+        content: "Lớp English A1 bắt đầu lúc 18:00.",
+        notificationType: "SCHEDULE",
+        read: false,
+        createdAt: "2026-09-12T18:00:00",
+      }] });
+    }
+    if (path === "/api/students/me/notifications/41/read" && request.method() === "PATCH") {
+      markedNotificationId = 41;
+      return json(route, { id: 41, read: true });
+    }
+    return json(route, []);
+  });
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "Thông báo" }).click();
+  await expect(page.getByText("Buổi học đang bắt đầu")).toBeVisible();
+  await page.getByText("Buổi học đang bắt đầu").click();
+  await expect.poll(() => markedNotificationId).toBe(41);
+});
+
 test("admin tạo tài khoản tư vấn viên từ màn hình người dùng", async ({ page }) => {
   await useSession(page, "ADMIN");
   let createdAccount;

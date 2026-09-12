@@ -25,6 +25,7 @@ import com.ntt.language_center_management.repository.CourseRepository;
 import com.ntt.language_center_management.repository.EnrollmentRepository;
 import com.ntt.language_center_management.repository.TeacherRepository;
 import com.ntt.language_center_management.service.CourseClassService;
+import com.ntt.language_center_management.event.ClassOpenedMailEvent;
 import com.ntt.language_center_management.util.ApplicationDateTimeUtils;
 import com.ntt.language_center_management.security.CurrentUserResolver;
 import java.security.Principal;
@@ -39,6 +40,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -71,6 +73,7 @@ public class CourseClassServiceImpl implements CourseClassService {
   private final ClassScheduleMapper classScheduleMapper;
   private final ZoneId applicationZone;
   private final CurrentUserResolver currentUserResolver;
+  private final ApplicationEventPublisher eventPublisher;
 
   public CourseClassServiceImpl(
       CourseClassRepository courseClassRepository,
@@ -82,7 +85,8 @@ public class CourseClassServiceImpl implements CourseClassService {
       CourseMapper courseMapper,
       ClassScheduleMapper classScheduleMapper,
       @Value("${app.time-zone:Asia/Ho_Chi_Minh}") String applicationTimeZone,
-      CurrentUserResolver currentUserResolver) {
+      CurrentUserResolver currentUserResolver,
+      ApplicationEventPublisher eventPublisher) {
     this.courseClassRepository = courseClassRepository;
     this.courseRepository = courseRepository;
     this.teacherRepository = teacherRepository;
@@ -93,6 +97,7 @@ public class CourseClassServiceImpl implements CourseClassService {
     this.classScheduleMapper = classScheduleMapper;
     this.applicationZone = ZoneId.of(applicationTimeZone);
     this.currentUserResolver = currentUserResolver;
+    this.eventPublisher = eventPublisher;
   }
 
   @Override
@@ -272,6 +277,7 @@ public class CourseClassServiceImpl implements CourseClassService {
   @Override
   public CourseClassResponse changeStatus(Integer id, ClassStatus status) {
     Courseclass value = lock(id);
+    ClassStatus previousStatus = value.getStatus();
     if (status == null) {
       throw new IllegalArgumentException("Trạng thái lớp không được để trống");
     }
@@ -280,7 +286,7 @@ public class CourseClassServiceImpl implements CourseClassService {
       throw new IllegalArgumentException(
           "Không thể chuyển trạng thái từ " + value.getStatus() + " sang " + normalizedStatus);
     }
-    if (normalizedStatus == ClassStatus.OPEN) {
+    if (previousStatus == ClassStatus.DRAFT && normalizedStatus == ClassStatus.OPEN) {
       validateCanOpen(value);
     }
     if (normalizedStatus == ClassStatus.FULL
@@ -289,7 +295,13 @@ public class CourseClassServiceImpl implements CourseClassService {
     }
     value.setStatus(normalizedStatus);
     value.setUpdatedAt(new Date());
-    return toResponse(courseClassRepository.save(value));
+    Courseclass saved = courseClassRepository.save(value);
+    if (normalizedStatus == ClassStatus.OPEN) {
+      eventPublisher.publishEvent(new ClassOpenedMailEvent(
+          saved.getClassCode(), saved.getClassName(), saved.getStartDate(),
+          saved.getAppliedTuitionFee()));
+    }
+    return toResponse(saved);
   }
 
   @Override

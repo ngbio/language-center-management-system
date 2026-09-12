@@ -18,6 +18,7 @@ import com.ntt.language_center_management.repository.*;
 import com.ntt.language_center_management.repository.projection.CourseClassEnrollmentCount;
 import com.ntt.language_center_management.service.impl.CourseClassServiceImpl;
 import com.ntt.language_center_management.security.CurrentUserResolver;
+import com.ntt.language_center_management.event.ClassOpenedMailEvent;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.context.ApplicationEventPublisher;
 
 class CourseClassServiceImplTest {
   private CourseClassRepository classes;
@@ -39,6 +41,7 @@ class CourseClassServiceImplTest {
   private ClassScheduleMapper scheduleMapper;
   private CourseClassServiceImpl service;
   private CurrentUserResolver currentUserResolver;
+  private ApplicationEventPublisher eventPublisher;
 
   @BeforeEach
   void setUp() {
@@ -49,8 +52,10 @@ class CourseClassServiceImplTest {
     scheduleMapper = mock(ClassScheduleMapper.class);
     currentUserResolver = new CurrentUserResolver(
         mock(UserRepository.class), mock(StudentRepository.class), teachers);
+    eventPublisher = mock(ApplicationEventPublisher.class);
     service = new CourseClassServiceImpl(classes, courses, teachers, enrollments, schedules,
-        mapper, courseMapper, scheduleMapper, "Asia/Ho_Chi_Minh", currentUserResolver);
+        mapper, courseMapper, scheduleMapper, "Asia/Ho_Chi_Minh", currentUserResolver,
+        eventPublisher);
   }
 
   @Test
@@ -170,6 +175,19 @@ class CourseClassServiceImplTest {
     when(schedules.findByCourseClassId_Id(1)).thenReturn(List.of());
     assertThatThrownBy(() -> service.changeStatus(1, ClassStatus.OPEN))
         .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void shouldPublishMailEventWhenDraftClassIsOpened() {
+    Courseclass value = courseClass(ClassStatus.DRAFT);
+    value.setTeacherId(teacher(AccountStatus.ACTIVE));
+    when(classes.lockById(1)).thenReturn(Optional.of(value));
+    when(schedules.findByCourseClassId_Id(1)).thenReturn(List.of(schedule((short) 2, 8, 10)));
+    when(classes.save(value)).thenReturn(value);
+
+    service.changeStatus(1, ClassStatus.OPEN);
+
+    verify(eventPublisher).publishEvent(any(ClassOpenedMailEvent.class));
   }
 
   @Test

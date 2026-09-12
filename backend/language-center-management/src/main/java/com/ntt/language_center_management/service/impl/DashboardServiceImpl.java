@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -130,7 +131,9 @@ public class DashboardServiceImpl implements DashboardService {
     if (limit < 1 || limit > 20) {
       throw new IllegalArgumentException("Giới hạn khóa học phổ biến phải từ 1 đến 20");
     }
-    return enrollments.findPopularCourses(range.from(), range.toExclusive(), limit).stream()
+    return enrollments
+        .findPopularCourses(range.from(), range.toExclusive(), PageRequest.of(0, limit))
+        .stream()
         .map(row -> new PopularCourseReportResponse(number(row[0]).intValue(),
             String.valueOf(row[1]), String.valueOf(row[2]), number(row[3]).longValue(),
             number(row[4]).longValue(), decimal(row[5])))

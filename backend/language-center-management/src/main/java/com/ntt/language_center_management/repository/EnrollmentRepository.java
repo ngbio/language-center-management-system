@@ -18,6 +18,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.domain.Pageable;
 import java.util.Date;
 
 public interface EnrollmentRepository
@@ -166,10 +167,9 @@ public interface EnrollmentRepository
       WHERE e.enrollment_date >= :from AND e.enrollment_date < :toExclusive
       GROUP BY c.id, c.course_code, c.course_name
       ORDER BY 5 DESC, 4 DESC, c.course_name ASC
-      LIMIT :limit
       """, nativeQuery = true)
   List<Object[]> findPopularCourses(
       @Param("from") Date from,
       @Param("toExclusive") Date toExclusive,
-      @Param("limit") int limit);
+      Pageable pageable);
 }

@@ -17,6 +17,7 @@ import com.ntt.language_center_management.entity.Courseclass;
 import com.ntt.language_center_management.entity.Enrollment;
 import com.ntt.language_center_management.entity.Payment;
 import com.ntt.language_center_management.entity.Student;
+import com.ntt.language_center_management.entity.User;
 import com.ntt.language_center_management.enums.EnrollmentPaymentStatus;
 import com.ntt.language_center_management.enums.EnrollmentStatus;
 import com.ntt.language_center_management.enums.PaymentMethod;
@@ -32,6 +33,7 @@ import com.ntt.language_center_management.security.CurrentUserResolver;
 import com.ntt.language_center_management.transaction.TransactionExecutor;
 import com.ntt.language_center_management.service.EnrollmentExpirationService;
 import com.ntt.language_center_management.service.impl.PaymentServiceImpl;
+import com.ntt.language_center_management.event.PaymentSucceededMailEvent;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
@@ -44,6 +46,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -64,6 +67,7 @@ class PaymentServiceImplTest {
   private PaymentServiceImpl service;
   private Student student;
   private Enrollment enrollment;
+  private ApplicationEventPublisher eventPublisher;
 
   @BeforeEach
   void setUp() {
@@ -75,9 +79,15 @@ class PaymentServiceImplTest {
     currentUserResolver = new CurrentUserResolver(
         mock(UserRepository.class), students, mock(TeacherRepository.class));
     transactionExecutor = new TransactionExecutor();
+    eventPublisher = mock(ApplicationEventPublisher.class);
     service = new PaymentServiceImpl(
-        payments, enrollments, currentUserResolver, objectMapper, expiration, transactionExecutor);
+        payments, enrollments, currentUserResolver, objectMapper, expiration, transactionExecutor,
+        eventPublisher);
     student = new Student(7);
+    User studentUser = new User(9);
+    studentUser.setEmail("student@example.com");
+    studentUser.setFullName("Student Name");
+    student.setUserId(studentUser);
     enrollment = enrollment(15, student, "3200000");
     when(students.findByUserId_EmailIgnoreCase("student@example.com")).thenReturn(Optional.of(student));
     when(enrollments.lockById(15)).thenReturn(Optional.of(enrollment));
@@ -171,6 +181,7 @@ class PaymentServiceImplTest {
     assertThat(enrollment.getPaymentStatus()).isEqualTo(EnrollmentPaymentStatus.PAID);
     verify(payments).save(payment);
     verify(enrollments).save(enrollment);
+    verify(eventPublisher).publishEvent(any(PaymentSucceededMailEvent.class));
   }
 
   @Test
@@ -215,6 +226,7 @@ class PaymentServiceImplTest {
 
     verify(payments, never()).save(any());
     verify(enrollments, never()).save(any());
+    verify(eventPublisher, never()).publishEvent(any(PaymentSucceededMailEvent.class));
   }
 
   @Test
@@ -422,6 +434,7 @@ class PaymentServiceImplTest {
     value.setAmountDue(new BigDecimal(amount));
     Courseclass courseClass = new Courseclass(3);
     courseClass.setClassCode("EN-A1-01");
+    courseClass.setClassName("English A1");
     value.setCourseClassId(courseClass);
     return value;
   }

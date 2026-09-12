@@ -14,6 +14,8 @@ import com.ntt.language_center_management.exception.*;
 import com.ntt.language_center_management.mapper.UserMapper;
 import com.ntt.language_center_management.repository.*;
 import com.ntt.language_center_management.service.impl.UserServiceImpl;
+import com.ntt.language_center_management.service.NotificationService;
+import com.ntt.language_center_management.event.AccountCreatedMailEvent;
 import com.ntt.language_center_management.security.CurrentUserResolver;
 import java.security.Principal;
 import java.util.*;
@@ -22,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.data.domain.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.context.ApplicationEventPublisher;
 
 class UserServiceImplTest {
   private UserRepository users;
@@ -30,6 +33,8 @@ class UserServiceImplTest {
   private RoleRepository roles;
   private PasswordEncoder encoder;
   private UserServiceImpl service;
+  private NotificationService notificationService;
+  private ApplicationEventPublisher eventPublisher;
   private final Principal principal = () -> "student@example.com";
 
   @BeforeEach
@@ -39,8 +44,10 @@ class UserServiceImplTest {
     teachers = mock(TeacherRepository.class);
     roles = mock(RoleRepository.class);
     encoder = mock(PasswordEncoder.class);
+    notificationService = mock(NotificationService.class);
+    eventPublisher = mock(ApplicationEventPublisher.class);
     service = new UserServiceImpl(users, students, teachers, roles, new UserMapper(), encoder,
-        new CurrentUserResolver(users, students, teachers));
+        new CurrentUserResolver(users, students, teachers), notificationService, eventPublisher);
   }
 
   @Test
@@ -110,6 +117,8 @@ class UserServiceImplTest {
     assertThat(user.getValue().getPasswordHash()).isEqualTo("encoded");
     assertThat(student.getValue().getUserId()).isSameAs(user.getValue());
     assertThat(student.getValue().getStudentCode()).matches("HV[A-F0-9]{10}");
+    verify(notificationService).createWelcomeNotification(user.getValue());
+    verify(eventPublisher).publishEvent(any(AccountCreatedMailEvent.class));
   }
 
   @Test

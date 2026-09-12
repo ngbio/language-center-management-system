@@ -67,6 +67,9 @@ public class Notification implements Serializable {
     @Column(name = "read_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date readAt;
+    @Size(max = 160)
+    @Column(name = "dedup_key", unique = true)
+    private String dedupKey;
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private User userId;
@@ -142,6 +145,14 @@ public class Notification implements Serializable {
 
     public void setReadAt(Date readAt) {
         this.readAt = readAt;
+    }
+
+    public String getDedupKey() {
+        return dedupKey;
+    }
+
+    public void setDedupKey(String dedupKey) {
+        this.dedupKey = dedupKey;
     }
 
     public User getUserId() {
