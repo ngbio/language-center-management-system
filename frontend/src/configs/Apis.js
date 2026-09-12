@@ -16,6 +16,7 @@ export const endpoints = {
   "firebase-chat-token": "/chat/firebase-token",
   "admin-teachers": "/admin/teachers",
   "admin-users": "/admin/users",
+  "admin-create-user": "/admin/users",
   "admin-user-details": (userId) => `/admin/users/${userId}`,
   "change-user-status": (userId) => `/admin/users/${userId}/status`,
 
@@ -48,7 +49,6 @@ export const endpoints = {
   "admin-content-publication": (contentId) => `/admin/contents/${contentId}/publication-status`,
   "admin-contents-reorder": "/admin/contents/reorder",
 
-  rooms: "/rooms",
   "admin-rooms": "/admin/rooms",
   "admin-room-details": (roomId) => `/admin/rooms/${roomId}`,
 
@@ -57,7 +57,6 @@ export const endpoints = {
   "class-schedules": (classId) => `/classes/${classId}/schedules`,
   "schedule-details": (scheduleId) => `/schedules/${scheduleId}`,
   enrollments: "/enrollments",
-  payments: "/payments",
   "my-payments": "/students/me/payments",
   "staff-enrollments": "/staff/enrollments",
   "staff-enrollment-details": (enrollmentId) => `/staff/enrollments/${enrollmentId}`,

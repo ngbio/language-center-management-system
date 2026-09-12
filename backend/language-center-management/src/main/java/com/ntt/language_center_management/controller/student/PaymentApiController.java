@@ -25,6 +25,8 @@ public class PaymentApiController {
     this.paymentService = paymentService;
   }
 
+  /** @deprecated Use POST /api/enrollments/{enrollmentId}/payments instead. */
+  @Deprecated(since = "2026-09", forRemoval = true)
   @PostMapping("/payments")
   public ApiResponse<PaymentResponse> create(
       @Valid @RequestBody CreatePaymentRequest request, Principal principal) {

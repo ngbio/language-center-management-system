@@ -59,9 +59,17 @@ export default function EnrollmentHistoryScreen() {
 
   const cancel = async (enrollment) => {
     if (!window.confirm(`Bạn có chắc muốn hủy đăng ký lớp ${enrollment.className}?`)) return;
+    const cancellationReason = window.prompt("Vui lòng nhập lý do hủy đăng ký:");
+    if (cancellationReason === null) return;
+    if (!cancellationReason.trim()) {
+      setError("Lý do hủy đăng ký không được để trống.");
+      return;
+    }
     setError(""); setNotice("");
     try {
-      await authApis().post(endpoints["cancel-enrollment"](enrollment.id));
+      await authApis().post(endpoints["cancel-enrollment"](enrollment.id), {
+        cancellationReason: cancellationReason.trim(),
+      });
       setNotice("Hủy đăng ký thành công."); await loadHistory();
     } catch (requestError) { setError(apiError(requestError)); }
   };

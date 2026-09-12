@@ -1,8 +1,10 @@
 package com.ntt.language_center_management.controller.admin;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ntt.language_center_management.dto.request.ChangeUserStatusRequest;
+import com.ntt.language_center_management.dto.request.AdminStaffAccountRequest;
 import com.ntt.language_center_management.dto.response.ApiResponse;
 import com.ntt.language_center_management.dto.response.PageResponse;
 import com.ntt.language_center_management.dto.response.UserResponse;
@@ -48,6 +51,16 @@ public class ApiAdminUserController {
                 HttpStatus.OK.value(),
                 "Lấy thông tin người dùng thành công",
                 userService.getUserById(id));
+    }
+
+    @PostMapping("/users")
+    public ResponseEntity<ApiResponse<UserResponse>> createAdminStaffAccount(
+            @Valid @RequestBody AdminStaffAccountRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>(
+                        HttpStatus.CREATED.value(),
+                        "Tạo tài khoản quản trị nội bộ thành công",
+                        userService.createAdminStaffAccount(request)));
     }
 
     @PatchMapping("/users/{id}/status")

@@ -12,6 +12,15 @@ import { apiData, apiError, formatDate } from "../../utils/api";
 import useDebouncedValue from "../../hooks/useDebouncedValue";
 
 const statuses = ["ACTIVE", "INACTIVE", "LOCKED"];
+const emptyAccountForm = {
+  username: "",
+  password: "",
+  fullName: "",
+  email: "",
+  phoneNumber: "",
+  address: "",
+  roleCode: "CONSULTANT",
+};
 
 export default function UsersScreen() {
   const [result, setResult] = useState({
@@ -30,6 +39,8 @@ export default function UsersScreen() {
   const [sorting, setSorting] = useState("createdAt:desc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [accountForm, setAccountForm] = useState(null);
+  const [savingAccount, setSavingAccount] = useState(false);
 
   const load = useCallback(
     async (page = 0) => {
@@ -89,12 +100,36 @@ export default function UsersScreen() {
     }
   };
 
+  const createAccount = async (event) => {
+    event.preventDefault();
+    setSavingAccount(true);
+    setError("");
+    try {
+      await authApis().post(endpoints["admin-create-user"], accountForm);
+      setAccountForm(null);
+      await load(0);
+    } catch (requestError) {
+      setError(apiError(requestError));
+    } finally {
+      setSavingAccount(false);
+    }
+  };
+
   return (
     <>
       <PageTitle
         eyebrow="QUẢN TRỊ & PHÂN QUYỀN"
         title="Người dùng"
         description={`${result.totalElements || 0} tài khoản trong hệ thống`}
+        action={
+          <button
+            className="primary-button"
+            type="button"
+            onClick={() => setAccountForm({ ...emptyAccountForm })}
+          >
+            Thêm Admin / Tư vấn viên
+          </button>
+        }
       />
       <ErrorAlert message={error} />
       <section className="panel table-panel">
@@ -251,6 +286,53 @@ export default function UsersScreen() {
               Cập nhật trạng thái
             </button>
           </div>
+        </Modal>
+      )}
+      {accountForm && (
+        <Modal title="Tạo tài khoản nội bộ" onClose={() => setAccountForm(null)}>
+          <form onSubmit={createAccount}>
+            <div className="form-grid">
+              <label>
+                Vai trò
+                <select
+                  value={accountForm.roleCode}
+                  onChange={(event) => setAccountForm({ ...accountForm, roleCode: event.target.value })}
+                >
+                  <option value="CONSULTANT">Nhân viên tư vấn</option>
+                  <option value="ADMIN">Quản trị viên</option>
+                </select>
+              </label>
+              <label>
+                Họ tên
+                <input required maxLength="150" value={accountForm.fullName} onChange={(event) => setAccountForm({ ...accountForm, fullName: event.target.value })} />
+              </label>
+              <label>
+                Tên đăng nhập
+                <input required maxLength="100" value={accountForm.username} onChange={(event) => setAccountForm({ ...accountForm, username: event.target.value })} />
+              </label>
+              <label>
+                Email
+                <input required type="email" maxLength="150" value={accountForm.email} onChange={(event) => setAccountForm({ ...accountForm, email: event.target.value })} />
+              </label>
+              <label>
+                Mật khẩu ban đầu
+                <input required type="password" minLength="8" maxLength="100" value={accountForm.password} onChange={(event) => setAccountForm({ ...accountForm, password: event.target.value })} />
+              </label>
+              <label>
+                Số điện thoại
+                <input pattern="0[0-9]{9}" value={accountForm.phoneNumber} onChange={(event) => setAccountForm({ ...accountForm, phoneNumber: event.target.value })} />
+              </label>
+              <label>
+                Địa chỉ
+                <input maxLength="255" value={accountForm.address} onChange={(event) => setAccountForm({ ...accountForm, address: event.target.value })} />
+              </label>
+            </div>
+            <p className="form-note">Mật khẩu cần có ít nhất một chữ thường, một chữ số và một ký tự đặc biệt.</p>
+            <div className="modal-actions">
+              <button className="secondary-button" type="button" onClick={() => setAccountForm(null)}>Hủy</button>
+              <button className="primary-button" disabled={savingAccount}>{savingAccount ? "Đang tạo..." : "Tạo tài khoản"}</button>
+            </div>
+          </form>
         </Modal>
       )}
     </>
