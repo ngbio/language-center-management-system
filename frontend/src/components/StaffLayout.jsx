@@ -4,8 +4,8 @@ import { disconnectFirebaseChat } from "../services/firebaseChat";
 
 export default function StaffLayout() {
   const navigate = useNavigate();
-  const logout = () => {
-    disconnectFirebaseChat();
+  const logout = async () => {
+    await disconnectFirebaseChat();
     clearSession();
     navigate("/staff/login", { replace: true });
   };

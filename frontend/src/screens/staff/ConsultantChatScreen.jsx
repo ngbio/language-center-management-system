@@ -26,7 +26,14 @@ export default function ConsultantChatScreen() {
       .then((connected) => {
         if (!active) return;
         setSession(connected);
-        unsubscribe = subscribeConsultantConversations(connected, setConversations);
+        unsubscribe = subscribeConsultantConversations(
+          connected,
+          (nextConversations) => {
+            setConversations(nextConversations);
+            setError("");
+          },
+          (chatError) => setError(apiError(chatError)),
+        );
       })
       .catch((chatError) => active && setError(apiError(chatError)));
     return () => { active = false; unsubscribe?.(); };
@@ -34,7 +41,15 @@ export default function ConsultantChatScreen() {
 
   useEffect(() => {
     if (!session || !selected) return undefined;
-    const unsubscribe = subscribeMessages(session, selected.studentUid, setMessages);
+    const unsubscribe = subscribeMessages(
+      session,
+      selected.studentUid,
+      (nextMessages) => {
+        setMessages(nextMessages);
+        setError("");
+      },
+      (chatError) => setError(apiError(chatError)),
+    );
     markConversationRead(session, selected.studentUid).catch((chatError) => setError(apiError(chatError)));
     return unsubscribe;
   }, [session, selected]);

@@ -33,7 +33,15 @@ export default function StudentChatBubble() {
         );
         if (!active) return;
         setSession(connected);
-        unsubscribe = subscribeMessages(connected, connected.identity.uid, setMessages);
+        unsubscribe = subscribeMessages(
+          connected,
+          connected.identity.uid,
+          (nextMessages) => {
+            setMessages(nextMessages);
+            setError("");
+          },
+          (chatError) => setError(apiError(chatError)),
+        );
         await markConversationRead(connected, connected.identity.uid);
       } catch (chatError) {
         if (active) setError(apiError(chatError));

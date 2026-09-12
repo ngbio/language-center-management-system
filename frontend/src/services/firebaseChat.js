@@ -26,6 +26,9 @@ const firebaseConfig = {
 
 const requiredConfig = ["apiKey", "authDomain", "databaseURL", "projectId", "appId"];
 let sessionPromise;
+let sessionKey;
+
+const currentSessionKey = () => localStorage.getItem("token") || "";
 
 const describeFirebaseAuthError = (error) => {
   if (error?.code === "auth/configuration-not-found") {
@@ -51,7 +54,12 @@ const getFirebase = () => {
 };
 
 export const connectFirebaseChat = async () => {
+  const nextSessionKey = currentSessionKey();
+  if (sessionPromise && sessionKey !== nextSessionKey) {
+    await disconnectFirebaseChat();
+  }
   if (!sessionPromise) {
+    sessionKey = nextSessionKey;
     sessionPromise = (async () => {
       const response = await authApis().post(endpoints["firebase-chat-token"]);
       const identity = apiData(response);
@@ -60,6 +68,7 @@ export const connectFirebaseChat = async () => {
       return { ...firebase, identity };
     })().catch((error) => {
       sessionPromise = undefined;
+      sessionKey = undefined;
       throw describeFirebaseAuthError(error);
     });
   }
@@ -74,6 +83,7 @@ export const disconnectFirebaseChat = async () => {
     // Firebase may be intentionally disabled in local environments.
   } finally {
     sessionPromise = undefined;
+    sessionKey = undefined;
   }
 };
 
@@ -102,23 +112,52 @@ export const ensureStudentConversation = async (session, email) => {
   }
 };
 
-export const subscribeMessages = (session, studentUid, onMessages) => {
+const subscribeWithRefresh = (target, onSnapshot, onError) => {
+  let active = true;
+  let refreshing = false;
+  const handleError = (error) => {
+    if (active) onError?.(error);
+  };
+  const unsubscribe = onValue(target, onSnapshot, handleError);
+
+  // Firebase normally pushes changes immediately. This refresh is a safety net for
+  // browsers/proxies that leave the realtime transport connected but stop delivering events.
+  const intervalId = window.setInterval(async () => {
+    if (!active || document.visibilityState === "hidden" || refreshing) return;
+    refreshing = true;
+    try {
+      onSnapshot(await get(target));
+    } catch (error) {
+      handleError(error);
+    } finally {
+      refreshing = false;
+    }
+  }, 5000);
+
+  return () => {
+    active = false;
+    window.clearInterval(intervalId);
+    unsubscribe();
+  };
+};
+
+export const subscribeMessages = (session, studentUid, onMessages, onError) => {
   const { database, identity } = session;
   const messagesQuery = query(
     ref(database, `${chatRoot(identity.consultantUid, studentUid)}/messages`),
     orderByChild("createdAt"),
     limitToLast(100),
   );
-  return onValue(messagesQuery, (snapshot) => {
+  return subscribeWithRefresh(messagesQuery, (snapshot) => {
     const messages = [];
     snapshot.forEach((child) => messages.push({ id: child.key, ...child.val() }));
     onMessages(messages);
-  });
+  }, onError);
 };
 
-export const subscribeConsultantConversations = (session, onConversations) => {
+export const subscribeConsultantConversations = (session, onConversations, onError) => {
   const conversationsRef = ref(session.database, `chats/${session.identity.uid}`);
-  return onValue(conversationsRef, (snapshot) => {
+  return subscribeWithRefresh(conversationsRef, (snapshot) => {
     const conversations = [];
     snapshot.forEach((child) => {
       const metadata = child.child("metadata").val();
@@ -126,7 +165,7 @@ export const subscribeConsultantConversations = (session, onConversations) => {
     });
     conversations.sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0));
     onConversations(conversations);
-  });
+  }, onError);
 };
 
 export const sendChatMessage = async (session, studentUid, text) => {

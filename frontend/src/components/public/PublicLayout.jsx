@@ -32,8 +32,8 @@ export default function PublicLayout() {
     });
   };
 
-  const logout = () => {
-    disconnectFirebaseChat();
+  const logout = async () => {
+    await disconnectFirebaseChat();
     clearSession();
     setAccountMenuOpen(false);
     navigate("/");
