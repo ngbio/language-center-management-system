@@ -24,7 +24,7 @@ public interface LessonRepository extends JpaRepository<Lesson, Integer> {
 
   @Query(
       """
-      select distinct lesson from Lesson lesson
+      select lesson from Lesson lesson
       join lesson.classScheduleId schedule
       join schedule.courseClassId courseClass
       where exists (
