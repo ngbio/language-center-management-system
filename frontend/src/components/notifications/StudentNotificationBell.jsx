@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { authApis, endpoints } from "../../configs/Apis";
 import { apiData, formatDateTime } from "../../utils/api";
+import "../../styles/StudentNotifications.css";
 
 const POLL_INTERVAL_MS = 60_000;
 
@@ -78,7 +79,7 @@ export default function StudentNotificationBell() {
   return (
     <div className="student-notifications" ref={panelRef}>
       <button
-        className="notification-trigger"
+        className={`notification-trigger ${open ? "open" : ""}`}
         type="button"
         aria-label="Thông báo"
         aria-expanded={open}
