@@ -5,6 +5,7 @@ import com.ntt.language_center_management.service.MailGateway;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpHeaders;
@@ -24,11 +25,16 @@ public class ResendMailGateway implements MailGateway {
   private final RestClient restClient;
   private final String from;
 
+  @Autowired
   public ResendMailGateway(
-      RestClient.Builder builder,
       @Value("${app.mail.resend.base-url:https://api.resend.com}") String baseUrl,
       @Value("${app.mail.resend.api-key:}") String apiKey,
       @Value("${app.mail.from:}") String from) {
+    this(RestClient.builder(), baseUrl, apiKey, from);
+  }
+
+  public ResendMailGateway(
+      RestClient.Builder builder, String baseUrl, String apiKey, String from) {
     if (!StringUtils.hasText(apiKey)) {
       throw new IllegalStateException("RESEND_API_KEY is required when MAIL_PROVIDER=resend");
     }
