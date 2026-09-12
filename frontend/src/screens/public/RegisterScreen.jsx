@@ -4,6 +4,7 @@ import api, { endpoints } from "../../configs/Apis";
 import { apiError } from "../../utils/api";
 import { getActiveSessionHome } from "../../utils/authSession";
 import "../../styles/PublicSite.css";
+import "../../styles/PasswordToggle.css";
 
 const studentInitial = {
   username: "", password: "", fullName: "", email: "", phoneNumber: "",
@@ -20,6 +21,7 @@ const passwordPattern = "(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9\\s]).{8,100}";
 
 export default function RegisterScreen() {
   const [accountType, setAccountType] = useState("student");
+  const [showPassword, setShowPassword] = useState(false);
   const [studentForm, setStudentForm] = useState(studentInitial);
   const [teacherForm, setTeacherForm] = useState(teacherInitial);
   const [error, setError] = useState("");
@@ -98,7 +100,22 @@ export default function RegisterScreen() {
             <label>Họ và tên<input name="fullName" required maxLength="150" value={form.fullName} onChange={update} /></label>
             <label>Tên đăng nhập<input name="username" required maxLength="100" value={form.username} onChange={update} /></label>
             <label>Email<input name="email" type="email" required maxLength="150" placeholder="ten@mien.com" value={form.email} onChange={update} /></label>
-            <label>Mật khẩu<input name="password" type="password" required minLength="8" maxLength="100" pattern={passwordPattern} title="Từ 8 ký tự, có chữ thường, chữ số và ký tự đặc biệt" value={form.password} onChange={update} /><small>Tối thiểu 8 ký tự, gồm chữ thường, chữ số và ký tự đặc biệt.</small></label>
+            <label>
+              Mật khẩu
+              <span className="password-input-wrap">
+                <input name="password" type={showPassword ? "text" : "password"} required minLength="8" maxLength="100" pattern={passwordPattern} title="Từ 8 ký tự, có chữ thường, chữ số và ký tự đặc biệt" autoComplete="new-password" value={form.password} onChange={update} />
+                <button
+                  className="password-toggle"
+                  type="button"
+                  aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                  aria-pressed={showPassword}
+                  onClick={() => setShowPassword((visible) => !visible)}
+                >
+                  <PasswordEyeIcon visible={showPassword} />
+                </button>
+              </span>
+              <small>Tối thiểu 8 ký tự, gồm chữ thường, chữ số và ký tự đặc biệt.</small>
+            </label>
             <label>Số điện thoại<input name="phoneNumber" type="tel" required inputMode="numeric" pattern="0[0-9]{9}" minLength="10" maxLength="10" placeholder="0901234567" title="Nhập đúng 10 chữ số và bắt đầu bằng 0" value={form.phoneNumber} onChange={update} /></label>
             {accountType === "student" ? (
               <>
@@ -119,5 +136,18 @@ export default function RegisterScreen() {
         </form>
       </section>
     </main>
+  );
+}
+
+function PasswordEyeIcon({ visible }) {
+  return visible ? (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M3 3l18 18M10.6 10.7a2 2 0 002.7 2.7M9.9 4.2A10.7 10.7 0 0112 4c5.5 0 9 5.5 9 5.5a17 17 0 01-2.2 2.7M6.2 6.2C4.1 7.6 3 9.5 3 9.5S6.5 15 12 15c1 0 2-.2 2.8-.5" />
+    </svg>
+  ) : (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M3 12s3.5-5.5 9-5.5 9 5.5 9 5.5-3.5 5.5-9 5.5S3 12 3 12z" />
+      <circle cx="12" cy="12" r="2.5" />
+    </svg>
   );
 }

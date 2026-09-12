@@ -1,0 +1,93 @@
+.notification-trigger {
+  color: #263b4c;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background-color 0.2s, transform 0.2s;
+}
+
+.notification-trigger:hover,
+.notification-trigger.open {
+  color: #fff;
+  border-color: var(--navy);
+  background: var(--navy);
+}
+
+.notification-trigger:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+}
+
+.public-site.dark .notification-trigger {
+  color: #e8eef3;
+  border-color: #35414d;
+  background: #18212b;
+}
+
+.public-site.dark .notification-trigger:hover,
+.public-site.dark .notification-trigger.open {
+  color: #10151c;
+  border-color: #f2f6fa;
+  background: #f2f6fa;
+}
+
+.public-site.dark .notification-trigger > strong {
+  border-color: #10151c;
+  color: #fff;
+  background: #ff5f66;
+}
+
+.public-site.dark .notification-panel {
+  border-color: #303b46;
+  background: #18212b;
+  box-shadow: 0 18px 46px #0009;
+}
+
+.public-site.dark .notification-panel > header {
+  border-color: #303b46;
+  background: #18212b;
+}
+
+.public-site.dark .notification-panel > header strong {
+  color: #eef3f6;
+}
+
+.public-site.dark .notification-panel > header small,
+.public-site.dark .notification-empty {
+  color: #9caab6;
+}
+
+.public-site.dark .notification-panel > header button {
+  color: #72d7ce;
+}
+
+.public-site.dark .notification-panel > header button:hover {
+  color: #a5f0ea;
+}
+
+.public-site.dark .notification-item {
+  border-color: #303b46;
+  background: #18212b;
+}
+
+.public-site.dark .notification-item:hover {
+  background: #202c37;
+}
+
+.public-site.dark .notification-item.unread {
+  background: #17312f;
+}
+
+.public-site.dark .notification-item.unread:hover {
+  background: #1b3b38;
+}
+
+.public-site.dark .notification-item strong {
+  color: #eef3f6;
+}
+
+.public-site.dark .notification-item small {
+  color: #b4c0c9;
+}
+
+.public-site.dark .notification-item time {
+  color: #85939e;
+}
