@@ -11,6 +11,7 @@ import com.ntt.language_center_management.dto.response.PaymentResponse;
 import com.ntt.language_center_management.entity.Enrollment;
 import com.ntt.language_center_management.entity.Payment;
 import com.ntt.language_center_management.entity.Student;
+import com.ntt.language_center_management.entity.User;
 import com.ntt.language_center_management.exception.ResourceNotFoundException;
 import com.ntt.language_center_management.exception.PaymentGatewayException;
 import com.ntt.language_center_management.exception.UnauthorizedException;
@@ -20,6 +21,7 @@ import com.ntt.language_center_management.security.CurrentUserResolver;
 import com.ntt.language_center_management.transaction.TransactionExecutor;
 import com.ntt.language_center_management.service.PaymentService;
 import com.ntt.language_center_management.service.EnrollmentExpirationService;
+import com.ntt.language_center_management.event.PaymentSucceededMailEvent;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URI;
@@ -34,6 +36,7 @@ import java.util.Map;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,6 +66,7 @@ public class PaymentServiceImpl implements PaymentService {
   private final RestClient restClient;
   private final EnrollmentExpirationService enrollmentExpirationService;
   private final TransactionExecutor transactionExecutor;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Value("${payment.momo.endpoint}") private String momoEndpoint;
   @Value("${payment.momo.partner-code}") private String momoPartnerCode;
@@ -84,9 +88,23 @@ public class PaymentServiceImpl implements PaymentService {
       CurrentUserResolver currentUserResolver,
       ObjectMapper objectMapper,
       EnrollmentExpirationService enrollmentExpirationService,
+      TransactionExecutor transactionExecutor,
+      ApplicationEventPublisher eventPublisher) {
+    this(paymentRepository, enrollmentRepository, currentUserResolver, objectMapper,
+        enrollmentExpirationService, transactionExecutor, RestClient.builder().build(),
+        eventPublisher);
+  }
+
+  public PaymentServiceImpl(
+      PaymentRepository paymentRepository,
+      EnrollmentRepository enrollmentRepository,
+      CurrentUserResolver currentUserResolver,
+      ObjectMapper objectMapper,
+      EnrollmentExpirationService enrollmentExpirationService,
       TransactionExecutor transactionExecutor) {
     this(paymentRepository, enrollmentRepository, currentUserResolver, objectMapper,
-        enrollmentExpirationService, transactionExecutor, RestClient.builder().build());
+        enrollmentExpirationService, transactionExecutor, RestClient.builder().build(),
+        event -> {});
   }
 
   public PaymentServiceImpl(
@@ -97,6 +115,19 @@ public class PaymentServiceImpl implements PaymentService {
       EnrollmentExpirationService enrollmentExpirationService,
       TransactionExecutor transactionExecutor,
       RestClient restClient) {
+    this(paymentRepository, enrollmentRepository, currentUserResolver, objectMapper,
+        enrollmentExpirationService, transactionExecutor, restClient, event -> {});
+  }
+
+  public PaymentServiceImpl(
+      PaymentRepository paymentRepository,
+      EnrollmentRepository enrollmentRepository,
+      CurrentUserResolver currentUserResolver,
+      ObjectMapper objectMapper,
+      EnrollmentExpirationService enrollmentExpirationService,
+      TransactionExecutor transactionExecutor,
+      RestClient restClient,
+      ApplicationEventPublisher eventPublisher) {
     this.paymentRepository = paymentRepository;
     this.enrollmentRepository = enrollmentRepository;
     this.currentUserResolver = currentUserResolver;
@@ -104,6 +135,7 @@ public class PaymentServiceImpl implements PaymentService {
     this.enrollmentExpirationService = enrollmentExpirationService;
     this.transactionExecutor = transactionExecutor;
     this.restClient = restClient;
+    this.eventPublisher = eventPublisher;
   }
 
   @Override
@@ -312,6 +344,10 @@ public class PaymentServiceImpl implements PaymentService {
     if (enrollment.getConfirmedAt() == null) enrollment.setConfirmedAt(now);
     paymentRepository.save(payment);
     enrollmentRepository.save(enrollment);
+    User paymentUser = enrollment.getStudentId().getUserId();
+    eventPublisher.publishEvent(new PaymentSucceededMailEvent(
+        paymentUser.getEmail(), paymentUser.getFullName(), payment.getTransactionCode(),
+        enrollment.getCourseClassId().getClassName(), payment.getAmount()));
   }
 
   private void fail(Payment payment, String message) {

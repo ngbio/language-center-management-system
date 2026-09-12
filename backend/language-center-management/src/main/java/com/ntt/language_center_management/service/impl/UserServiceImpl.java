@@ -26,6 +26,8 @@ import com.ntt.language_center_management.repository.StudentRepository;
 import com.ntt.language_center_management.repository.TeacherRepository;
 import com.ntt.language_center_management.repository.UserRepository;
 import com.ntt.language_center_management.service.UserService;
+import com.ntt.language_center_management.service.NotificationService;
+import com.ntt.language_center_management.event.AccountCreatedMailEvent;
 import com.ntt.language_center_management.security.CurrentUserResolver;
 import java.security.Principal;
 import java.util.Date;
@@ -36,6 +38,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -59,6 +62,8 @@ public class UserServiceImpl implements UserService {
   private final UserMapper userMapper;
   private final PasswordEncoder passwordEncoder;
   private final CurrentUserResolver currentUserResolver;
+  private final NotificationService notificationService;
+  private final ApplicationEventPublisher eventPublisher;
 
   public UserServiceImpl(
       UserRepository userRepository,
@@ -67,7 +72,9 @@ public class UserServiceImpl implements UserService {
       RoleRepository roleRepository,
       UserMapper userMapper,
       PasswordEncoder passwordEncoder,
-      CurrentUserResolver currentUserResolver) {
+      CurrentUserResolver currentUserResolver,
+      NotificationService notificationService,
+      ApplicationEventPublisher eventPublisher) {
     this.userRepository = userRepository;
     this.studentRepository = studentRepository;
     this.teacherRepository = teacherRepository;
@@ -75,6 +82,8 @@ public class UserServiceImpl implements UserService {
     this.userMapper = userMapper;
     this.passwordEncoder = passwordEncoder;
     this.currentUserResolver = currentUserResolver;
+    this.notificationService = notificationService;
+    this.eventPublisher = eventPublisher;
   }
 
   @Override
@@ -201,6 +210,9 @@ public class UserServiceImpl implements UserService {
     student.setAvatar(request.avatar());
     student.setUserId(savedUser);
     studentRepository.save(student);
+    notificationService.createWelcomeNotification(savedUser);
+    eventPublisher.publishEvent(
+        new AccountCreatedMailEvent(savedUser.getEmail(), savedUser.getFullName()));
 
     // TODO: Gửi email xác nhận sau khi transaction commit khi đã cấu hình email service.
     return userMapper.toResponse(savedUser);

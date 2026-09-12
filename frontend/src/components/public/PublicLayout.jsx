@@ -8,6 +8,7 @@ import {
 } from "../../utils/authSession";
 import StudentChatBubble from "../chat/StudentChatBubble";
 import { disconnectFirebaseChat } from "../../services/firebaseChat";
+import StudentNotificationBell from "../notifications/StudentNotificationBell";
 
 export default function PublicLayout() {
   const navigate = useNavigate();
@@ -91,6 +92,7 @@ export default function PublicLayout() {
             </button>
             {!sessionAuthenticated && <Link className="public-register" to="/register">Đăng ký tài khoản</Link>}
             {!sessionAuthenticated && <Link className="public-login" to="/login">Đăng nhập</Link>}
+            {sessionAuthenticated && session.role === "STUDENT" && <StudentNotificationBell />}
             {publicAuthenticated && (
               <div className="public-account" ref={accountMenuRef}>
                 <button className="account-trigger" type="button" aria-haspopup="menu" aria-expanded={accountMenuOpen} onClick={() => setAccountMenuOpen((open) => !open)}>

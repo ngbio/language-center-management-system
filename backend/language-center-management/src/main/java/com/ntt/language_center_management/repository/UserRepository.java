@@ -28,6 +28,18 @@ public interface UserRepository
         String roleCode, AccountStatus status);
 
     @Query("""
+        select user.email
+        from User user
+        join user.roleId role
+        where upper(role.roleCode) = 'STUDENT'
+          and user.status = com.ntt.language_center_management.enums.AccountStatus.ACTIVE
+          and user.email is not null
+          and user.email <> ''
+        order by user.id
+        """)
+    Page<String> findActiveStudentEmails(Pageable pageable);
+
+    @Query("""
         select user
         from User user
         join user.roleId role
