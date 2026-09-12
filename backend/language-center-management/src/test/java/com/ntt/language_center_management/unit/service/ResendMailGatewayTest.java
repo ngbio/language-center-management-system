@@ -78,4 +78,12 @@ class ResendMailGatewayTest {
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("MAIL_FROM");
   }
+
+  @Test
+  void productionConstructorDoesNotRequireRestClientBuilderBean() {
+    ResendMailGateway gateway = new ResendMailGateway(
+        "https://api.resend.com", "re_test", "noreply@example.com");
+
+    org.assertj.core.api.Assertions.assertThat(gateway).isNotNull();
+  }
 }

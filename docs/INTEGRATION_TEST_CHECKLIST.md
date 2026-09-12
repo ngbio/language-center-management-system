@@ -219,7 +219,7 @@ Tài liệu này được lập từ source backend hiện tại, gồm controll
 - Integration/controller test hiện có **11 lớp**, bao phủ authentication/profile, public/admin
   catalog, lớp/lịch học, lesson, enrollment, payment/refund/invoice, attendance,
   dashboard/upload và security matrix.
-- Tổng số test backend ở lần `mvn test` gần nhất: **362**; **0 failure**, **0 error**,
+- Tổng số test backend ở lần `mvn test` gần nhất: **363**; **0 failure**, **0 error**,
   **1 skipped** (mail smoke test chỉ chạy khi được bật rõ ràng).
 - Riêng bốn lớp vừa bổ sung/mở rộng có **45 test**, tất cả đều pass.
 - Các Unit Test hiện có không được đánh dấu thay cho Integration Test trong tài liệu này.
