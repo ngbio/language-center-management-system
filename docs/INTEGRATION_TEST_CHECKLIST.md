@@ -42,6 +42,11 @@ Tài liệu này được lập từ source backend hiện tại, gồm controll
 - [x] `PUT /api/auth/change-password`: password yếu trả `400`.
 - [x] `PUT /api/auth/change-password`: chưa xác thực trả `401`.
 - [x] `PUT /api/auth/change-password`: lỗi mật khẩu hiện tại, xác nhận không khớp và mật khẩu mới trùng cũ trả `400`.
+- [x] `POST /api/auth/forgot-password`: public, validate email và luôn trả thông báo chung.
+- [x] Service quên mật khẩu: chỉ lưu SHA-256 của token, link chứa token thô, có thời hạn và cooldown.
+- [x] `GET /api/auth/reset-password/validate`: phân biệt token còn hạn với token sai, hết hạn hoặc đã dùng.
+- [x] `POST /api/auth/reset-password`: đổi BCrypt hash, chống dùng lại token/mật khẩu cũ và gửi email xác nhận.
+- [x] JWT được cấp trước lần đổi hoặc reset mật khẩu bị từ chối.
 
 ### Admin/Staff authentication
 

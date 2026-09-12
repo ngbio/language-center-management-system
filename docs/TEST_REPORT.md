@@ -31,12 +31,12 @@ Kết quả ngày 12/09/2026:
 
 | Chỉ số | Kết quả |
 |---|---:|
-| Test class | 46 |
-| Unit test | 229 |
-| Integration test | 148 |
+| Test class | 47 |
+| Unit test | 236 |
+| Integration test | 154 |
 | Spring context test | 1 |
-| Tổng test | 378 |
-| Thành công | 377 |
+| Tổng test | 391 |
+| Thành công | 390 |
 | Failure | 0 |
 | Error | 0 |
 | Skipped | 1 |
@@ -64,9 +64,10 @@ Các nhóm unit test:
 | `CloudinaryImageUploadServiceTest` | 6 | Pass |
 | `InvoicePdfServiceImplTest` | 3 | Pass |
 | `SystemLogServiceImplTest` | 4 | Pass |
-| `JwtFilterTest` | 6 | Pass |
+| `PasswordResetServiceImplTest` | 5 | Pass |
+| `JwtFilterTest` | 7 | Pass |
 | `JwtUtilsTest` | 3 | Pass |
-| Brevo, Firebase, notification và reminder | 18 | Pass |
+| Brevo, Firebase, notification và reminder | 19 | Pass |
 | Mapper, controller và exception handler | 12 | Pass |
 
 ## 4. Phạm vi nghiệp vụ đã kiểm thử
@@ -82,6 +83,14 @@ Các nhóm unit test:
 - Lấy/cập nhật hồ sơ, xử lý Principal thiếu và chuẩn hóa trường tùy chọn.
 - Đổi mật khẩu và các trường hợp mật khẩu sai, trùng hoặc confirm không khớp.
 - Tìm kiếm có filter, sort, pagination và đổi trạng thái user.
+
+### Quên và đặt lại mật khẩu
+
+- API yêu cầu reset luôn trả thông báo chung, đồng thời validate email đầu vào.
+- Token ngẫu nhiên chỉ được lưu dưới dạng SHA-256, có thời hạn, cooldown và chỉ dùng một lần.
+- Token sai, hết hạn, đã dùng, mật khẩu xác nhận sai hoặc trùng mật khẩu hiện tại đều bị từ chối.
+- Đổi mật khẩu lưu BCrypt hash mới, vô hiệu các token reset còn lại và JWT được cấp trước đó.
+- Email chứa đúng link frontend và email xác nhận được phát sau khi đổi mật khẩu thành công.
 
 ### TeacherServiceImpl
 
