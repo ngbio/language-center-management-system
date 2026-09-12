@@ -20,6 +20,7 @@ import com.ntt.language_center_management.dto.request.RefundRequest;
 import com.ntt.language_center_management.dto.response.InvoiceResponse;
 import com.ntt.language_center_management.dto.response.PaymentResponse;
 import com.ntt.language_center_management.exception.ForbiddenException;
+import com.ntt.language_center_management.exception.PaymentGatewayException;
 import com.ntt.language_center_management.service.BillingService;
 import com.ntt.language_center_management.service.InvoicePdfService;
 import com.ntt.language_center_management.service.PaymentService;
@@ -125,6 +126,32 @@ class PaymentRefundControllerIntegrationTest {
 
   @Test
   @WithMockUser(username = "student@example.com", roles = "STUDENT")
+  void paymentBusinessRuleFailuresReturnBadRequest() throws Exception {
+    when(paymentService.createPayment(any(CreatePaymentRequest.class), any(Principal.class)))
+        .thenThrow(new IllegalArgumentException("Đăng ký đã hết hạn thanh toán 48 giờ"));
+
+    mockMvc.perform(post("/api/enrollments/15/payments")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"method\":\"MOMO\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("Đăng ký đã hết hạn thanh toán 48 giờ"));
+  }
+
+  @Test
+  @WithMockUser(username = "student@example.com", roles = "STUDENT")
+  void paymentGatewayTimeoutReturnsSafeBadGatewayResponse() throws Exception {
+    when(paymentService.createPayment(any(CreatePaymentRequest.class), any(Principal.class)))
+        .thenThrow(new PaymentGatewayException("Không thể kết nối cổng thanh toán"));
+
+    mockMvc.perform(post("/api/enrollments/15/payments")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"method\":\"ZALOPAY\"}"))
+        .andExpect(status().isBadGateway())
+        .andExpect(jsonPath("$.status").value(502));
+  }
+
+  @Test
+  @WithMockUser(username = "student@example.com", roles = "STUDENT")
   void studentReadsOwnPaymentHistory() throws Exception {
     when(paymentService.getMyPayments(any(Principal.class))).thenReturn(List.of(payment()));
     when(billingService.getPayments(eq(15), any(Principal.class))).thenReturn(List.of(payment()));
@@ -204,6 +231,25 @@ class PaymentRefundControllerIntegrationTest {
   }
 
   @Test
+  void invalidGatewaySignaturesAreRejectedOnPublicCallbacks() throws Exception {
+    when(paymentService.handleMomoIpn(any()))
+        .thenThrow(new IllegalArgumentException("Chữ ký callback MoMo không hợp lệ"));
+    when(paymentService.handleZaloPayCallback(any()))
+        .thenThrow(new IllegalArgumentException("MAC callback ZaloPay không hợp lệ"));
+
+    mockMvc.perform(post("/api/payments/momo/ipn")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"orderId\":\"TXN-15\",\"signature\":\"invalid\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("Chữ ký callback MoMo không hợp lệ"));
+    mockMvc.perform(post("/api/payments/zalopay/callback")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"data\":\"payload\",\"mac\":\"invalid\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("MAC callback ZaloPay không hợp lệ"));
+  }
+
+  @Test
   @WithMockUser(username = "student@example.com", roles = "STUDENT")
   void invoicePdfHasExpectedContentTypeFilenameAndBody() throws Exception {
     when(invoicePdfService.createInvoicePdf(eq(15), any(Principal.class)))
@@ -248,6 +294,38 @@ class PaymentRefundControllerIntegrationTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content("{\"amount\":0,\"reason\":\"\",\"idempotencyKey\":\"\"}"))
         .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  @WithMockUser(username = "consultant@example.com", roles = "CONSULTANT")
+  void refundBusinessRulesRejectDuplicateKeyAndExcessAmount() throws Exception {
+    when(billingService.createRefund(eq(15), any(RefundRequest.class), any(Principal.class)))
+        .thenThrow(new IllegalArgumentException(
+            "Idempotency key đã được dùng cho yêu cầu hoàn tiền khác"));
+
+    mockMvc.perform(post("/api/staff/enrollments/15/refunds")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""
+                {"amount":200000,"reason":"Học viên yêu cầu","idempotencyKey":"RF-DUPLICATE"}
+                """))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value(
+            "Idempotency key đã được dùng cho yêu cầu hoàn tiền khác"));
+  }
+
+  @Test
+  @WithMockUser(username = "consultant@example.com", roles = "CONSULTANT")
+  void consultantCanReadAndRefreshRefundsButGatewayFailureReturns502() throws Exception {
+    when(billingService.getStaffRefunds(eq("PENDING"), any(Principal.class)))
+        .thenReturn(List.of());
+    when(billingService.refreshRefund(eq(9), any(Principal.class)))
+        .thenThrow(new PaymentGatewayException("Cổng hoàn tiền không phản hồi"));
+
+    mockMvc.perform(get("/api/staff/refunds").param("status", "PENDING"))
+        .andExpect(status().isOk());
+    mockMvc.perform(post("/api/staff/refunds/9/refresh"))
+        .andExpect(status().isBadGateway())
+        .andExpect(jsonPath("$.status").value(502));
   }
 
   private PaymentResponse payment() {

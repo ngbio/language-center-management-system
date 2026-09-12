@@ -1,10 +1,10 @@
 # BÁO CÁO KIỂM THỬ
 
-Ngày cập nhật: **11/09/2026**
+Ngày cập nhật: **12/09/2026**
 
 ## 1. Mục tiêu
 
-Báo cáo ghi nhận kết quả kiểm thử tự động của backend hệ thống quản lý trung tâm ngoại ngữ. Unit test tập trung xác minh nghiệp vụ độc lập; integration test xác minh controller, bảo mật, validation, persistence và transaction khi các thành phần phối hợp.
+Báo cáo ghi nhận kết quả kiểm thử tự động của backend hệ thống quản lý trung tâm ngoại ngữ. Unit test tập trung xác minh nghiệp vụ độc lập; integration test hiện xác minh controller, bảo mật và validation. Các kiểm chứng persistence, transaction cạnh tranh và native query cần MySQL Testcontainers thật như giới hạn nêu ở cuối báo cáo.
 
 ## 2. Công cụ và quy ước
 
@@ -18,41 +18,43 @@ Báo cáo ghi nhận kết quả kiểm thử tự động của backend hệ th
 
 ## 3. Kết quả kiểm thử
 
-Lệnh xác minh:
+Lệnh xác minh test sạch, không dùng report tồn đọng từ lần chạy trước:
 
 ```powershell
 cd backend/language-center-management
-mvn.cmd verify
+mvn.cmd clean test
 ```
 
-Kết quả ngày 11/09/2026:
+CI chạy `mvn verify` để sinh thêm báo cáo JaCoCo rồi lưu JaCoCo và Surefire dưới dạng artifact.
+
+Kết quả ngày 12/09/2026:
 
 | Chỉ số | Kết quả |
 |---|---:|
-| Test class | 36 |
-| Unit test | 205 |
-| Integration test | 90 |
+| Test class | 46 |
+| Unit test | 229 |
+| Integration test | 148 |
 | Spring context test | 1 |
-| Tổng test | 296 |
-| Thành công | 296 |
+| Tổng test | 378 |
+| Thành công | 377 |
 | Failure | 0 |
 | Error | 0 |
-| Skipped | 0 |
+| Skipped | 1 |
 
 Các nhóm unit test:
 
 | Nhóm test | Số test | Kết quả |
 |---|---:|---|
-| `UserServiceImplTest` | 16 | Pass |
+| `UserServiceImplTest` | 18 | Pass |
 | `TeacherServiceImplTest` | 8 | Pass |
 | `LanguageServiceImplTest` | 10 | Pass |
 | `LevelServiceImplTest` | 12 | Pass |
 | `RoomServiceImplTest` | 8 | Pass |
 | `CourseServiceImplTest` | 10 | Pass |
 | `CourseCurriculumAdminServiceTest` | 9 | Pass |
-| `CourseClassServiceImplTest` | 13 | Pass |
+| `CourseClassServiceImplTest` | 14 | Pass |
 | `ClassScheduleServiceImplTest` | 8 | Pass |
-| `LessonServiceImplTest` | 11 | Pass |
+| `LessonServiceImplTest` | 13 | Pass |
 | `EnrollmentServiceImplTest` | 15 | Pass |
 | `EnrollmentExpirationServiceImplTest` | 4 | Pass |
 | `PaymentServiceImplTest` | 19 | Pass |
@@ -64,7 +66,8 @@ Các nhóm unit test:
 | `SystemLogServiceImplTest` | 4 | Pass |
 | `JwtFilterTest` | 6 | Pass |
 | `JwtUtilsTest` | 3 | Pass |
-| Mapper, controller và exception handler | 11 | Pass |
+| Brevo, Firebase, notification và reminder | 18 | Pass |
+| Mapper, controller và exception handler | 12 | Pass |
 
 ## 4. Phạm vi nghiệp vụ đã kiểm thử
 

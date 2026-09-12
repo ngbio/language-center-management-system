@@ -21,7 +21,7 @@ Tài liệu này được lập từ source backend hiện tại, gồm controll
 - [ ] Cấu hình MySQL Testcontainers dùng chung cho repository/integration test.
 - [ ] Tạo fixture/builder dùng chung cho User, Course, Class, Schedule, Enrollment và Payment.
 - [x] Tách test gateway bằng mock web server hoặc HTTP client mock.
-- [ ] Cấu hình CI lưu JaCoCo HTML/XML làm artifact.
+- [x] Cấu hình CI lưu JaCoCo HTML/XML và Surefire report làm artifact.
 - [ ] Chỉ đặt coverage gate sau khi các module lõi đã được phủ ổn định.
 
 ## 3. Authentication và hồ sơ người dùng
@@ -175,8 +175,8 @@ Tài liệu này được lập từ source backend hiện tại, gồm controll
 
 - [x] ADMIN upload ảnh Course; STUDENT upload avatar đúng purpose.
 - [x] TEACHER/CONSULTANT và purpose không hợp lệ bị từ chối theo cấu hình hiện tại.
-- [ ] File rỗng, quá dung lượng hoặc MIME không phải ảnh trả `400/413` phù hợp.
-- [ ] Cloudinary lỗi được chuyển thành response an toàn, không lộ credential.
+- [x] File rỗng, quá dung lượng hoặc MIME không phải ảnh trả `400/413` phù hợp.
+- [x] Cloudinary lỗi được chuyển thành response an toàn, không lộ credential.
 - [x] Upload thành công trả URL, public ID, kích thước và định dạng đúng.
 
 ## 13. Repository integration bằng MySQL
@@ -194,10 +194,10 @@ Tài liệu này được lập từ source backend hiện tại, gồm controll
 ## 14. Security matrix chung
 
 - [x] Public endpoint hoạt động không cần token.
-- [ ] Protected endpoint thiếu token hoặc token hỏng/hết hạn trả JSON `401` thống nhất.
+- [x] Protected endpoint thiếu token hoặc token hỏng/hết hạn trả JSON `401` thống nhất.
 - [x] Token hợp lệ nhưng sai role trả JSON `403` thống nhất.
-- [ ] ADMIN không mặc nhiên truy cập endpoint chỉ dành riêng cho STUDENT/TEACHER.
-- [ ] CONSULTANT chỉ có quyền lớp, enrollment, refund và report được khai báo.
+- [x] ADMIN không mặc nhiên truy cập endpoint chỉ dành riêng cho STUDENT/TEACHER.
+- [x] CONSULTANT chỉ có quyền lớp, enrollment, refund và report được khai báo.
 - [x] TEACHER không được quản trị catalog/payment/refund.
 - [x] STUDENT không đọc/sửa dữ liệu của Student khác bằng cách đổi path ID.
 - [ ] Callback payment public vẫn bắt buộc chữ ký gateway hợp lệ.
@@ -219,7 +219,11 @@ Tài liệu này được lập từ source backend hiện tại, gồm controll
 - Integration/controller test hiện có **11 lớp**, bao phủ authentication/profile, public/admin
   catalog, lớp/lịch học, lesson, enrollment, payment/refund/invoice, attendance,
   dashboard/upload và security matrix.
-- Tổng số test backend ở lần `mvn test` gần nhất: **363**; **0 failure**, **0 error**,
+- Tổng số test backend ở lần `mvn clean test` gần nhất: **378**; **0 failure**, **0 error**,
   **1 skipped** (mail smoke test chỉ chạy khi được bật rõ ràng).
-- Riêng bốn lớp vừa bổ sung/mở rộng có **45 test**, tất cả đều pass.
+- Ba lớp integration test vừa mở rộng có **53 test**, tất cả đều pass. Các ca mới bao phủ
+  lỗi payment/refund, callback sai chữ ký, trạng thái điểm danh, dữ liệu dashboard,
+  upload lỗi và security matrix.
 - Các Unit Test hiện có không được đánh dấu thay cho Integration Test trong tài liệu này.
+- Nhóm repository/concurrency vẫn để `[ ]` vì cần MySQL Testcontainers thật; máy phát triển
+  hiện tại chưa có Docker daemon nên chưa thể xác nhận query native và pessimistic lock.

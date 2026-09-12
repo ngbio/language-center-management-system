@@ -18,6 +18,7 @@ import com.ntt.language_center_management.dto.request.AttendanceBulkRequest;
 import com.ntt.language_center_management.dto.request.AttendanceUpdateRequest;
 import com.ntt.language_center_management.dto.response.AttendanceResponse;
 import com.ntt.language_center_management.dto.response.AttendanceSheetResponse;
+import com.ntt.language_center_management.dto.response.AttendanceSheetItemResponse;
 import com.ntt.language_center_management.dto.response.ClassAttendanceSummaryResponse;
 import com.ntt.language_center_management.exception.ForbiddenException;
 import com.ntt.language_center_management.service.AttendanceService;
@@ -61,6 +62,21 @@ class AttendanceControllerIntegrationTest {
   }
 
   @Test
+  @WithMockUser(username = "teacher@example.com", roles = "TEACHER")
+  void attendanceSheetSerializesOnlyEligiblePaidStudentsReturnedByService() throws Exception {
+    when(attendanceService.getSheet(eq(20), any(Principal.class)))
+        .thenReturn(new AttendanceSheetResponse(20, new Date(), "Unit 1", "SCHEDULED",
+            5, "EN-A1", "English A1", List.of(
+                new AttendanceSheetItemResponse(null, 7, "ST001", "Paid Student",
+                    null, null, null))));
+
+    mockMvc.perform(get("/api/lessons/20/attendance"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.students.length()").value(1))
+        .andExpect(jsonPath("$.data.students[0].studentCode").value("ST001"));
+  }
+
+  @Test
   @WithMockUser(username = "teacher2@example.com", roles = "TEACHER")
   void teacherCannotReadAnotherTeachersLesson() throws Exception {
     when(attendanceService.getSheet(eq(20), any(Principal.class)))
@@ -91,6 +107,44 @@ class AttendanceControllerIntegrationTest {
 
     verify(attendanceService).saveBulk(eq(20),
         argThat(request -> request.attendances().size() == 2), any(Principal.class));
+  }
+
+  @Test
+  @WithMockUser(username = "teacher@example.com", roles = "TEACHER")
+  void cancelledLessonAndExpiredAttendanceWindowReturnBadRequest() throws Exception {
+    when(attendanceService.saveBulk(eq(20), any(AttendanceBulkRequest.class),
+        any(Principal.class)))
+        .thenThrow(new IllegalArgumentException("Không thể điểm danh buổi học đã hủy"));
+    when(attendanceService.update(eq(40), any(AttendanceUpdateRequest.class),
+        any(Principal.class)))
+        .thenThrow(new IllegalArgumentException(
+            "Chỉ được cập nhật điểm danh trong vòng 7 ngày sau buổi học"));
+
+    mockMvc.perform(put("/api/lessons/20/attendance")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"attendances\":[{\"studentId\":7,\"status\":\"PRESENT\"}]}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("Không thể điểm danh buổi học đã hủy"));
+    mockMvc.perform(patch("/api/attendance/40")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"status\":\"PRESENT\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value(
+            "Chỉ được cập nhật điểm danh trong vòng 7 ngày sau buổi học"));
+  }
+
+  @Test
+  @WithMockUser(username = "teacher@example.com", roles = "TEACHER")
+  void completedLessonStillAcceptsAttendanceWithinAllowedWindow() throws Exception {
+    when(attendanceService.saveBulk(eq(20), any(AttendanceBulkRequest.class),
+        any(Principal.class))).thenReturn(new AttendanceSheetResponse(
+            20, new Date(), "Unit 1", "COMPLETED", 5, "EN-A1", "English A1", List.of()));
+
+    mockMvc.perform(put("/api/lessons/20/attendance")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"attendances\":[{\"studentId\":7,\"status\":\"PRESENT\"}]}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.lessonStatus").value("COMPLETED"));
   }
 
   @Test
@@ -149,6 +203,20 @@ class AttendanceControllerIntegrationTest {
         .andExpect(jsonPath("$.data.classId").value(5))
         .andExpect(jsonPath("$.data.totalLessons").value(12))
         .andExpect(jsonPath("$.data.completedLessons").value(8));
+  }
+
+  @Test
+  @WithMockUser(username = "teacher@example.com", roles = "TEACHER")
+  void attendanceSummaryHandlesClassWithoutCompletedLessons() throws Exception {
+    when(attendanceService.getClassSummary(eq(5), any(Principal.class)))
+        .thenReturn(new ClassAttendanceSummaryResponse(
+            5, "EN-A1", "English A1", 0, 0, List.of()));
+
+    mockMvc.perform(get("/api/classes/5/attendance-summary"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.totalLessons").value(0))
+        .andExpect(jsonPath("$.data.completedLessons").value(0))
+        .andExpect(jsonPath("$.data.students.length()").value(0));
   }
 
   @Test
