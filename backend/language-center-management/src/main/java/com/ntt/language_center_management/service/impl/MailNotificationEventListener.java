@@ -3,6 +3,8 @@ package com.ntt.language_center_management.service.impl;
 import com.ntt.language_center_management.event.AccountCreatedMailEvent;
 import com.ntt.language_center_management.event.ClassOpenedMailEvent;
 import com.ntt.language_center_management.event.PaymentSucceededMailEvent;
+import com.ntt.language_center_management.event.PasswordResetRequestedMailEvent;
+import com.ntt.language_center_management.event.PasswordResetCompletedMailEvent;
 import com.ntt.language_center_management.repository.UserRepository;
 import com.ntt.language_center_management.service.MailGateway;
 import java.math.BigDecimal;
@@ -64,6 +66,27 @@ public class MailNotificationEventListener {
             + "Mã giao dịch: " + event.transactionCode() + "\n"
             + "Số tiền: " + money(event.amount()) + "\n\n"
             + "Bạn có thể đăng nhập để xem chi tiết và tải hóa đơn.\n\n"
+            + "Trân trọng,\nLingua Center");
+  }
+
+  @Async("mailTaskExecutor")
+  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+  public void passwordResetRequested(PasswordResetRequestedMailEvent event) {
+    send(event.email(), "Đặt lại mật khẩu Lingua Center",
+        "Xin chào " + displayName(event.fullName()) + ",\n\n"
+            + "Bạn vừa yêu cầu đặt lại mật khẩu. Mở liên kết sau trong vòng "
+            + event.expirationMinutes() + " phút:\n\n" + event.resetUrl() + "\n\n"
+            + "Nếu bạn không thực hiện yêu cầu này, hãy bỏ qua email.\n\n"
+            + "Trân trọng,\nLingua Center");
+  }
+
+  @Async("mailTaskExecutor")
+  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+  public void passwordResetCompleted(PasswordResetCompletedMailEvent event) {
+    send(event.email(), "Mật khẩu Lingua Center đã được thay đổi",
+        "Xin chào " + displayName(event.fullName()) + ",\n\n"
+            + "Mật khẩu tài khoản của bạn đã được thay đổi thành công. "
+            + "Nếu đây không phải thao tác của bạn, hãy liên hệ trung tâm ngay.\n\n"
             + "Trân trọng,\nLingua Center");
   }
 

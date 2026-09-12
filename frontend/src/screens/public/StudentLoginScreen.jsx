@@ -85,6 +85,7 @@ export default function StudentLoginScreen() {
               </button>
             </span>
           </label>
+          <Link className="forgot-password-link" to="/forgot-password">Quên mật khẩu?</Link>
           <button className="primary-cta student-login-submit" disabled={loading}>{loading ? "Đang xác thực..." : "Đăng nhập"}</button>
           <small>Chưa có tài khoản? <Link to="/register">Đăng ký tại đây</Link>.</small>
         </form>

@@ -17,6 +17,7 @@ class JwtUtilsTest {
 
     assertThat(token).isNotBlank();
     assertThat(jwtUtils.validateTokenAndGetUsername(token)).isEqualTo("student@example.com");
+    assertThat(jwtUtils.getIssuedAt(token)).isNotNull();
   }
 
   @Test

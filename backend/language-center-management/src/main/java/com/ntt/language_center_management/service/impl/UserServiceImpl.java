@@ -295,7 +295,9 @@ public class UserServiceImpl implements UserService {
       throw new IllegalArgumentException("Mật khẩu mới phải khác mật khẩu hiện tại");
     }
     user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
-    user.setUpdatedAt(new Date());
+    Date now = new Date();
+    user.setPasswordChangedAt(now);
+    user.setUpdatedAt(now);
     userRepository.save(user);
   }
 

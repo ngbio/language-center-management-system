@@ -121,6 +121,39 @@ Response `data`:
 
 `gender`: `MALE`, `FEMALE`, `OTHER`.
 
+### POST `/auth/forgot-password`
+
+- Quyền: Public.
+- Công dụng: yêu cầu gửi liên kết đặt lại mật khẩu đến email tài khoản ACTIVE.
+- Response luôn dùng thông báo chung để không tiết lộ email có tồn tại hay không.
+- Mỗi tài khoản chỉ nhận một yêu cầu trong thời gian cooldown cấu hình; liên kết cũ bị vô hiệu khi tạo liên kết mới.
+
+```json
+{
+  "email": "student@example.com"
+}
+```
+
+### GET `/auth/reset-password/validate?token={token}`
+
+- Quyền: Public.
+- Công dụng: frontend kiểm tra token còn hạn và chưa được sử dụng trước khi hiện form mật khẩu mới.
+- Trả `200` nếu hợp lệ, `400` nếu token sai, hết hạn hoặc đã dùng.
+
+### POST `/auth/reset-password`
+
+- Quyền: Public.
+- Công dụng: đặt mật khẩu mới bằng token nhận trong email.
+- Token chỉ dùng một lần. Sau khi thành công, mọi token reset còn lại và JWT được cấp trước thời điểm đổi mật khẩu đều mất hiệu lực.
+
+```json
+{
+  "token": "token-from-email",
+  "newPassword": "NewPassword@123",
+  "confirmPassword": "NewPassword@123"
+}
+```
+
 ### POST `/auth/teacher/register`
 
 - Quyền: Public

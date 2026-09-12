@@ -20,6 +20,8 @@ import MyCoursesScreen from "./screens/public/MyCoursesScreen";
 import MyClassesScreen from "./screens/public/MyClassesScreen";
 import EnrollmentHistoryScreen from "./screens/public/EnrollmentHistoryScreen";
 import StudentLoginScreen from "./screens/public/StudentLoginScreen";
+import ForgotPasswordScreen from "./screens/public/ForgotPasswordScreen";
+import ResetPasswordScreen from "./screens/public/ResetPasswordScreen";
 import RegisterScreen from "./screens/public/RegisterScreen";
 import PaymentResultScreen from "./screens/public/PaymentResultScreen";
 import StudentProfileScreen from "./screens/public/StudentProfileScreen";
@@ -67,6 +69,8 @@ function App() {
         <Route path="/giao-vien/diem-danh" element={<TeacherAttendanceScreen />} />
       </Route>
       <Route path="/login" element={<StudentLoginScreen />} />
+      <Route path="/forgot-password" element={<ForgotPasswordScreen />} />
+      <Route path="/reset-password" element={<ResetPasswordScreen />} />
       <Route path="/register" element={<RegisterScreen />} />
       <Route path="/admin/login" element={<LoginScreen />} />
       <Route path="/staff/login" element={<StaffLoginScreen />} />

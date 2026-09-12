@@ -91,4 +91,12 @@ public class JwtUtils {
             throw new IllegalArgumentException("Token không đúng định dạng", exception);
         }
     }
+
+    public Date getIssuedAt(String token) {
+        try {
+            return SignedJWT.parse(token).getJWTClaimsSet().getIssueTime();
+        } catch (ParseException exception) {
+            throw new IllegalArgumentException("Token không đúng định dạng", exception);
+        }
+    }
 }

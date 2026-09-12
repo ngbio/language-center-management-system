@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
+import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -62,6 +63,12 @@ public class JwtFilter extends OncePerRequestFilter {
     try {
       String email = jwtUtils.validateTokenAndGetUsername(token);
       User user = userService.getUserEntityByEmail(email);
+
+      Date issuedAt = jwtUtils.getIssuedAt(token);
+      if (user.getPasswordChangedAt() != null
+          && (issuedAt == null || !issuedAt.after(user.getPasswordChangedAt()))) {
+        throw new IllegalArgumentException("Token được cấp trước lần đổi mật khẩu gần nhất");
+      }
 
       if (user.getStatus() != AccountStatus.ACTIVE) {
         throw new IllegalArgumentException("Tài khoản không hoạt động");

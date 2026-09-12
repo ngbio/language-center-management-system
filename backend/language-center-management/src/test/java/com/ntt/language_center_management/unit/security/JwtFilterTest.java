@@ -22,6 +22,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import tools.jackson.databind.ObjectMapper;
+import java.util.Date;
 
 class JwtFilterTest {
 
@@ -97,6 +98,28 @@ class JwtFilterTest {
         assertThat(response.getContentAsString()).contains("\"status\":401").doesNotContain("expired-token");
         verify(chain, never()).doFilter(request, response);
         verify(userService, never()).getUserEntityByEmail(org.mockito.ArgumentMatchers.anyString());
+    }
+
+    @Test
+    void shouldRejectTokenIssuedBeforePasswordWasChanged() throws Exception {
+        JwtUtils jwtUtils = mock(JwtUtils.class);
+        UserService userService = mock(UserService.class);
+        FilterChain chain = mock(FilterChain.class);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        request.addHeader("Authorization", "Bearer old-token");
+        User user = activeUser("STUDENT");
+        Date passwordChangedAt = new Date();
+        user.setPasswordChangedAt(passwordChangedAt);
+        when(jwtUtils.validateTokenAndGetUsername("old-token")).thenReturn("student@example.com");
+        when(jwtUtils.getIssuedAt("old-token"))
+            .thenReturn(new Date(passwordChangedAt.getTime() - 1_000));
+        when(userService.getUserEntityByEmail("student@example.com")).thenReturn(user);
+
+        new JwtFilter(jwtUtils, userService, new ObjectMapper()).doFilter(request, response, chain);
+
+        assertThat(response.getStatus()).isEqualTo(401);
+        verify(chain, never()).doFilter(request, response);
     }
 
     @Test
