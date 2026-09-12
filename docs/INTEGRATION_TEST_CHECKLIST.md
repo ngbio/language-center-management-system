@@ -20,7 +20,7 @@ Tài liệu này được lập từ source backend hiện tại, gồm controll
 - [x] Tạo profile `test` tách khỏi `.env` và MySQL local.
 - [ ] Cấu hình MySQL Testcontainers dùng chung cho repository/integration test.
 - [ ] Tạo fixture/builder dùng chung cho User, Course, Class, Schedule, Enrollment và Payment.
-- [ ] Tách test gateway bằng mock web server hoặc HTTP client mock.
+- [x] Tách test gateway bằng mock web server hoặc HTTP client mock.
 - [ ] Cấu hình CI lưu JaCoCo HTML/XML làm artifact.
 - [ ] Chỉ đặt coverage gate sau khi các module lõi đã được phủ ổn định.
 
@@ -219,7 +219,7 @@ Tài liệu này được lập từ source backend hiện tại, gồm controll
 - Integration/controller test hiện có **11 lớp**, bao phủ authentication/profile, public/admin
   catalog, lớp/lịch học, lesson, enrollment, payment/refund/invoice, attendance,
   dashboard/upload và security matrix.
-- Tổng số test backend ở lần `mvn test` gần nhất: **359**; **0 failure**, **0 error**,
+- Tổng số test backend ở lần `mvn test` gần nhất: **362**; **0 failure**, **0 error**,
   **1 skipped** (mail smoke test chỉ chạy khi được bật rõ ràng).
 - Riêng bốn lớp vừa bổ sung/mở rộng có **45 test**, tất cả đều pass.
 - Các Unit Test hiện có không được đánh dấu thay cho Integration Test trong tài liệu này.

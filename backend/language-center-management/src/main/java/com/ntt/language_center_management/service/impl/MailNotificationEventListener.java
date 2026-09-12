@@ -4,6 +4,7 @@ import com.ntt.language_center_management.event.AccountCreatedMailEvent;
 import com.ntt.language_center_management.event.ClassOpenedMailEvent;
 import com.ntt.language_center_management.event.PaymentSucceededMailEvent;
 import com.ntt.language_center_management.repository.UserRepository;
+import com.ntt.language_center_management.service.MailGateway;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.ZoneId;
@@ -16,9 +17,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.mail.MailException;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -31,21 +29,18 @@ public class MailNotificationEventListener {
   private static final Logger log = LoggerFactory.getLogger(MailNotificationEventListener.class);
   private static final Locale VIETNAMESE = Locale.forLanguageTag("vi-VN");
 
-  private final JavaMailSender mailSender;
+  private final MailGateway mailGateway;
   private final UserRepository users;
-  private final String from;
   private final int studentBatchSize;
   private final ZoneId applicationZone;
 
   public MailNotificationEventListener(
-      JavaMailSender mailSender,
+      MailGateway mailGateway,
       UserRepository users,
-      @Value("${app.mail.from:${spring.mail.username:}}") String from,
       @Value("${app.mail.student-batch-size:200}") int studentBatchSize,
       @Value("${app.time-zone:Asia/Ho_Chi_Minh}") String applicationTimeZone) {
-    this.mailSender = mailSender;
+    this.mailGateway = mailGateway;
     this.users = users;
-    this.from = from;
     this.studentBatchSize = Math.max(1, Math.min(studentBatchSize, 1000));
     this.applicationZone = ZoneId.of(applicationTimeZone);
   }
@@ -97,34 +92,22 @@ public class MailNotificationEventListener {
   private void send(String recipient, String subject, String body) {
     if (!StringUtils.hasText(recipient)) return;
     try {
-      mailSender.send(message(recipient, subject, body));
-    } catch (MailException exception) {
+      mailGateway.send(recipient, subject, body);
+    } catch (RuntimeException exception) {
       log.error("Could not send '{}' email to {}: {}", subject, recipient,
           exception.getMessage());
     }
   }
 
   private void sendBatch(List<String> recipients, String subject, String body) {
-    SimpleMailMessage[] messages = recipients.stream()
-        .filter(StringUtils::hasText)
-        .map(recipient -> message(recipient, subject, body))
-        .toArray(SimpleMailMessage[]::new);
-    if (messages.length == 0) return;
+    List<String> validRecipients = recipients.stream().filter(StringUtils::hasText).toList();
+    if (validRecipients.isEmpty()) return;
     try {
-      mailSender.send(messages);
-    } catch (MailException exception) {
+      mailGateway.sendBatch(validRecipients, subject, body);
+    } catch (RuntimeException exception) {
       log.error("Could not send '{}' email batch ({} recipients): {}", subject,
-          messages.length, exception.getMessage());
+          validRecipients.size(), exception.getMessage());
     }
-  }
-
-  private SimpleMailMessage message(String recipient, String subject, String body) {
-    SimpleMailMessage message = new SimpleMailMessage();
-    if (StringUtils.hasText(from)) message.setFrom(from);
-    message.setTo(recipient);
-    message.setSubject(subject);
-    message.setText(body);
-    return message;
   }
 
   private String displayName(String fullName) {

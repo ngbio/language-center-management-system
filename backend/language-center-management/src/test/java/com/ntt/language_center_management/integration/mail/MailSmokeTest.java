@@ -2,6 +2,7 @@ package com.ntt.language_center_management.integration.mail;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
+import com.ntt.language_center_management.service.impl.ResendMailGateway;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
@@ -12,11 +13,12 @@ import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.web.client.RestClient;
 
 class MailSmokeTest {
 
   @Test
-  void sendsOneRealEmailOnlyWhenExplicitlyEnabled() throws IOException {
+  void sendsOneRealEmailThroughConfiguredProviderOnlyWhenExplicitlyEnabled() throws IOException {
     Assumptions.assumeTrue(Boolean.getBoolean("mail.smoke.enabled"),
         "Real email smoke test is disabled by default");
 
@@ -24,6 +26,25 @@ class MailSmokeTest {
     Assumptions.assumeTrue(!recipient.isBlank(), "A smoke-test recipient is required");
 
     Properties environment = loadEnvironment();
+    if ("resend".equalsIgnoreCase(environment.getProperty("MAIL_PROVIDER", "smtp").trim())) {
+      sendWithResend(environment, recipient);
+      return;
+    }
+    sendWithSmtp(environment, recipient);
+  }
+
+  private void sendWithResend(Properties environment, String recipient) {
+    ResendMailGateway gateway = new ResendMailGateway(
+        RestClient.builder(),
+        environment.getProperty("RESEND_BASE_URL", "https://api.resend.com"),
+        required(environment, "RESEND_API_KEY"),
+        required(environment, "MAIL_FROM"));
+    assertDoesNotThrow(() -> gateway.send(recipient,
+        "[Lingua Center] Kiểm tra gửi email Resend",
+        "Email Resend HTTPS API của hệ thống đang hoạt động bình thường."));
+  }
+
+  private void sendWithSmtp(Properties environment, String recipient) {
     JavaMailSenderImpl sender = new JavaMailSenderImpl();
     sender.setHost(required(environment, "SPRING_MAIL_HOST"));
     sender.setPort(Integer.parseInt(required(environment, "SPRING_MAIL_PORT")));
