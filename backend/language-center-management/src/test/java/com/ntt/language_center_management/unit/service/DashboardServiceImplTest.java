@@ -3,7 +3,6 @@ package com.ntt.language_center_management.unit.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -29,6 +28,7 @@ import java.time.YearMonth;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.Pageable;
 
 class DashboardServiceImplTest {
   private StudentRepository students;
@@ -127,7 +127,7 @@ class DashboardServiceImplTest {
         .hasMessageContaining("1 đến 20");
     assertThatThrownBy(() -> service.getPopularCourses(date, date, 21))
         .hasMessageContaining("1 đến 20");
-    when(enrollments.findPopularCourses(any(), any(), anyInt())).thenReturn(List.<Object[]>of(
+    when(enrollments.findPopularCourses(any(), any(), any(Pageable.class))).thenReturn(List.<Object[]>of(
         new Object[] {3L, "EN-A1", "English A1", 12L, 10L, "32000000.00"}));
 
     var result = service.getPopularCourses(date, date, 5);
