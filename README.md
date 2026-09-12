@@ -214,6 +214,25 @@ Backend được tổ chức theo các tầng Controller, Service, Repository, M
 - Axios
 - Vite
 - CSS responsive cho từng khu vực Public, Student, Teacher, Staff và Admin
+- 
+## HƯỚNG DẪN CÀI ĐẶT
+
+### Bước 1: Clone dự án
+```bash
+https://github.com/ngbio/language-center-management-system.git
+```
+
+### Bước 3: Chạy Backend (Spring Boot)
+```bash
+cd backend/language-center-management
+mvn.cmd spring-boot:run
+```
+
+### Bước 4: Chạy Frontend (ReactJS)
+```bash
+cd frontend
+npm.cmd run dev
+```
 
 ## Tài liệu dự án
 
