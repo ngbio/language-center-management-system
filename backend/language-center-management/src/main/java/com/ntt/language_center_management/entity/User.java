@@ -82,6 +82,9 @@ public class User implements Serializable {
     @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedAt;
+    @Column(name = "password_changed_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date passwordChangedAt;
     @OneToOne(cascade = CascadeType.ALL, mappedBy = "userId")
     private Student student;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "userId")
@@ -188,6 +191,14 @@ public class User implements Serializable {
 
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Date getPasswordChangedAt() {
+        return passwordChangedAt;
+    }
+
+    public void setPasswordChangedAt(Date passwordChangedAt) {
+        this.passwordChangedAt = passwordChangedAt;
     }
 
     public Student getStudent() {

@@ -21,6 +21,7 @@ import com.ntt.language_center_management.enums.AccountStatus;
 import com.ntt.language_center_management.exception.DuplicateResourceException;
 import com.ntt.language_center_management.exception.UnauthorizedException;
 import com.ntt.language_center_management.service.UserService;
+import com.ntt.language_center_management.service.PasswordResetService;
 import com.ntt.language_center_management.util.JwtUtils;
 import java.security.Principal;
 import org.junit.jupiter.api.Test;
@@ -41,6 +42,63 @@ class ApiUserControllerIntegrationTest {
   @MockitoBean private UserService userService;
 
   @MockitoBean private JwtUtils jwtUtils;
+
+  @MockitoBean private PasswordResetService passwordResetService;
+
+  @Test
+  void forgotPasswordReturnsGenericResponseWithoutAuthentication() throws Exception {
+    mockMvc.perform(postJson("/api/auth/forgot-password", "{\"email\":\"student@example.com\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value(200))
+        .andExpect(jsonPath("$.message").isNotEmpty());
+
+    verify(passwordResetService).requestReset("student@example.com");
+  }
+
+  @Test
+  void forgotPasswordRejectsMalformedEmail() throws Exception {
+    mockMvc.perform(postJson("/api/auth/forgot-password", "{\"email\":\"not-an-email\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.status").value(400));
+  }
+
+  @Test
+  void validateResetPasswordTokenReturnsOkForValidToken() throws Exception {
+    when(passwordResetService.isTokenValid("valid-token")).thenReturn(true);
+
+    mockMvc.perform(get("/api/auth/reset-password/validate").param("token", "valid-token"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value(200));
+  }
+
+  @Test
+  void validateResetPasswordTokenRejectsExpiredToken() throws Exception {
+    when(passwordResetService.isTokenValid("expired-token")).thenReturn(false);
+
+    mockMvc.perform(get("/api/auth/reset-password/validate").param("token", "expired-token"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.status").value(400));
+  }
+
+  @Test
+  void resetPasswordReturnsOkForValidRequest() throws Exception {
+    mockMvc.perform(postJson("/api/auth/reset-password", """
+        {"token":"valid-token","newPassword":"New@1234","confirmPassword":"New@1234"}
+        """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value(200));
+
+    verify(passwordResetService).resetPassword(any());
+  }
+
+  @Test
+  void resetPasswordRejectsWeakPassword() throws Exception {
+    mockMvc.perform(postJson("/api/auth/reset-password", """
+        {"token":"valid-token","newPassword":"password","confirmPassword":"password"}
+        """))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.status").value(400));
+  }
 
   @Test
   void loginReturnsTokenAndRoleForValidCredentials() throws Exception {

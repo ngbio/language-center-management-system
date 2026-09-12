@@ -9,6 +9,7 @@ import com.ntt.language_center_management.dto.response.UserResponse;
 import com.ntt.language_center_management.controller.publicapi.ApiUserController;
 import com.ntt.language_center_management.enums.AccountStatus;
 import com.ntt.language_center_management.service.UserService;
+import com.ntt.language_center_management.service.PasswordResetService;
 import com.ntt.language_center_management.util.JwtUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -36,7 +37,8 @@ class ApiUserControllerTest {
     when(userService.login(request)).thenReturn(user);
     when(jwtUtils.generateToken(user.email())).thenReturn("jwt-token");
 
-    var response = new ApiUserController(userService, jwtUtils).login(request);
+    var response = new ApiUserController(userService, jwtUtils, mock(PasswordResetService.class))
+        .login(request);
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(200, response.getBody().status());

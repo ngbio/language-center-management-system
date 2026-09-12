@@ -230,12 +230,21 @@ MAIL_PROVIDER=brevo
 MAIL_FROM=Lingua Center <your-verified-sender@example.com>
 BREVO_API_KEY=xkeysib-CHANGE_ME
 BREVO_BASE_URL=https://api.brevo.com
+APP_FRONTEND_URL=https://your-frontend.example.com
+PASSWORD_RESET_EXPIRATION_MINUTES=30
+PASSWORD_RESET_COOLDOWN_SECONDS=60
 ```
 
 Không đưa `BREVO_API_KEY` vào Git hoặc Docker image. Khi bật Brevo mà thiếu
 `BREVO_API_KEY` hoặc `MAIL_FROM`, backend sẽ từ chối khởi động và báo rõ biến còn thiếu.
-Email đăng ký và thanh toán được gửi bất đồng bộ sau khi transaction thành công; lỗi từ
-Brevo được ghi trong log nhưng không rollback nghiệp vụ đã hoàn tất.
+Email đăng ký, thanh toán và đặt lại mật khẩu được gửi bất đồng bộ sau khi transaction
+thành công; lỗi từ Brevo được ghi trong log nhưng không rollback nghiệp vụ đã hoàn tất.
+`APP_FRONTEND_URL` phải là URL HTTPS của frontend đã deploy vì email quên mật khẩu sẽ trỏ
+đến `${APP_FRONTEND_URL}/reset-password?token=...`.
+
+Nếu database đã tồn tại từ phiên bản trước, chạy một lần
+`migrate_add_password_reset_mysql.sql` trước khi deploy backend mới. Với database tạo mới,
+`database_language_center_mysql.sql` đã có sẵn bảng token và cột vô hiệu hóa JWT cũ.
 
 ## Tài liệu dự án
 

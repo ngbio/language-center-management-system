@@ -12,6 +12,8 @@ import static org.mockito.Mockito.when;
 import com.ntt.language_center_management.event.AccountCreatedMailEvent;
 import com.ntt.language_center_management.event.ClassOpenedMailEvent;
 import com.ntt.language_center_management.event.PaymentSucceededMailEvent;
+import com.ntt.language_center_management.event.PasswordResetCompletedMailEvent;
+import com.ntt.language_center_management.event.PasswordResetRequestedMailEvent;
 import com.ntt.language_center_management.repository.UserRepository;
 import com.ntt.language_center_management.service.MailGateway;
 import com.ntt.language_center_management.service.impl.MailNotificationEventListener;
@@ -48,6 +50,19 @@ class MailNotificationEventListenerTest {
     verify(sender).send(eq("student@example.com"), contains("Chào mừng"), any(String.class));
     verify(sender).send(eq("student@example.com"), contains("thanh toán"),
         argThat(body -> body.contains("TX-01") && body.contains("English A1")));
+  }
+
+  @Test
+  void shouldSendPasswordResetLinkAndCompletionEmail() {
+    listener.passwordResetRequested(new PasswordResetRequestedMailEvent(
+        "student@example.com", "Student One", "https://app.example/reset-password?token=abc", 30));
+    listener.passwordResetCompleted(
+        new PasswordResetCompletedMailEvent("student@example.com", "Student One"));
+
+    verify(sender).send(eq("student@example.com"), contains("mật khẩu"),
+        argThat(body -> body.contains("token=abc") && body.contains("30")));
+    verify(sender).send(eq("student@example.com"), contains("đã được thay đổi"),
+        any(String.class));
   }
 
   @Test

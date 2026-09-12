@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.security.Principal;
@@ -15,10 +16,13 @@ import com.ntt.language_center_management.dto.request.LoginRequest;
 import com.ntt.language_center_management.dto.request.ChangePasswordRequest;
 import com.ntt.language_center_management.dto.request.UserRegisterRequest;
 import com.ntt.language_center_management.dto.request.TeacherRegisterRequest;
+import com.ntt.language_center_management.dto.request.ForgotPasswordRequest;
+import com.ntt.language_center_management.dto.request.ResetPasswordRequest;
 import com.ntt.language_center_management.dto.response.ApiResponse;
 import com.ntt.language_center_management.dto.response.LoginResponse;
 import com.ntt.language_center_management.dto.response.UserResponse;
 import com.ntt.language_center_management.service.UserService;
+import com.ntt.language_center_management.service.PasswordResetService;
 import com.ntt.language_center_management.util.JwtUtils;
 import com.ntt.language_center_management.exception.UnauthorizedException;
 
@@ -30,10 +34,40 @@ public class ApiUserController {
 
     private final UserService userService;
     private final JwtUtils jwtUtils;
+    private final PasswordResetService passwordResetService;
 
-    public ApiUserController(UserService userService, JwtUtils jwtUtils) {
+    public ApiUserController(
+            UserService userService, JwtUtils jwtUtils, PasswordResetService passwordResetService) {
         this.userService = userService;
         this.jwtUtils = jwtUtils;
+        this.passwordResetService = passwordResetService;
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request) {
+        passwordResetService.requestReset(request.email());
+        return ResponseEntity.ok(new ApiResponse<>(
+                HttpStatus.OK.value(),
+                "Nếu email tồn tại trong hệ thống, hướng dẫn đặt lại mật khẩu sẽ được gửi.",
+                null));
+    }
+
+    @GetMapping("/reset-password/validate")
+    public ResponseEntity<ApiResponse<Void>> validateResetToken(@RequestParam String token) {
+        if (!passwordResetService.isTokenValid(token)) {
+            throw new IllegalArgumentException(
+                    "Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn");
+        }
+        return ResponseEntity.ok(new ApiResponse<>(200, "Liên kết đặt lại mật khẩu hợp lệ", null));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request) {
+        passwordResetService.resetPassword(request);
+        return ResponseEntity.ok(new ApiResponse<>(
+                200, "Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại.", null));
     }
 
     @PostMapping("/login")
