@@ -1,6 +1,7 @@
 /*
   Database: LanguageCenterDB
   Database engine: MySQL 8.0.16+
+  Password reset support is included in the main schema.
 
   Naming convention:
   - Table names stay compatible with the current project.

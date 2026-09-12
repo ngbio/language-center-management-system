@@ -3,12 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import api, { authApis, endpoints } from "../../configs/Apis";
 import { apiData, apiError, formatDate, formatMoney } from "../../utils/api";
 import { isTokenActive, SESSION_KEYS } from "../../utils/authSession";
-
-const plainText = (html) => {
-  if (!html) return "";
-  const documentNode = new DOMParser().parseFromString(html, "text/html");
-  return documentNode.body.textContent || "";
-};
+import LessonContent from "../../components/LessonContent";
 
 export default function CourseDetailScreen() {
   const { slug } = useParams();
@@ -162,7 +157,7 @@ export default function CourseDetailScreen() {
           <div className="detail-panel"><span className="section-kicker">TỔNG QUAN</span><h2>Bạn sẽ nhận được gì?</h2><p>{course.learningOutcomes || course.description || "Nội dung đang được cập nhật."}</p>{course.targetAudience && <><h3>Khóa học dành cho ai?</h3><p>{course.targetAudience}</p></>}{course.prerequisites && <><h3>Yêu cầu đầu vào</h3><p>{course.prerequisites}</p></>}</div>
           <div className="curriculum" id="curriculum"><div className="curriculum-heading"><div><span className="section-kicker">CHƯƠNG TRÌNH HỌC</span><h2>Nội dung theo từng bài</h2></div><span>{sections.length} phần</span></div>{error && <div className="public-alert">{error}</div>}{sections.map((section) => {
             const open = openSection === section.id;
-            return <article className={`curriculum-item ${open ? "open" : ""}`} key={section.id}><button onClick={() => toggleSection(section.id)} type="button"><span><small>PHẦN {section.displayOrder}</small><strong>{section.title}</strong><em>{section.description}</em></span><b>{open ? "−" : "+"}</b></button>{open && <div className="content-list">{sectionLoading === section.id && <p>Đang tải nội dung...</p>}{contents[section.id]?.map((content) => <div className="content-row" key={content.id}><span className="content-icon">文</span><div><strong>{content.title}</strong><p>{content.summary}</p>{content.contentHtml && <small>{plainText(content.contentHtml)}</small>}</div><span className="content-type">{content.contentType}</span></div>)}{sectionLoading !== section.id && contents[section.id]?.length === 0 && <p>Phần này chưa có nội dung.</p>}</div>}</article>;
+            return <article className={`curriculum-item ${open ? "open" : ""}`} key={section.id}><button onClick={() => toggleSection(section.id)} type="button"><span><small>PHẦN {section.displayOrder}</small><strong>{section.title}</strong><em>{section.description}</em></span><b>{open ? "−" : "+"}</b></button>{open && <div className="content-list">{sectionLoading === section.id && <p>Đang tải nội dung...</p>}{contents[section.id]?.map((content) => <div className="content-row" key={content.id}><span className="content-icon">文</span><div><strong>{content.title}</strong><p>{content.summary}</p>{content.contentHtml && <LessonContent html={content.contentHtml} />}</div><span className="content-type">{content.contentType}</span></div>)}{sectionLoading !== section.id && contents[section.id]?.length === 0 && <p>Phần này chưa có nội dung.</p>}</div>}</article>;
           })}{sections.length === 0 && <div className="public-empty">Chương trình học đang được cập nhật.</div>}</div>
         </div>
         <aside className="detail-side"><div><span className="section-kicker">THÔNG TIN</span><h3>Tổng quan khóa học</h3><dl><dt>Mã khóa học</dt><dd>{course.courseCode}</dd><dt>Trình độ</dt><dd>{course.levelName}</dd><dt>Ngôn ngữ</dt><dd>{course.languageName}</dd><dt>Chứng chỉ</dt><dd>{course.certificateInfo || "Đang cập nhật"}</dd></dl></div></aside>
