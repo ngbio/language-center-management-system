@@ -38,6 +38,8 @@ public class BillingApiController {
     return new ApiResponse<>(200, "Lấy lịch sử thanh toán thành công", billingService.getPayments(id, principal));
   }
 
+  /** @deprecated The client reads payment attempts by enrollment. */
+  @Deprecated(since = "2026-09", forRemoval = true)
   @GetMapping("/payments/{transactionCode}")
   public ApiResponse<PaymentResponse> payment(@PathVariable String transactionCode, Principal principal) {
     return new ApiResponse<>(200, "Lấy trạng thái giao dịch thành công", billingService.getPayment(transactionCode, principal));

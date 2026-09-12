@@ -12,6 +12,7 @@ import com.ntt.language_center_management.enums.AccountStatus;
 import com.ntt.language_center_management.dto.response.PageResponse;
 import com.ntt.language_center_management.dto.response.StudentProfileResponse;
 import com.ntt.language_center_management.dto.request.StudentProfileUpdateRequest;
+import com.ntt.language_center_management.dto.request.AdminStaffAccountRequest;
 import com.ntt.language_center_management.entity.User;
 
 public interface UserService {
@@ -52,4 +53,6 @@ public interface UserService {
         String direction);
 
     UserResponse changeStatus(Integer id, AccountStatus status);
+
+    UserResponse createAdminStaffAccount(AdminStaffAccountRequest request);
 }

@@ -20,6 +20,7 @@ import com.ntt.language_center_management.controller.admin.AdminLevelApiControll
 import com.ntt.language_center_management.controller.admin.AdminRoomApiController;
 import com.ntt.language_center_management.controller.admin.ApiAdminUserController;
 import com.ntt.language_center_management.controller.publicapi.LanguageApiController;
+import com.ntt.language_center_management.dto.request.AdminStaffAccountRequest;
 import com.ntt.language_center_management.dto.request.CourseRequest;
 import com.ntt.language_center_management.dto.request.LanguageRequest;
 import com.ntt.language_center_management.dto.request.LevelRequest;
@@ -197,6 +198,13 @@ class AdminCatalogUserControllerIntegrationTest {
         .content("{\"status\":\"INACTIVE\"}")).andExpect(status().isOk());
     verify(userService).changeStatus(7, AccountStatus.ACTIVE);
     verify(userService).changeStatus(8, AccountStatus.INACTIVE);
+
+    mockMvc.perform(post("/api/admin/users").contentType(MediaType.APPLICATION_JSON)
+        .content("{\"username\":\"consultant1\",\"password\":\"Secret@1\","
+            + "\"fullName\":\"Tư vấn viên\",\"email\":\"consultant@example.com\","
+            + "\"phoneNumber\":\"0901234567\",\"roleCode\":\"CONSULTANT\"}"))
+        .andExpect(status().isCreated());
+    verify(userService).createAdminStaffAccount(any(AdminStaffAccountRequest.class));
   }
 
   @Test

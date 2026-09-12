@@ -161,6 +161,37 @@ class UserServiceImplTest {
   }
 
   @Test
+  void adminShouldCreateActiveConsultantAccount() {
+    when(roles.findByRoleCodeIgnoreCase("CONSULTANT"))
+        .thenReturn(Optional.of(role("CONSULTANT")));
+    when(encoder.encode("Secret@1")).thenReturn("encoded");
+    when(users.save(any())).thenAnswer(i -> i.getArgument(0));
+
+    UserResponse response = service.createAdminStaffAccount(
+        new AdminStaffAccountRequest("  consultant1  ", "Secret@1", "  Tư vấn viên  ",
+            "  CONSULTANT@Example.com  ", "0901234567", "  Quận 1  ", "consultant"));
+
+    ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+    verify(users).save(captor.capture());
+    User saved = captor.getValue();
+    assertThat(saved.getUsername()).isEqualTo("consultant1");
+    assertThat(saved.getEmail()).isEqualTo("consultant@example.com");
+    assertThat(saved.getFullName()).isEqualTo("Tư vấn viên");
+    assertThat(saved.getRoleId().getRoleCode()).isEqualTo("CONSULTANT");
+    assertThat(saved.getStatus()).isEqualTo(AccountStatus.ACTIVE);
+    assertThat(saved.getPasswordHash()).isEqualTo("encoded");
+    assertThat(response.roleCode()).isEqualTo("CONSULTANT");
+  }
+
+  @Test
+  void adminShouldRejectUnsupportedAccountRole() {
+    AdminStaffAccountRequest request = new AdminStaffAccountRequest(
+        "teacher", "Secret@1", "Teacher", "teacher@example.com", null, null, "TEACHER");
+    assertThrows(IllegalArgumentException.class, () -> service.createAdminStaffAccount(request));
+    verify(users, never()).save(any());
+  }
+
+  @Test
   void shouldRejectProfileOperationsWhenPrincipalIsNullOrBlank() {
     Principal blank = () -> "  ";
     assertThrows(UnauthorizedException.class, () -> service.getCurrentUserProfile(null));

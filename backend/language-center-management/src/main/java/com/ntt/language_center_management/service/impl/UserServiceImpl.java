@@ -12,6 +12,7 @@ import com.ntt.language_center_management.dto.response.UserResponse;
 import com.ntt.language_center_management.dto.response.PageResponse;
 import com.ntt.language_center_management.dto.response.StudentProfileResponse;
 import com.ntt.language_center_management.dto.request.StudentProfileUpdateRequest;
+import com.ntt.language_center_management.dto.request.AdminStaffAccountRequest;
 import com.ntt.language_center_management.entity.Role;
 import com.ntt.language_center_management.entity.Student;
 import com.ntt.language_center_management.entity.Teacher;
@@ -374,6 +375,41 @@ public class UserServiceImpl implements UserService {
     }
     user.setStatus(status);
     user.setUpdatedAt(new Date());
+    return userMapper.toResponse(userRepository.save(user));
+  }
+
+  @Override
+  public UserResponse createAdminStaffAccount(AdminStaffAccountRequest request) {
+    String normalizedEmail = request.email().trim().toLowerCase(Locale.ROOT);
+    String normalizedUsername = request.username().trim();
+    String normalizedRoleCode = request.roleCode().trim().toUpperCase(Locale.ROOT);
+    if (!Set.of("ADMIN", "CONSULTANT").contains(normalizedRoleCode)) {
+      throw new IllegalArgumentException("Vai trò chỉ được là ADMIN hoặc CONSULTANT");
+    }
+    if (userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
+      throw new DuplicateResourceException("Email này đã có người đăng ký!");
+    }
+    if (userRepository.existsByUsernameIgnoreCase(normalizedUsername)) {
+      throw new DuplicateResourceException("Tên đăng nhập này đã tồn tại!");
+    }
+
+    Role role =
+        roleRepository
+            .findByRoleCodeIgnoreCase(normalizedRoleCode)
+            .orElseThrow(
+                () -> new ResourceNotFoundException("Không tìm thấy role: " + normalizedRoleCode));
+    Date now = new Date();
+    User user = new User();
+    user.setUsername(normalizedUsername);
+    user.setPasswordHash(passwordEncoder.encode(request.password()));
+    user.setFullName(request.fullName().trim());
+    user.setEmail(normalizedEmail);
+    user.setPhoneNumber(trimToNull(request.phoneNumber()));
+    user.setAddress(trimToNull(request.address()));
+    user.setRoleId(role);
+    user.setStatus(AccountStatus.ACTIVE);
+    user.setCreatedAt(now);
+    user.setUpdatedAt(now);
     return userMapper.toResponse(userRepository.save(user));
   }
 

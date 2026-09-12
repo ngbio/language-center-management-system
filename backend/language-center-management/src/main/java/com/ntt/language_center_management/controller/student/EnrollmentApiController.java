@@ -60,6 +60,8 @@ public class EnrollmentApiController {
         enrollmentService.getMyClasses(principal));
   }
 
+  /** @deprecated Schedule data is available through the student's classes and lessons. */
+  @Deprecated(since = "2026-09", forRemoval = true)
   @GetMapping("/students/me/schedules")
   public ApiResponse<List<ClassScheduleResponse>> getMySchedules(Principal principal) {
     return new ApiResponse<>(
