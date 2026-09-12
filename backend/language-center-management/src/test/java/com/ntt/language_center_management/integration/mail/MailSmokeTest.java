@@ -2,7 +2,7 @@ package com.ntt.language_center_management.integration.mail;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-import com.ntt.language_center_management.service.impl.ResendMailGateway;
+import com.ntt.language_center_management.service.impl.BrevoMailGateway;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
@@ -26,22 +26,22 @@ class MailSmokeTest {
     Assumptions.assumeTrue(!recipient.isBlank(), "A smoke-test recipient is required");
 
     Properties environment = loadEnvironment();
-    if ("resend".equalsIgnoreCase(environment.getProperty("MAIL_PROVIDER", "smtp").trim())) {
-      sendWithResend(environment, recipient);
+    if ("brevo".equalsIgnoreCase(environment.getProperty("MAIL_PROVIDER", "smtp").trim())) {
+      sendWithBrevo(environment, recipient);
       return;
     }
     sendWithSmtp(environment, recipient);
   }
 
-  private void sendWithResend(Properties environment, String recipient) {
-    ResendMailGateway gateway = new ResendMailGateway(
+  private void sendWithBrevo(Properties environment, String recipient) {
+    BrevoMailGateway gateway = new BrevoMailGateway(
         RestClient.builder(),
-        environment.getProperty("RESEND_BASE_URL", "https://api.resend.com"),
-        required(environment, "RESEND_API_KEY"),
+        environment.getProperty("BREVO_BASE_URL", "https://api.brevo.com"),
+        required(environment, "BREVO_API_KEY"),
         required(environment, "MAIL_FROM"));
     assertDoesNotThrow(() -> gateway.send(recipient,
-        "[Lingua Center] Kiểm tra gửi email Resend",
-        "Email Resend HTTPS API của hệ thống đang hoạt động bình thường."));
+        "[Lingua Center] Kiểm tra gửi email Brevo",
+        "Email Brevo HTTPS API của hệ thống đang hoạt động bình thường."));
   }
 
   private void sendWithSmtp(Properties environment, String recipient) {
