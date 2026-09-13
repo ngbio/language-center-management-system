@@ -57,11 +57,11 @@ export default function AdminLayout() {
         </div>
       </aside>
       {open && (
-        <button className="sidebar-backdrop" onClick={() => setOpen(false)} />
+        <button className="sidebar-backdrop" type="button" aria-label="Đóng menu" onClick={() => setOpen(false)} />
       )}
       <main className="admin-main">
         <header className="topbar">
-          <button className="menu-button" onClick={() => setOpen(true)}>
+          <button className="menu-button" type="button" aria-label="Mở menu" aria-expanded={open} onClick={() => setOpen(true)}>
             ☰
           </button>
           <span>Hệ thống quản lý trung tâm ngoại ngữ</span>

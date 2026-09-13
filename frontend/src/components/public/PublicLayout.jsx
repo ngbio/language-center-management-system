@@ -14,6 +14,7 @@ export default function PublicLayout() {
   const navigate = useNavigate();
   const accountMenuRef = useRef(null);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
     const savedTheme = localStorage.getItem("publicTheme");
     if (savedTheme) return savedTheme === "dark";
@@ -61,6 +62,24 @@ export default function PublicLayout() {
     };
   }, [accountMenuOpen]);
 
+  useEffect(() => {
+    if (!mobileMenuOpen) return undefined;
+
+    const closeWithEscape = (event) => {
+      if (event.key === "Escape") setMobileMenuOpen(false);
+    };
+    const closeOnDesktop = () => {
+      if (window.innerWidth > 900) setMobileMenuOpen(false);
+    };
+
+    document.addEventListener("keydown", closeWithEscape);
+    window.addEventListener("resize", closeOnDesktop);
+    return () => {
+      document.removeEventListener("keydown", closeWithEscape);
+      window.removeEventListener("resize", closeOnDesktop);
+    };
+  }, [mobileMenuOpen]);
+
   const accountLabel = session.email.split("@")[0] || "Tài khoản";
 
   return (
@@ -74,11 +93,11 @@ export default function PublicLayout() {
               <small>Học ngoại ngữ mỗi ngày</small>
             </span>
           </Link>
-          <nav aria-label="Điều hướng chính">
-            <NavLink to="/" end>Trang chủ</NavLink>
-            <NavLink to="/khoa-hoc">Khóa học</NavLink>
-            <NavLink to="/ngon-ngu">Ngôn ngữ</NavLink>
-            <NavLink to="/lop-hoc">Lớp đang mở</NavLink>
+          <nav className={`public-main-nav ${mobileMenuOpen ? "is-open" : ""}`} aria-label="Điều hướng chính">
+            <NavLink to="/" end onClick={() => setMobileMenuOpen(false)}>Trang chủ</NavLink>
+            <NavLink to="/khoa-hoc" onClick={() => setMobileMenuOpen(false)}>Khóa học</NavLink>
+            <NavLink to="/ngon-ngu" onClick={() => setMobileMenuOpen(false)}>Ngôn ngữ</NavLink>
+            <NavLink to="/lop-hoc" onClick={() => setMobileMenuOpen(false)}>Lớp đang mở</NavLink>
           </nav>
           <div className="public-nav-actions">
             <button
@@ -124,8 +143,30 @@ export default function PublicLayout() {
                 )}
               </div>
             )}
+            <button
+              className={`public-menu-button ${mobileMenuOpen ? "is-open" : ""}`}
+              type="button"
+              aria-label={mobileMenuOpen ? "Đóng menu" : "Mở menu"}
+              aria-expanded={mobileMenuOpen}
+              onClick={() => {
+                setAccountMenuOpen(false);
+                setMobileMenuOpen((open) => !open);
+              }}
+            >
+              <span />
+              <span />
+              <span />
+            </button>
           </div>
         </div>
+        {mobileMenuOpen && (
+          <button
+            className="public-nav-backdrop"
+            type="button"
+            aria-label="Đóng menu"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+        )}
       </header>
 
       <main><Outlet /></main>

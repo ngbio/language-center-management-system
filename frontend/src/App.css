@@ -997,3 +997,141 @@ td small {
 
 .button-link{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}.curriculum-title-actions{display:flex;gap:9px}.curriculum-loading{padding:28px;color:var(--muted)}.curriculum-admin-list{display:flex;flex-direction:column;gap:14px}.curriculum-section{overflow:hidden}.curriculum-section>header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding:21px 24px;border-bottom:1px solid var(--line)}.curriculum-section>header span{color:#39775c;font-size:10px;font-weight:800}.curriculum-section h2{margin:4px 0;font-size:18px}.curriculum-section p{margin:0;color:var(--muted);font-size:12px}.curriculum-content-list article{display:grid;grid-template-columns:34px minmax(180px,1fr) auto auto;align-items:center;gap:12px;padding:14px 24px;border-bottom:1px solid #edf0ee}.curriculum-content-list article small{display:block;margin-top:3px;color:var(--muted)}.curriculum-add-content{margin:14px 24px;padding:9px 13px;border:1px dashed #9db6a9;border-radius:8px;color:#28634a;background:#f5faf7;font-weight:700}
 @media(max-width:800px){.curriculum-section>header{flex-direction:column}.curriculum-content-list article{grid-template-columns:34px 1fr}.curriculum-content-list article>.status-badge,.curriculum-content-list article>.row-actions{grid-column:2}.curriculum-title-actions{align-items:stretch;flex-direction:column}}
+
+/* Shared phone layout for the Admin and Staff workspaces. */
+@media (max-width: 780px) {
+  .admin-shell {
+    overflow-x: hidden;
+  }
+  .sidebar {
+    width: min(290px, 86vw);
+    padding-top: 20px;
+    box-shadow: 18px 0 45px #07171038;
+  }
+  .sidebar nav {
+    margin-top: 28px;
+  }
+  .menu-button {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--green);
+    background: #fff;
+  }
+  .topbar {
+    position: sticky;
+    z-index: 15;
+    top: 0;
+    height: 64px;
+    gap: 10px;
+  }
+  .topbar-actions {
+    gap: 8px;
+    margin-left: auto;
+  }
+  .page-title {
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .page-title h1 {
+    font-size: clamp(24px, 8vw, 29px);
+  }
+  .page-title > button,
+  .page-title > a,
+  .page-title .primary-button,
+  .page-title .secondary-button {
+    width: 100%;
+  }
+  .panel-heading {
+    align-items: flex-start;
+    gap: 10px;
+    flex-direction: column;
+    padding: 18px 16px 12px;
+  }
+  .toolbar {
+    padding: 14px;
+  }
+  .toolbar button,
+  .toolbar .primary-button,
+  .toolbar .secondary-button {
+    min-height: 42px;
+  }
+  .table-wrap,
+  .compact-table {
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+  .pagination {
+    align-items: flex-start;
+    gap: 10px;
+    flex-direction: column;
+  }
+  .pagination > div {
+    align-self: stretch;
+    display: flex;
+  }
+  .pagination button {
+    flex: 1;
+    margin: 0 3px;
+  }
+  .modal-backdrop {
+    align-items: end;
+    padding: 0;
+  }
+  .modal {
+    width: 100%;
+    max-height: min(92vh, 92dvh);
+    border-radius: 18px 18px 0 0;
+  }
+  .modal > header,
+  .modal form,
+  .modal > .detail-grid {
+    padding-inline: 16px;
+  }
+  .modal-actions {
+    flex-wrap: wrap;
+  }
+  .modal-actions button {
+    min-height: 44px;
+    flex: 1;
+  }
+  .schedule-admin-list,
+  .schedule-admin-empty {
+    margin-inline: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .online-dot {
+    display: none;
+  }
+  .logout-button {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  .page-container {
+    padding: 20px 12px 32px;
+  }
+  .stat-card {
+    min-height: 112px;
+    padding: 16px;
+  }
+  .toolbar select,
+  .toolbar button,
+  .toolbar .primary-button,
+  .toolbar .secondary-button {
+    width: 100%;
+  }
+  .empty-state {
+    padding: 36px 18px;
+  }
+  th,
+  td {
+    padding-inline: 12px;
+  }
+}
