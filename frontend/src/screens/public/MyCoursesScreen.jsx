@@ -80,7 +80,7 @@ function CourseCard({ course, index, badge, free }) {
       <h3><Link to={`/khoa-hoc/${course.slug}`}>{course.courseName}</Link></h3>
       <p>{course.shortDescription || "Khóa học đã sẵn sàng để bạn bắt đầu."}</p>
       <div className="course-facts"><span>◷ {course.totalSessions} buổi</span><span>▤ {course.durationHours || "—"} giờ</span></div>
-      <div className="course-card-foot"><strong>{free ? "Miễn phí" : formatMoney(course.tuitionFee)}</strong><Link className="continue-course" to={`/khoa-hoc/${course.slug}`}>Vào học →</Link></div>
+      <div className="course-card-foot"><strong>{free ? "Miễn phí" : formatMoney(course.tuitionFee)}</strong><Link className="continue-course" to={`/on-tap/${course.id}`}>Vào học →</Link></div>
     </div>
   </article>;
 }

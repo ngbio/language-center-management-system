@@ -20,6 +20,9 @@
 - Consultant dùng `components/StaffLayout.jsx` và `ProtectedStaffRoute.jsx`.
 - Màn hình nằm trong `src/screens/public`, `teacher`, `admin`, `staff`.
 - Component dùng chung nằm trong `src/components`.
+- Tự học: `LearningScreen.jsx` tại `/on-tap/:courseId`; `LearningAdminScreen.jsx` tại `/admin/courses/:courseId/contents/:contentId/practice`.
+- Link vào học từ MyCourses/CourseDetail; quản trị từ CourseCurriculumAdminScreen. CSS riêng `Learning.css`.
+- Nội dung HTML ôn tập được cách ly trong iframe sandbox; khách dùng API public, student dùng authApis và lưu lịch sử.
 
 ## CSS
 
@@ -62,4 +65,3 @@ npm.cmd run test:e2e
 ```
 
 Trên PowerShell của máy này nên dùng `npm.cmd` vì execution policy có thể chặn `npm.ps1`.
-

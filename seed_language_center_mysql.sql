@@ -2,6 +2,9 @@
   Seed data for LanguageCenterDB
 
   Run database_language_center_mysql.sql first, then run this file once.
+  Minimal catalog: 2 courses (EN-A1-COM, JA-N5-STD), 2 classes, 6 schedules.
+  The extra seed adds teachers/rooms only. Separate N5 content seeds are optional.
+  Editing this file does not remove demo records already inserted into a database.
   All passwords below are BCrypt hashes compatible with Spring Security.
 
   Demo accounts:
@@ -91,25 +94,9 @@ SELECT lv.id INTO @level_en_a1
 FROM level lv JOIN language lg ON lg.id = lv.language_id
 WHERE lg.language_code = 'EN' AND lv.level_code = 'A1';
 
-SELECT lv.id INTO @level_en_b1
-FROM level lv JOIN language lg ON lg.id = lv.language_id
-WHERE lg.language_code = 'EN' AND lv.level_code = 'B1';
-
-SELECT lv.id INTO @level_en_c1
-FROM level lv JOIN language lg ON lg.id = lv.language_id
-WHERE lg.language_code = 'EN' AND lv.level_code = 'C1';
-
 SELECT lv.id INTO @level_ja_n5
 FROM level lv JOIN language lg ON lg.id = lv.language_id
 WHERE lg.language_code = 'JA' AND lv.level_code = 'N5';
-
-SELECT lv.id INTO @level_ja_n4
-FROM level lv JOIN language lg ON lg.id = lv.language_id
-WHERE lg.language_code = 'JA' AND lv.level_code = 'N4';
-
-SELECT lv.id INTO @level_zh_hsk1
-FROM level lv JOIN language lg ON lg.id = lv.language_id
-WHERE lg.language_code = 'ZH' AND lv.level_code = 'HSK1';
 
 INSERT INTO course (
     level_id, course_code, course_name, slug, description, tuition_fee,
@@ -119,26 +106,12 @@ INSERT INTO course (
 (@level_en_a1, 'EN-A1-COM', 'English Communication A1', 'english-communication-a1',
  'Khóa giao tiếp tiếng Anh cơ bản dành cho người mới bắt đầu.',
  3200000, 24, 48, 'ACTIVE', 'PUBLISHED', NOW(), TRUE, NOW(), NOW()),
-(@level_en_b1, 'EN-B1-GEN', 'General English B1', 'general-english-b1',
- 'Phát triển đồng đều nghe, nói, đọc và viết ở trình độ B1.',
- 4500000, 30, 60, 'ACTIVE', 'PUBLISHED', NOW(), FALSE, NOW(), NOW()),
-(@level_en_c1, 'EN-C1-ADV', 'Advanced English C1', 'advanced-english-c1',
- 'Tiếng Anh học thuật và giao tiếp nâng cao.',
- 6200000, 32, 64, 'INACTIVE', 'DRAFT', NULL, FALSE, NOW(), NOW()),
 (@level_ja_n5, 'JA-N5-STD', 'Japanese Foundation N5', 'japanese-foundation-n5',
  'Nhập môn tiếng Nhật, bảng chữ cái và ngữ pháp N5.',
- 3800000, 28, 56, 'ACTIVE', 'PUBLISHED', NOW(), TRUE, NOW(), NOW()),
-(@level_ja_n4, 'JA-N4-STD', 'Japanese Intermediate N4', 'japanese-intermediate-n4',
- 'Củng cố từ vựng, ngữ pháp và luyện thi JLPT N4.',
- 4800000, 30, 60, 'ACTIVE', 'PUBLISHED', NOW(), FALSE, NOW(), NOW()),
-(@level_zh_hsk1, 'ZH-HSK1-STD', 'Chinese Foundation HSK1', 'chinese-foundation-hsk1',
- 'Tiếng Trung nền tảng theo chuẩn HSK1.',
- 3500000, 24, 48, 'ACTIVE', 'PUBLISHED', NOW(), FALSE, NOW(), NOW());
+ 3800000, 28, 56, 'ACTIVE', 'PUBLISHED', NOW(), TRUE, NOW(), NOW());
 
 SELECT id INTO @course_en_a1 FROM course WHERE course_code = 'EN-A1-COM';
-SELECT id INTO @course_en_b1 FROM course WHERE course_code = 'EN-B1-GEN';
 SELECT id INTO @course_ja_n5 FROM course WHERE course_code = 'JA-N5-STD';
-SELECT id INTO @course_zh_hsk1 FROM course WHERE course_code = 'ZH-HSK1-STD';
 
 -- Public curriculum for the Japanese N5 course.
 INSERT INTO course_section (course_id, title, description, display_order) VALUES
@@ -174,7 +147,6 @@ INSERT INTO room (room_code, room_name, capacity, location, status) VALUES
 
 SELECT id INTO @room_101 FROM room WHERE room_code = 'P101';
 SELECT id INTO @room_102 FROM room WHERE room_code = 'P102';
-SELECT id INTO @room_201 FROM room WHERE room_code = 'P201';
 
 -- Course classes with dates relative to the day the seed is executed.
 INSERT INTO courseclass (
@@ -186,18 +158,10 @@ INSERT INTO courseclass (
  20, 3200000, 'OPEN', NOW(), NOW()),
 (@course_ja_n5, @teacher_2, 'JA-N5-DRAFT-01', 'Japanese N5 Weekend 01',
  DATE_ADD(CURRENT_DATE, INTERVAL 14 DAY), DATE_ADD(CURRENT_DATE, INTERVAL 112 DAY),
- 18, 3800000, 'DRAFT', NOW(), NOW()),
-(@course_en_b1, @teacher_1, 'EN-B1-RUN-01', 'General English B1 Morning 01',
- DATE_SUB(CURRENT_DATE, INTERVAL 30 DAY), DATE_ADD(CURRENT_DATE, INTERVAL 45 DAY),
- 22, 4500000, 'IN_PROGRESS', NOW(), NOW()),
-(@course_zh_hsk1, @teacher_2, 'ZH-HSK1-OPEN-01', 'Chinese HSK1 Online 01',
- DATE_ADD(CURRENT_DATE, INTERVAL 10 DAY), DATE_ADD(CURRENT_DATE, INTERVAL 94 DAY),
- 25, 3500000, 'OPEN', NOW(), NOW());
+ 18, 3800000, 'DRAFT', NOW(), NOW());
 
 SELECT id INTO @class_en_a1 FROM courseclass WHERE class_code = 'EN-A1-OPEN-01';
 SELECT id INTO @class_ja_n5 FROM courseclass WHERE class_code = 'JA-N5-DRAFT-01';
-SELECT id INTO @class_en_b1 FROM courseclass WHERE class_code = 'EN-B1-RUN-01';
-SELECT id INTO @class_zh_hsk1 FROM courseclass WHERE class_code = 'ZH-HSK1-OPEN-01';
 
 -- day_of_week: 1 = Monday, ..., 7 = Sunday.
 INSERT INTO classschedule (
@@ -209,45 +173,7 @@ INSERT INTO classschedule (
 (@class_en_a1, @room_101, 6, '18:00:00', '20:00:00', 'IN_PERSON', NULL),
 (@class_ja_n5, @room_102, 3, '18:00:00', '20:00:00', 'IN_PERSON', NULL),
 (@class_ja_n5, @room_102, 5, '18:00:00', '20:00:00', 'IN_PERSON', NULL),
-(@class_ja_n5, @room_102, 7, '08:00:00', '12:00:00', 'IN_PERSON', NULL),
-(@class_en_b1, @room_201, 1, '08:00:00', '10:00:00', 'IN_PERSON', NULL),
-(@class_en_b1, @room_201, 3, '08:00:00', '10:00:00', 'IN_PERSON', NULL),
-(@class_en_b1, @room_201, 5, '08:00:00', '10:00:00', 'IN_PERSON', NULL),
-(@class_zh_hsk1, NULL, 2, '19:00:00', '21:00:00', 'ONLINE',
- 'https://meet.example.com/zh-hsk1-open-01'),
-(@class_zh_hsk1, NULL, 4, '19:00:00', '21:00:00', 'ONLINE',
- 'https://meet.example.com/zh-hsk1-open-01'),
-(@class_zh_hsk1, NULL, 6, '19:00:00', '21:00:00', 'ONLINE',
- 'https://meet.example.com/zh-hsk1-open-01');
-
-SELECT id INTO @schedule_en_b1_mon
-FROM classschedule
-WHERE course_class_id = @class_en_b1 AND day_of_week = 1;
-
-SELECT id INTO @schedule_en_b1_wed
-FROM classschedule
-WHERE course_class_id = @class_en_b1 AND day_of_week = 3;
-
--- Lessons for the class currently in progress.
-INSERT INTO lesson (
-    class_schedule_id, topic, lesson_date, status
-) VALUES
-(@schedule_en_b1_mon, 'Review of present and past tenses',
- DATE_SUB(CURRENT_DATE, INTERVAL 14 DAY), 'COMPLETED'),
-(@schedule_en_b1_wed, 'Everyday communication practice',
- DATE_SUB(CURRENT_DATE, INTERVAL 12 DAY), 'COMPLETED'),
-(@schedule_en_b1_mon, 'Future plans and arrangements',
- DATE_ADD(CURRENT_DATE, INTERVAL 1 DAY), 'SCHEDULED');
-
-SELECT id INTO @lesson_en_b1_1
-FROM lesson
-WHERE class_schedule_id = @schedule_en_b1_mon
-  AND lesson_date = DATE_SUB(CURRENT_DATE, INTERVAL 14 DAY);
-
-SELECT id INTO @lesson_en_b1_2
-FROM lesson
-WHERE class_schedule_id = @schedule_en_b1_wed
-  AND lesson_date = DATE_SUB(CURRENT_DATE, INTERVAL 12 DAY);
+(@class_ja_n5, @room_102, 7, '08:00:00', '12:00:00', 'IN_PERSON', NULL);
 
 -- Enrollments
 INSERT INTO enrollment (
@@ -258,12 +184,7 @@ INSERT INTO enrollment (
 (@student_1, @class_en_a1, DATE_SUB(NOW(), INTERVAL 3 DAY), DATE_SUB(NOW(), INTERVAL 1 DAY), 3200000,
  'CONFIRMED', 'PAID', DATE_SUB(NOW(), INTERVAL 2 DAY), NULL, NULL),
 (@student_2, @class_en_a1, DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_ADD(NOW(), INTERVAL 1 DAY), 3200000,
- 'CONFIRMED', 'PENDING', DATE_SUB(NOW(), INTERVAL 1 DAY), NULL, NULL),
-(@student_1, @class_en_b1, DATE_SUB(NOW(), INTERVAL 40 DAY), DATE_SUB(NOW(), INTERVAL 38 DAY), 4500000,
- 'CONFIRMED', 'PAID', DATE_SUB(NOW(), INTERVAL 39 DAY), NULL, NULL),
-(@student_3, @class_en_b1, DATE_SUB(NOW(), INTERVAL 38 DAY), DATE_SUB(NOW(), INTERVAL 36 DAY), 4500000,
- 'CANCELLED', 'CANCELLED', NULL, DATE_SUB(NOW(), INTERVAL 35 DAY),
- 'Học viên thay đổi lịch cá nhân');
+ 'CONFIRMED', 'PENDING', DATE_SUB(NOW(), INTERVAL 1 DAY), NULL, NULL);
 
 SELECT id INTO @enrollment_student_1_a1
 FROM enrollment
@@ -272,10 +193,6 @@ WHERE student_id = @student_1 AND course_class_id = @class_en_a1;
 SELECT id INTO @enrollment_student_2_a1
 FROM enrollment
 WHERE student_id = @student_2 AND course_class_id = @class_en_a1;
-
-SELECT id INTO @enrollment_student_1_b1
-FROM enrollment
-WHERE student_id = @student_1 AND course_class_id = @class_en_b1;
 
 -- Payments. successful_enrollment_id is generated automatically by MySQL.
 INSERT INTO payment (
@@ -286,19 +203,7 @@ INSERT INTO payment (
  'PAID', DATE_SUB(NOW(), INTERVAL 3 DAY), DATE_SUB(NOW(), INTERVAL 2 DAY),
  'ZALOPAY-A1-0001', NULL),
 (@enrollment_student_2_a1, 'PAY-SEED-A1-0002', 'MOMO', 3200000,
- 'PENDING', DATE_SUB(NOW(), INTERVAL 1 DAY), NULL, 'MOMO-A1-0002', NULL),
-(@enrollment_student_1_b1, 'PAY-SEED-B1-0001', 'MOMO', 4500000,
- 'PAID', DATE_SUB(NOW(), INTERVAL 40 DAY), DATE_SUB(NOW(), INTERVAL 39 DAY),
- 'MOMO-B1-0001', NULL);
-
--- Attendance belongs to lessons and enrollments of the same class.
-INSERT INTO attendance (
-    lesson_id, enrollment_id, status, note, attendance_time
-) VALUES
-(@lesson_en_b1_1, @enrollment_student_1_b1, 'PRESENT', NULL,
- DATE_SUB(NOW(), INTERVAL 14 DAY)),
-(@lesson_en_b1_2, @enrollment_student_1_b1, 'LATE',
- 'Học viên đến trễ 10 phút', DATE_SUB(NOW(), INTERVAL 12 DAY));
+ 'PENDING', DATE_SUB(NOW(), INTERVAL 1 DAY), NULL, 'MOMO-A1-0002', NULL);
 
 -- Notifications
 INSERT INTO notification (

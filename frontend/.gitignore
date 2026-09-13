@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Generated browser-test reports
+/test-results/
+/test-results-learning-admin/
+/playwright-report/
+
 # Local environment / secrets
 .env
 .env.*
