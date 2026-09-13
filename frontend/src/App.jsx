@@ -43,6 +43,8 @@ import AccountProfileScreen from "./screens/AccountProfileScreen";
 import ConsultantChatScreen from "./screens/staff/ConsultantChatScreen";
 import CourseCurriculumAdminScreen from "./screens/admin/courses/CourseCurriculumAdminScreen";
 import "./App.css";
+import LearningScreen from "./screens/public/LearningScreen";
+import LearningAdminScreen from "./screens/admin/courses/LearningAdminScreen";
 
 function App() {
   return (
@@ -56,6 +58,7 @@ function App() {
         <Route path="/lop-hoc" element={<OpenClassesScreen />} />
         <Route path="/lop-hoc/:id" element={<ClassDetailScreen />} />
         <Route path="/khoa-hoc/:slug" element={<CourseDetailScreen />} />
+        <Route path="/on-tap/:courseId" element={<LearningScreen />} />
         <Route path="/khoa-hoc-cua-toi" element={<MyCoursesScreen />} />
         <Route path="/lop-hoc-cua-toi" element={<MyClassesScreen />} />
         <Route path="/lich-su-dang-ky" element={<EnrollmentHistoryScreen />} />
@@ -82,6 +85,7 @@ function App() {
           <Route path="levels" element={<LevelListScreen />} />
           <Route path="courses" element={<CourseListScreen />} />
           <Route path="courses/:courseId/curriculum" element={<CourseCurriculumAdminScreen />} />
+          <Route path="courses/:courseId/contents/:contentId/practice" element={<LearningAdminScreen />} />
           <Route path="rooms" element={<RoomListScreen />} />
           <Route path="classes" element={<ClassListScreen />} />
           <Route path="enrollments" element={<EnrollmentManagementScreen />} />

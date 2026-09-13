@@ -25,6 +25,13 @@ public class GlobalExceptionHandler {
     return error(HttpStatus.CONFLICT, exception.getMessage());
   }
 
+  @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+  public ResponseEntity<ApiResponse<Void>> handleDataConflict(
+      org.springframework.dao.DataIntegrityViolationException exception) {
+    return error(HttpStatus.CONFLICT,
+        "Dữ liệu bị trùng hoặc đang được sử dụng. Với nội dung đã có flashcard/quiz, hãy gỡ xuất bản hoặc lưu trữ thay vì xóa.");
+  }
+
   @ExceptionHandler(ResourceNotFoundException.class)
   public ResponseEntity<ApiResponse<Void>> handleResourceNotFound(
       ResourceNotFoundException exception) {

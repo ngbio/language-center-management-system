@@ -16,6 +16,7 @@ Mục tiêu của tài liệu này là định tuyến việc đọc source, tr�
 - MySQL, entity, quan hệ dữ liệu, seed/migration: `docs/ai-context/database.md`
 - Đăng nhập, JWT, role, đổi/quên mật khẩu: `docs/ai-context/authentication.md`
 - Enrollment, payment, refund, invoice: `docs/ai-context/enrollment-payment.md`
+- Ôn tập, flashcard, quiz: `docs/ai-context/backend.md`, `docs/ai-context/database.md`; giao diện đọc thêm `docs/ai-context/frontend.md`. Thiết kế: `docs/LEARNING_REVIEW_FLASHCARD_QUIZ.md`.
 - Chọn và chạy kiểm thử: `docs/ai-context/testing.md`
 
 Nếu tác vụ thuộc nhiều domain, chỉ đọc các file tương ứng. Ví dụ sửa thanh toán phía học viên thì đọc `frontend.md` và `enrollment-payment.md`; chỉ đọc `backend.md` nếu cần thay API.
@@ -43,4 +44,3 @@ Nếu tài liệu ngữ cảnh khác source, làm theo source và cập nhật t
 - Không tự thay đổi schema production; phân biệt schema tạo mới, migration và seed.
 - Không làm mất thay đổi chưa commit của người dùng.
 - Chạy kiểm tra tỷ lệ với phạm vi thay đổi theo `docs/ai-context/testing.md`.
-

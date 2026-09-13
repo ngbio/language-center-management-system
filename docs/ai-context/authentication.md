@@ -22,6 +22,8 @@
 ## Endpoint auth
 
 - Public auth: `/api/auth/**`.
+- Tự học miễn phí: GET `/api/public/learning/**`, POST `/api/public/learning/quizzes/*/evaluate`; service vẫn kiểm tra khóa ACTIVE/PUBLISHED/free.
+- Lịch sử tự học: `/api/students/me/learning/**` chỉ STUDENT và kiểm tra owner; `/api/admin/learning/**` chỉ ADMIN.
 - Admin login: `POST /api/admin/auth/login`.
 - Staff login: `POST /api/staff/auth/login`.
 - Current account: `GET /api/auth/me`.
@@ -57,4 +59,3 @@ email → tạo token một lần → gửi link frontend → validate token
 - Khi thêm endpoint, cập nhật `SecurityConfig` có chủ đích và kiểm tra ownership trong service.
 - Không dùng email/role do client gửi để thay cho identity trong JWT.
 - Test cả token hết hạn, sai role, truy cập chéo tài nguyên và token reset dùng lại.
-

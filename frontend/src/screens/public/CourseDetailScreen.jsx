@@ -154,6 +154,8 @@ export default function CourseDetailScreen() {
 
       <section className="detail-body public-container">
         <div className="detail-main">
+          {(Number(course.tuitionFee) === 0 || (currentEnrollment?.enrollmentStatus === "CONFIRMED" && currentEnrollment?.paymentStatus === "PAID")) &&
+            <div className="detail-panel"><Link className="primary-cta" to={`/on-tap/${course.id}`}>Ôn tập, flashcard và quiz →</Link></div>}
           <div className="detail-panel"><span className="section-kicker">TỔNG QUAN</span><h2>Bạn sẽ nhận được gì?</h2><p>{course.learningOutcomes || course.description || "Nội dung đang được cập nhật."}</p>{course.targetAudience && <><h3>Khóa học dành cho ai?</h3><p>{course.targetAudience}</p></>}{course.prerequisites && <><h3>Yêu cầu đầu vào</h3><p>{course.prerequisites}</p></>}</div>
           <div className="curriculum" id="curriculum"><div className="curriculum-heading"><div><span className="section-kicker">CHƯƠNG TRÌNH HỌC</span><h2>Nội dung theo từng bài</h2></div><span>{sections.length} phần</span></div>{error && <div className="public-alert">{error}</div>}{sections.map((section) => {
             const open = openSection === section.id;
