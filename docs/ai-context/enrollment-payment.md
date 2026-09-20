@@ -36,12 +36,14 @@ Student tự đăng ký hoặc Consultant xếp lớp
 Admin/Consultant tạo yêu cầu
 → Refund PENDING với transaction/idempotency data
 → gọi gateway hoặc refresh trạng thái
-→ COMPLETED: cập nhật enrollment và thu hồi quyền học
+→ COMPLETED: chỉ khi tổng hoàn thành công đủ tổng thu mới hủy enrollment và thu hồi quyền học
 → FAILED/PENDING: giữ dữ liệu để kiểm tra hoặc đối soát tiếp
 ```
 
 - Staff routes: `/api/staff/refunds/**` và `/api/staff/enrollments/{id}/refunds`.
 - Không thu hồi quyền trước khi gateway xác nhận hoàn tiền thành công.
+- Hoàn một phần giữ nguyên trạng thái enrollment; hoàn đủ chuyển `REFUNDED + CANCELLED`.
+- Refund hiện chưa phát email; hướng dẫn luồng và tái sử dụng Brevo: [REFUND_VA_BREVO_GUIDE.md](../REFUND_VA_BREVO_GUIDE.md).
 - Mọi thao tác nhiều bảng phải nằm trong transaction và hỗ trợ retry/idempotency.
 
 ## Trạng thái
