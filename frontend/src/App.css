@@ -892,6 +892,16 @@ td small {
 .sidebar-backdrop {
   display: none;
 }
+
+.capacitor-native .topbar {
+  height: calc(64px + var(--safe-area-top));
+  padding-top: var(--safe-area-top);
+}
+
+.capacitor-native .sidebar {
+  padding-top: calc(30px + var(--safe-area-top));
+  padding-bottom: calc(25px + var(--safe-area-bottom));
+}
 @media (max-width: 1100px) {
   .stat-grid {
     grid-template-columns: repeat(2, 1fr);

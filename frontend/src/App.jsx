@@ -45,10 +45,13 @@ import CourseCurriculumAdminScreen from "./screens/admin/courses/CourseCurriculu
 import "./App.css";
 import LearningScreen from "./screens/public/LearningScreen";
 import LearningAdminScreen from "./screens/admin/courses/LearningAdminScreen";
+import NativeAppBridge from "./components/NativeAppBridge";
 
 function App() {
   return (
-    <Routes>
+    <>
+      <NativeAppBridge />
+      <Routes>
       <Route element={<PublicLayout />}>
         <Route path="/" element={<HomeScreen />} />
         <Route path="/khoa-hoc" element={<CoursesScreen />} />
@@ -106,7 +109,8 @@ function App() {
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+    </>
   );
 }
 
