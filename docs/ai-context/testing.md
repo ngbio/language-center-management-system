@@ -36,6 +36,7 @@ npm.cmd run test:e2e
 ```
 
 - E2E specs: `frontend/e2e/`.
+- Tự học: `LearningServiceImplTest`, `LearningControllerIntegrationTest`; E2E `frontend/e2e/learning.spec.js` mock API, không cần DB.
 - Playwright tự khởi động Vite tại `127.0.0.1:4173` theo `playwright.config.js`.
 - Một số flow cần backend/database hoạt động; đọc spec trước khi chạy để biết dependency.
 - Với thay đổi responsive, kiểm tra tối thiểu 320px, 390px, 768px và một viewport desktop.
@@ -56,4 +57,3 @@ npm.cmd run test:e2e
 - Deployment: `.github/workflows/cd.yml`.
 - Trước khi bàn giao, báo rõ lệnh đã chạy, kết quả và cảnh báo không chặn build.
 - Không lặp lại toàn bộ test đã pass nếu source không đổi sau lần chạy đó.
-

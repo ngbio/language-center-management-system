@@ -39,6 +39,7 @@ Quyền URL cuối cùng nằm trong `config/SecurityConfig.java`. Service vẫn
 ## Domain service
 
 - Catalog: `LanguageService`, `LevelService`, `CourseService`, `CourseCurriculumService`, `RoomService`.
+- Tự học: `LearningService` / `LearningServiceImpl`, DTO nhóm `LearningRequest` và `LearningResponse`.
 - Lớp/lịch/buổi học: `CourseClassService`, `ClassScheduleService`, `LessonService`.
 - Đăng ký/tài chính: `EnrollmentService`, `PaymentService`, `BillingService`, `InvoicePdfService`.
 - Điểm danh: `AttendanceService`.
@@ -58,6 +59,12 @@ Interface ở `service/`; implementation ở `service/impl/`. Khi thay contract,
 
 ## Quy tắc quan trọng
 
+- Tự học: public `/api/public/learning`, student `/api/students/me/learning`, admin `/api/admin/learning`.
+- Quiz chấm ở server; DTO public không chứa đáp án/giải thích trước khi nộp. Khách free chấm tức thời không lưu DB.
+- Khóa quiz khi bắt đầu lượt làm để giữ giới hạn, khóa lượt làm khi nộp; tiếp tục lượt chưa nộp thay vì tạo mới.
+- Câu hỏi chỉ sửa khi quiz DRAFT và chưa có attempt. Sau khi có attempt không đổi điểm đạt/giới hạn.
+- `PublicQuizRateLimiter`: tối đa 20 lần nộp/phút/IP trên mỗi backend instance, không tin X-Forwarded-For.
+
 - API stateless, xác thực bằng Bearer JWT.
 - Transaction nhiều bước phải rollback toàn bộ khi validation thất bại.
 - Thời gian nghiệp vụ dùng `ApplicationDateTimeUtils` và múi giờ cấu hình Asia/Ho_Chi_Minh.
@@ -67,4 +74,3 @@ Interface ở `service/`; implementation ở `service/impl/`. Khi thay contract,
 ## Cách đọc theo tác vụ
 
 Tìm controller endpoint → service interface → đúng method implementation → repository/entity liên quan → test cùng tên. Chỉ mở `SecurityConfig` khi route hoặc role liên quan thay đổi.
-

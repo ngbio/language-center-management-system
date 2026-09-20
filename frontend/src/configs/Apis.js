@@ -5,6 +5,21 @@ const BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8081/api";
 
 export const endpoints = {
+  learning: (student = false) => student ? "/students/me/learning" : "/public/learning",
+  "learning-course": (id, student = false) => `${student ? "/students/me" : "/public"}/learning/courses/${id}`,
+  "learning-cards": (id, student = false) => `${student ? "/students/me" : "/public"}/learning/contents/${id}/flashcards`,
+  "learning-quizzes": (id, student = false) => `${student ? "/students/me" : "/public"}/learning/contents/${id}/quizzes`,
+  "learning-review": (id) => `/students/me/learning/flashcards/${id}/review`,
+  "learning-attempts": (id) => `/students/me/learning/quizzes/${id}/attempts`,
+  "learning-submit": (id) => `/students/me/learning/attempts/${id}/submit`,
+  "learning-evaluate": (id) => `/public/learning/quizzes/${id}/evaluate`,
+  "admin-learning-cards": (id) => `/admin/learning/contents/${id}/flashcards`,
+  "admin-learning-card": (id) => `/admin/learning/flashcards/${id}`,
+  "admin-learning-order": (id) => `/admin/learning/contents/${id}/flashcards/order`,
+  "admin-learning-quizzes": (id) => `/admin/learning/contents/${id}/quizzes`,
+  "admin-learning-quiz": (id) => `/admin/learning/quizzes/${id}`,
+  "admin-learning-questions": (id) => `/admin/learning/quizzes/${id}/questions`,
+  "admin-learning-question": (id) => `/admin/learning/questions/${id}`,
   login: "/auth/login",
   "admin-login": "/admin/auth/login",
   "staff-login": "/staff/auth/login",
