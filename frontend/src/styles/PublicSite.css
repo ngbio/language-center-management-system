@@ -84,6 +84,7 @@
 .public-site.dark .lesson-content :is(blockquote,code){background:#202a34}
 
 /* Mobile navigation: the public links become a touch-friendly drawer. */
+.public-header{padding-top:var(--safe-area-top)}
 .public-site{overflow-x:clip}
 .public-menu-button{
   width:42px;

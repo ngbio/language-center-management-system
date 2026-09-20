@@ -4,6 +4,12 @@ Nền tảng quản lý trung tâm ngoại ngữ tích hợp website giới thi�
 
 Hệ thống quản lý xuyên suốt vòng đời đào tạo: từ công bố khóa học, mở lớp, đăng ký, thanh toán, xếp lịch, tổ chức buổi học, điểm danh cho đến hoàn tiền và xuất hóa đơn.
 
+## Tải ứng dụng Android
+
+[Tải Lingua Center v1.0.0 cho Android](./frontend/public/downloads/lingua-center-1.0.0.apk?raw=1)
+
+APK hiện tại là bản debug, phù hợp để cài đặt kiểm thử và sử dụng nội bộ. Sau khi frontend được triển khai lên Cloudflare Pages, file cũng được cung cấp tại đường dẫn `/downloads/lingua-center-1.0.0.apk` trên domain của website.
+
 ## Tổng quan
 
 Language Center Management System giải quyết các bài toán vận hành chính của một trung tâm ngoại ngữ trong cùng một hệ thống:

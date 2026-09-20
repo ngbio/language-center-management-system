@@ -34,7 +34,11 @@ export default function HomeScreen() {
             <span className="eyebrow-pill">LỘ TRÌNH HỌC THỰC TẾ</span>
             <h1>Chạm gần hơn đến thế giới bằng một ngôn ngữ mới.</h1>
             <p>Khóa học có cấu trúc rõ ràng, nội dung theo từng bài và lịch học linh hoạt dành cho mọi trình độ.</p>
-            <div className="hero-actions"><Link className="primary-cta" to="/khoa-hoc">Khám phá khóa học</Link><Link className="text-cta" to="/ngon-ngu">Xem các ngôn ngữ <span>→</span></Link></div>
+            <div className="hero-actions">
+              <Link className="primary-cta" to="/khoa-hoc">Khám phá khóa học</Link>
+              <a className="text-cta" href="/downloads/lingua-center-1.0.0.apk" download>Tải ứng dụng Android <span>↓</span></a>
+              <Link className="text-cta" to="/ngon-ngu">Xem các ngôn ngữ <span>→</span></Link>
+            </div>
             <div className="hero-stats"><div><strong>25+</strong><span>Bài học chọn lọc</span></div><div><strong>{languages.length || "—"}</strong><span>Ngôn ngữ</span></div><div><strong>4.9/5</strong><span>Đánh giá học viên</span></div></div>
           </div>
           <div className="hero-visual" aria-label="Minh họa học ngoại ngữ">

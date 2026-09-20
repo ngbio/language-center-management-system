@@ -1,0 +1,27 @@
+{
+  "appId": "com.linguacenter.app",
+  "appName": "Lingua Center",
+  "webDir": "dist",
+  "backgroundColor": "#fff8ed",
+  "android": {
+    "allowMixedContent": true,
+    "backgroundColor": "#fff8ed"
+  },
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true,
+      "launchShowDuration": 1200,
+      "backgroundColor": "#fff8ed",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#fff8ed"
+    }
+  }
+}
