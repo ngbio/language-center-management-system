@@ -7,6 +7,7 @@
 - Schema tạo database mới: `database_language_center_mysql.sql`.
 - Migration password reset cho database cũ: `migrate_add_password_reset_mysql.sql`.
 - Seed chính/phụ: các file `seed_*.sql` ở root.
+- Migration tự học cho DB cũ: `migrate_add_learning_review_mysql.sql` (chạy một lần, chọn đúng database).
 - JPA entity: `backend/language-center-management/src/main/java/com/ntt/language_center_management/entity/`.
 - Hibernate không tự sửa schema (`spring.jpa.hibernate.ddl-auto=none`).
 
@@ -17,6 +18,7 @@
 - Vận hành lớp: `room`, `courseclass`, `classschedule`, `lesson`.
 - Đăng ký/tài chính: `enrollment`, `payment`, `refund`.
 - Học tập: `attendance`, `notification`.
+- Tự học: `flashcard`, `flashcard_review`, `quiz`, `quiz_question`, `quiz_option`, `quiz_attempt`, `quiz_attempt_answer`.
 - Audit: `system_logs`.
 
 ## Quan hệ chính
@@ -55,4 +57,6 @@ user → notification/password_reset_token/system_logs
 - Refund tham chiếu cả enrollment, payment và user xử lý.
 - Attendance gắn với lesson và enrollment, không gắn trực tiếp student.
 - Password reset token bị vô hiệu hóa theo vòng đời riêng; không dùng lại token cũ.
-
+- Flashcard và quiz thuộc `course_content`; lịch ôn/lượt làm thuộc `student`, dùng được cho khóa miễn phí không có lớp/enrollment.
+- Không có bảng tiến độ. Khóa có học phí kiểm tra enrollment CONFIRMED + PAID khi truy cập.
+- Foreign key giữ lịch sử quiz; nội dung có flashcard/quiz không được xóa cứng. Gỡ xuất bản/lưu trữ để ẩn.
