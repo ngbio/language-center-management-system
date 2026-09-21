@@ -135,6 +135,32 @@ public interface EnrollmentRepository
       @Param("targetClassId") Integer targetClassId,
       @Param("statuses") Collection<EnrollmentStatus> statuses);
 
+  @Query(
+      """
+      select count(e) > 0 from Enrollment e
+      join e.courseClassId currentClass
+      join currentClass.classscheduleList currentSchedule
+      where e.studentId.id = :studentId
+        and e.id <> :excludedEnrollmentId
+        and e.enrollmentStatus in :statuses
+        and currentClass.id <> :targetClassId
+        and exists (
+          select targetSchedule.id from Classschedule targetSchedule
+          join targetSchedule.courseClassId targetClass
+          where targetClass.id = :targetClassId
+            and currentClass.startDate <= targetClass.endDate
+            and currentClass.endDate >= targetClass.startDate
+            and currentSchedule.dayOfWeek = targetSchedule.dayOfWeek
+            and currentSchedule.startTime < targetSchedule.endTime
+            and currentSchedule.endTime > targetSchedule.startTime
+        )
+      """)
+  boolean existsScheduleConflictExcludingEnrollment(
+      @Param("studentId") Integer studentId,
+      @Param("excludedEnrollmentId") Integer excludedEnrollmentId,
+      @Param("targetClassId") Integer targetClassId,
+      @Param("statuses") Collection<EnrollmentStatus> statuses);
+
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select e from Enrollment e where e.id = :id")
   Optional<Enrollment> lockById(@Param("id") Integer id);

@@ -36,27 +36,28 @@ public class CourseClassMapper {
     var level = course.getLevelId();
     var teacher = value.getTeacherId();
 
-    return new CourseClassResponse(
-        value.getId(),
-        value.getClassCode(),
-        value.getClassName(),
-        value.getStartDate(),
-        value.getEndDate(),
-        value.getMaxStudents(),
-        enrolledStudents,
-        Math.max(value.getMaxStudents() - enrolledStudents, 0),
-        value.getAppliedTuitionFee(),
-        value.getStatus(),
-        course.getId(),
-        course.getCourseCode(),
-        course.getCourseName(),
-        level.getId(),
-        level.getLevelCode(),
-        teacher == null ? null : teacher.getId(),
-        teacher == null ? null : teacher.getTeacherCode(),
-        teacher == null ? null : teacher.getUserId().getFullName(),
-        value.getCreatedAt(),
-        value.getUpdatedAt(),
-        schedules == null ? List.of() : List.copyOf(schedules));
+    return CourseClassResponse.builder()
+        .id(value.getId())
+        .classCode(value.getClassCode())
+        .className(value.getClassName())
+        .startDate(value.getStartDate())
+        .endDate(value.getEndDate())
+        .maxStudents(value.getMaxStudents())
+        .enrolledStudents(enrolledStudents)
+        .availableSeats(Math.max(value.getMaxStudents() - enrolledStudents, 0))
+        .appliedTuitionFee(value.getAppliedTuitionFee())
+        .status(value.getStatus())
+        .courseId(course.getId())
+        .courseCode(course.getCourseCode())
+        .courseName(course.getCourseName())
+        .levelId(level.getId())
+        .levelCode(level.getLevelCode())
+        .teacherId(teacher == null ? null : teacher.getId())
+        .teacherCode(teacher == null ? null : teacher.getTeacherCode())
+        .teacherName(teacher == null ? null : teacher.getUserId().getFullName())
+        .createdAt(value.getCreatedAt())
+        .updatedAt(value.getUpdatedAt())
+        .schedules(schedules == null ? List.of() : List.copyOf(schedules))
+        .build();
   }
 }

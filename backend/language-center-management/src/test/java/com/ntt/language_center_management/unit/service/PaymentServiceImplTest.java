@@ -33,7 +33,8 @@ import com.ntt.language_center_management.security.CurrentUserResolver;
 import com.ntt.language_center_management.transaction.TransactionExecutor;
 import com.ntt.language_center_management.service.EnrollmentExpirationService;
 import com.ntt.language_center_management.service.impl.PaymentServiceImpl;
-import com.ntt.language_center_management.event.PaymentSucceededMailEvent;
+import com.ntt.language_center_management.payment.*;
+import com.ntt.language_center_management.event.PaymentSucceededEvent;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
@@ -43,6 +44,7 @@ import java.util.Optional;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.junit.jupiter.api.BeforeEach;
+import com.ntt.language_center_management.service.EnrollmentLifecycle;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -65,9 +67,19 @@ class PaymentServiceImplTest {
   private TransactionExecutor transactionExecutor;
   private ObjectMapper objectMapper;
   private PaymentServiceImpl service;
+  private MomoPaymentGateway momo;
+  private ZaloPayPaymentGateway zalo;
   private Student student;
   private Enrollment enrollment;
   private ApplicationEventPublisher eventPublisher;
+
+  private PaymentServiceImpl newService(ObjectMapper mapper, RestClient client) {
+    momo = new MomoPaymentGateway(mapper, client);
+    zalo = new ZaloPayPaymentGateway(mapper, client);
+    return new PaymentServiceImpl(payments, enrollments, currentUserResolver, expiration,
+        transactionExecutor, eventPublisher,
+        new PaymentGatewayRegistry(java.util.List.of(momo, zalo)), new EnrollmentLifecycle(java.time.Clock.systemUTC()));
+  }
 
   @BeforeEach
   void setUp() {
@@ -80,9 +92,7 @@ class PaymentServiceImplTest {
         mock(UserRepository.class), students, mock(TeacherRepository.class));
     transactionExecutor = new TransactionExecutor();
     eventPublisher = mock(ApplicationEventPublisher.class);
-    service = new PaymentServiceImpl(
-        payments, enrollments, currentUserResolver, objectMapper, expiration, transactionExecutor,
-        eventPublisher);
+    service = newService(objectMapper, RestClient.builder().build());
     student = new Student(7);
     User studentUser = new User(9);
     studentUser.setEmail("student@example.com");
@@ -132,7 +142,7 @@ class PaymentServiceImplTest {
 
   @Test
   void shouldRejectMissingGatewayConfigurationWithoutLeakingSecret() {
-    ReflectionTestUtils.setField(service, "momoPartnerCode", "CHANGE_ME_PARTNER");
+    ReflectionTestUtils.setField(momo, "momoPartnerCode", "CHANGE_ME_PARTNER");
 
     assertThatThrownBy(this::createMomo)
         .isInstanceOf(IllegalArgumentException.class)
@@ -144,7 +154,7 @@ class PaymentServiceImplTest {
   @Test
   void shouldRejectLocalhostCallbackUrl() {
     configureMomo();
-    ReflectionTestUtils.setField(service, "momoIpnUrl", "http://localhost:8080/api/payments/momo/ipn");
+    ReflectionTestUtils.setField(momo, "momoIpnUrl", "http://localhost:8080/api/payments/momo/ipn");
 
     assertThatThrownBy(this::createMomo)
         .isInstanceOf(IllegalArgumentException.class)
@@ -181,7 +191,7 @@ class PaymentServiceImplTest {
     assertThat(enrollment.getPaymentStatus()).isEqualTo(EnrollmentPaymentStatus.PAID);
     verify(payments).save(payment);
     verify(enrollments).save(enrollment);
-    verify(eventPublisher).publishEvent(any(PaymentSucceededMailEvent.class));
+    verify(eventPublisher).publishEvent(any(PaymentSucceededEvent.class));
   }
 
   @Test
@@ -226,12 +236,12 @@ class PaymentServiceImplTest {
 
     verify(payments, never()).save(any());
     verify(enrollments, never()).save(any());
-    verify(eventPublisher, never()).publishEvent(any(PaymentSucceededMailEvent.class));
+    verify(eventPublisher, never()).publishEvent(any(PaymentSucceededEvent.class));
   }
 
   @Test
   void shouldRejectInvalidZaloPayMacWithoutReadingCallbackData() throws Exception {
-    ReflectionTestUtils.setField(service, "zaloPayKey2", "ZALO-KEY-2");
+    ReflectionTestUtils.setField(zalo, "zaloPayKey2", "ZALO-KEY-2");
 
     Map<String, Object> result = service.handleZaloPayCallback(
         Map.of("data", "{}", "mac", "invalid"));
@@ -245,7 +255,7 @@ class PaymentServiceImplTest {
   @Test
   @SuppressWarnings("unchecked")
   void shouldCompleteZaloPayPaymentWhenCallbackMacIsValid() throws Exception {
-    ReflectionTestUtils.setField(service, "zaloPayKey2", "ZALO-KEY-2");
+    ReflectionTestUtils.setField(zalo, "zaloPayKey2", "ZALO-KEY-2");
     String data = "{\"app_trans_id\":\"260911_LC15\",\"amount\":3200000,\"zp_trans_id\":7788}";
     Map<String, Object> callback = Map.of(
         "app_trans_id", "260911_LC15", "amount", 3_200_000, "zp_trans_id", 7788);
@@ -269,7 +279,7 @@ class PaymentServiceImplTest {
   @Test
   @SuppressWarnings("unchecked")
   void shouldReturnRetryableZaloPayResponseWhenCallbackDataCannotBeProcessed() throws Exception {
-    ReflectionTestUtils.setField(service, "zaloPayKey2", "ZALO-KEY-2");
+    ReflectionTestUtils.setField(zalo, "zaloPayKey2", "ZALO-KEY-2");
     String data = "{}";
     when(objectMapper.readValue(org.mockito.ArgumentMatchers.eq(data), any(TypeReference.class)))
         .thenThrow(new IllegalArgumentException("invalid callback"));
@@ -301,8 +311,7 @@ class PaymentServiceImplTest {
     ObjectMapper json = new ObjectMapper();
     RestClient.Builder builder = RestClient.builder();
     MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-    service = new PaymentServiceImpl(payments, enrollments, currentUserResolver, json, expiration,
-        transactionExecutor, builder.build());
+    service = newService(json, builder.build());
     configureMomo();
     when(payments.save(any(Payment.class))).thenAnswer(invocation -> {
       Payment value = invocation.getArgument(0);
@@ -343,8 +352,7 @@ class PaymentServiceImplTest {
     ObjectMapper json = new ObjectMapper();
     RestClient.Builder builder = RestClient.builder();
     MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-    service = new PaymentServiceImpl(payments, enrollments, currentUserResolver, json, expiration,
-        transactionExecutor, builder.build());
+    service = newService(json, builder.build());
     configureZaloPay();
     when(payments.save(any(Payment.class))).thenAnswer(invocation -> {
       Payment value = invocation.getArgument(0);
@@ -377,8 +385,7 @@ class PaymentServiceImplTest {
     ObjectMapper json = new ObjectMapper();
     RestClient.Builder builder = RestClient.builder();
     MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-    service = new PaymentServiceImpl(payments, enrollments, currentUserResolver, json, expiration,
-        transactionExecutor, builder.build());
+    service = newService(json, builder.build());
     configureMomo();
     server.expect(requestTo("https://test-payment.momo.vn/v2/gateway/api/create"))
         .andRespond(withStatus(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON)
@@ -395,8 +402,7 @@ class PaymentServiceImplTest {
   void shouldWrapGatewayNetworkFailureAndNotCreatePendingPayment() {
     RestClient.Builder builder = RestClient.builder();
     MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-    service = new PaymentServiceImpl(payments, enrollments, currentUserResolver, new ObjectMapper(),
-        expiration, transactionExecutor, builder.build());
+    service = newService(new ObjectMapper(), builder.build());
     configureMomo();
     server.expect(requestTo("https://test-payment.momo.vn/v2/gateway/api/create"))
         .andRespond(request -> { throw new java.io.IOException("network unavailable"); });
@@ -451,25 +457,25 @@ class PaymentServiceImplTest {
 
   private void configureMomo() {
     configureMomoCallback();
-    ReflectionTestUtils.setField(service, "momoPartnerCode", "PARTNER");
-    ReflectionTestUtils.setField(service, "momoEndpoint", "https://test-payment.momo.vn/v2/gateway/api/create");
-    ReflectionTestUtils.setField(service, "momoRedirectUrl", "https://frontend.example.com/payment-result");
-    ReflectionTestUtils.setField(service, "momoIpnUrl", "https://backend.example.com/api/payments/momo/ipn");
+    ReflectionTestUtils.setField(momo, "momoPartnerCode", "PARTNER");
+    ReflectionTestUtils.setField(momo, "momoEndpoint", "https://test-payment.momo.vn/v2/gateway/api/create");
+    ReflectionTestUtils.setField(momo, "momoRedirectUrl", "https://frontend.example.com/payment-result");
+    ReflectionTestUtils.setField(momo, "momoIpnUrl", "https://backend.example.com/api/payments/momo/ipn");
   }
 
   private void configureMomoCallback() {
-    ReflectionTestUtils.setField(service, "momoAccessKey", "ACCESS");
-    ReflectionTestUtils.setField(service, "momoSecretKey", "SECRET");
+    ReflectionTestUtils.setField(momo, "momoAccessKey", "ACCESS");
+    ReflectionTestUtils.setField(momo, "momoSecretKey", "SECRET");
   }
 
   private void configureZaloPay() {
-    ReflectionTestUtils.setField(service, "zaloPayEndpoint",
+    ReflectionTestUtils.setField(zalo, "zaloPayEndpoint",
         "https://sandbox.zalopay.vn/v001/tpe/createorder");
-    ReflectionTestUtils.setField(service, "zaloPayAppId", "2553");
-    ReflectionTestUtils.setField(service, "zaloPayKey1", "ZALO-KEY-1");
-    ReflectionTestUtils.setField(service, "zaloPayCallbackUrl",
+    ReflectionTestUtils.setField(zalo, "zaloPayAppId", "2553");
+    ReflectionTestUtils.setField(zalo, "zaloPayKey1", "ZALO-KEY-1");
+    ReflectionTestUtils.setField(zalo, "zaloPayCallbackUrl",
         "https://backend.example.com/api/payments/zalopay/callback");
-    ReflectionTestUtils.setField(service, "zaloPayRedirectUrl",
+    ReflectionTestUtils.setField(zalo, "zaloPayRedirectUrl",
         "https://frontend.example.com/payment-result");
   }
 

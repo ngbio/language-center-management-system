@@ -49,6 +49,9 @@ import com.ntt.language_center_management.repository.UserRepository;
 import com.ntt.language_center_management.repository.TeacherRepository;
 import com.ntt.language_center_management.security.CurrentUserResolver;
 import com.ntt.language_center_management.service.impl.EnrollmentServiceImpl;
+import com.ntt.language_center_management.policy.*;
+import com.ntt.language_center_management.factory.EnrollmentFactory;
+import java.time.Clock;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.Duration;
@@ -58,6 +61,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
+import com.ntt.language_center_management.service.EnrollmentLifecycle;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
@@ -92,7 +96,11 @@ class EnrollmentServiceImplTest {
     schedules = mock(ClassScheduleRepository.class);
     currentUserResolver = new CurrentUserResolver(users, students, mock(TeacherRepository.class));
     service = new EnrollmentServiceImpl(enrollments, classes, students, users, mapper,
-        courseMapper, classMapper, scheduleMapper, schedules, currentUserResolver);
+        courseMapper, classMapper, scheduleMapper, schedules, currentUserResolver, new EnrollmentAccessPolicy(), new EnrollmentEligibilityPolicy(enrollments),
+        new EnrollmentCancellationPolicy(Clock.systemUTC()), new EnrollmentTransferPolicy(Clock.systemUTC()),
+        new EnrollmentFactory(Clock.systemUTC()), new EnrollmentLifecycle(java.time.Clock.systemUTC()),
+        new com.ntt.language_center_management.validation.EnrollmentValidationPipelines(
+            new EnrollmentEligibilityPolicy(enrollments), new EnrollmentTransferPolicy(Clock.systemUTC())));
     response = mock(EnrollmentResponse.class);
     when(mapper.toResponse(any(Enrollment.class))).thenReturn(response);
     when(enrollments.saveAndFlush(any(Enrollment.class)))
@@ -194,12 +202,12 @@ class EnrollmentServiceImplTest {
     mockCurrentStudent(student);
     when(classes.lockById(11)).thenReturn(Optional.of(openClass(11, 20, "100000", 30)));
     when(enrollments.countByCourseClassId_IdAndEnrollmentStatusIn(anyInt(), anySet())).thenReturn(0L);
-    when(enrollments.existsByStudentId_IdAndCourseClassId_Id(7, 11)).thenReturn(true);
+    when(enrollments.existsByStudentId_IdAndCourseClassId_IdAndEnrollmentStatusIn(7, 11, EnrollmentPolicy.CAPACITY_RESERVED_STATUSES)).thenReturn(true);
 
     assertThatThrownBy(() -> service.enrollMe(new CreateEnrollmentRequest(11, null), principal()))
         .isInstanceOf(DuplicateResourceException.class);
 
-    when(enrollments.existsByStudentId_IdAndCourseClassId_Id(7, 11)).thenReturn(false);
+    when(enrollments.existsByStudentId_IdAndCourseClassId_IdAndEnrollmentStatusIn(7, 11, EnrollmentPolicy.CAPACITY_RESERVED_STATUSES)).thenReturn(false);
     when(enrollments.existsScheduleConflict(anyInt(), anyInt(), anySet())).thenReturn(true);
     assertThatThrownBy(() -> service.enrollMe(new CreateEnrollmentRequest(11, null), principal()))
         .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("trùng thời gian");
@@ -289,6 +297,8 @@ class EnrollmentServiceImplTest {
     assertThat(enrollment.getAmountDue()).isEqualByComparingTo("120000");
     assertThat(source.getStatus()).isEqualTo(ClassStatus.OPEN);
     assertThat(target.getStatus()).isEqualTo(ClassStatus.FULL);
+    verify(enrollments).existsScheduleConflictExcludingEnrollment(eq(7), eq(15), eq(10), anySet());
+    verify(enrollments, never()).existsScheduleConflict(anyInt(), anyInt(), anySet());
   }
 
   @Test
@@ -403,9 +413,52 @@ class EnrollmentServiceImplTest {
 
     target.setCourseId(source.getCourseId());
     when(enrollments.countByCourseClassId_IdAndEnrollmentStatusIn(eq(20), anySet())).thenReturn(0L);
-    when(enrollments.existsScheduleConflict(eq(7), eq(20), anySet())).thenReturn(true);
+    when(enrollments.existsScheduleConflictExcludingEnrollment(eq(7), eq(15), eq(20), anySet())).thenReturn(true);
     assertThatThrownBy(() -> service.transfer(15, new TransferEnrollmentRequest(20)))
         .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("trùng thời gian");
+  }
+
+  @Test
+  void shouldConfirmPendingEnrollmentInOpenOrFullClass() {
+    for (ClassStatus status : List.of(ClassStatus.OPEN, ClassStatus.FULL)) {
+      org.mockito.Mockito.clearInvocations(enrollments);
+      Courseclass courseClass = openClass(11, 20, "3200000", 30);
+      courseClass.setStatus(status);
+      Enrollment enrollment = enrollment(15, activeStudent(7, 70, "student@example.com"),
+          courseClass, EnrollmentStatus.PENDING, EnrollmentPaymentStatus.PENDING);
+      when(enrollments.lockById(15)).thenReturn(Optional.of(enrollment));
+      when(classes.lockById(11)).thenReturn(Optional.of(courseClass));
+
+      assertThat(service.changeStatus(15, EnrollmentStatus.CONFIRMED)).isSameAs(response);
+      assertThat(enrollment.getEnrollmentStatus()).isEqualTo(EnrollmentStatus.CONFIRMED);
+      assertThat(enrollment.getConfirmedAt()).isNotNull();
+      verify(enrollments).save(enrollment);
+    }
+  }
+
+  @Test
+  void shouldNotConfirmPendingEnrollmentAfterClassStarts() {
+    Courseclass courseClass = openClass(11, 20, "3200000", 30);
+    courseClass.setStatus(ClassStatus.IN_PROGRESS);
+    Enrollment enrollment = enrollment(15, activeStudent(7, 70, "student@example.com"),
+        courseClass, EnrollmentStatus.PENDING, EnrollmentPaymentStatus.PENDING);
+    when(enrollments.lockById(15)).thenReturn(Optional.of(enrollment));
+    when(classes.lockById(11)).thenReturn(Optional.of(courseClass));
+
+    assertThatThrownBy(() -> service.changeStatus(15, EnrollmentStatus.CONFIRMED))
+        .hasMessage("Lớp học không còn nhận xử lý đăng ký");
+    assertThat(enrollment.getEnrollmentStatus()).isEqualTo(EnrollmentStatus.PENDING);
+    verify(enrollments, never()).save(any());
+  }
+
+  @Test
+  void repeatingTheCurrentStatusDoesNotSaveOrLockTheClass() {
+    Enrollment enrollment = enrollment(15, activeStudent(7, 70, "student@example.com"),
+        openClass(11, 20, "3200000", 30), EnrollmentStatus.CONFIRMED, EnrollmentPaymentStatus.PENDING);
+    when(enrollments.lockById(15)).thenReturn(Optional.of(enrollment));
+    assertThat(service.changeStatus(15, EnrollmentStatus.CONFIRMED)).isSameAs(response);
+    verify(enrollments, never()).save(any());
+    verify(classes, never()).lockById(any());
   }
 
   private void mockCurrentStudent(Student student) {

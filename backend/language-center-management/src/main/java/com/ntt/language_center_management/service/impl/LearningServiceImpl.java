@@ -27,6 +27,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class LearningServiceImpl implements LearningService {
+  private final com.ntt.language_center_management.learning.ReviewSchedulingStrategy reviewScheduling;
+  private final com.ntt.language_center_management.learning.QuestionGradingStrategy questionGrading;
   private final CourseRepository courses;
   private final CourseSectionRepository sections;
   private final CourseContentRepository contents;
@@ -122,10 +124,7 @@ public class LearningServiceImpl implements LearningService {
     var card = cards.findById(id).orElseThrow(this::missing);
     access(card.getContent(), student);
     if (!"ACTIVE".equals(card.getStatus())) throw missing();
-    int days = switch (request.masteryLevel()) {
-      case "AGAIN" -> 1; case "HARD" -> 3; case "REMEMBERED" -> 7;
-      default -> throw new IllegalArgumentException("Mức độ nhớ không hợp lệ");
-    };
+    int days = reviewScheduling.intervalDays(request.masteryLevel());
     var review = reviews.findByStudent_IdAndFlashcard_Id(student.getId(), id).orElseGet(FlashcardReview::new);
     review.setStudent(student); review.setFlashcard(card); review.setMasteryLevel(request.masteryLevel());
     review.setRepetitionCount(review.getRepetitionCount() + 1); review.setIntervalDays(days);
@@ -163,15 +162,16 @@ public class LearningServiceImpl implements LearningService {
     List<QuizAttemptAnswer> saved = new ArrayList<>();
     for (var question : items) {
       var choices = options.findByQuestion_IdOrderByDisplayOrderAsc(question.getId());
-      var correct = choices.stream().filter(QuizOption::isCorrect).toList();
-      if (correct.size() != 1) throw new IllegalArgumentException("Quiz có đáp án không hợp lệ");
       Long selectedId = selected.get(question.getId());
-      var choice = selectedId == null ? null : choices.stream().filter(o -> o.getId().equals(selectedId)).findFirst()
-          .orElseThrow(() -> new IllegalArgumentException("Lựa chọn không thuộc câu hỏi"));
-      boolean isCorrect = choice != null && choice.isCorrect();
-      BigDecimal points = isCorrect ? question.getPoints() : BigDecimal.ZERO;
+      var grade = questionGrading.grade(question.getPoints(), choices.stream()
+          .map(option -> new com.ntt.language_center_management.learning.QuestionGradingStrategy.Option(
+              option.getId(), option.isCorrect())).toList(), selectedId);
+      var choice = selectedId == null ? null : choices.stream()
+          .filter(option -> option.getId().equals(selectedId)).findFirst().orElseThrow();
+      boolean isCorrect = grade.correct();
+      BigDecimal points = grade.points();
       total = total.add(question.getPoints()); earned = earned.add(points);
-      results.add(new LearningResponse.Answer(question.getId(), selectedId, correct.getFirst().getId(),
+      results.add(new LearningResponse.Answer(question.getId(), selectedId, grade.correctOptionId(),
           isCorrect, points, question.getExplanation()));
       if (attempt != null) {
         var answer = new QuizAttemptAnswer();

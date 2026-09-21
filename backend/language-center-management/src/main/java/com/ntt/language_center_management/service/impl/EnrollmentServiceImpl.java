@@ -1,54 +1,59 @@
 package com.ntt.language_center_management.service.impl;
 
-import com.ntt.language_center_management.enums.ClassStatus;
-import com.ntt.language_center_management.enums.EnrollmentPaymentStatus;
-import com.ntt.language_center_management.enums.EnrollmentStatus;
-import com.ntt.language_center_management.enums.AccountStatus;
-
 import com.ntt.language_center_management.dto.request.CancelEnrollmentRequest;
 import com.ntt.language_center_management.dto.request.CreateEnrollmentRequest;
-import com.ntt.language_center_management.dto.request.TransferEnrollmentRequest;
 import com.ntt.language_center_management.dto.request.StaffCreateEnrollmentRequest;
+import com.ntt.language_center_management.dto.request.TransferEnrollmentRequest;
+import com.ntt.language_center_management.dto.response.ClassScheduleResponse;
+import com.ntt.language_center_management.dto.response.CourseClassResponse;
+import com.ntt.language_center_management.dto.response.CourseResponse;
 import com.ntt.language_center_management.dto.response.EnrollmentResponse;
 import com.ntt.language_center_management.dto.response.EnrollmentSummaryResponse;
-import com.ntt.language_center_management.dto.response.CourseResponse;
-import com.ntt.language_center_management.dto.response.CourseClassResponse;
-import com.ntt.language_center_management.dto.response.ClassScheduleResponse;
 import com.ntt.language_center_management.dto.response.PageResponse;
-import com.ntt.language_center_management.entity.Courseclass;
 import com.ntt.language_center_management.entity.Classschedule;
+import com.ntt.language_center_management.entity.Courseclass;
 import com.ntt.language_center_management.entity.Enrollment;
 import com.ntt.language_center_management.entity.Student;
 import com.ntt.language_center_management.entity.User;
+import com.ntt.language_center_management.enums.AccountStatus;
+import com.ntt.language_center_management.enums.ClassStatus;
+import com.ntt.language_center_management.enums.EnrollmentPaymentStatus;
+import com.ntt.language_center_management.enums.EnrollmentStatus;
 import com.ntt.language_center_management.exception.DuplicateResourceException;
 import com.ntt.language_center_management.exception.ForbiddenException;
 import com.ntt.language_center_management.exception.ResourceNotFoundException;
-import com.ntt.language_center_management.mapper.EnrollmentMapper;
-import com.ntt.language_center_management.mapper.CourseMapper;
-import com.ntt.language_center_management.mapper.CourseClassMapper;
+import com.ntt.language_center_management.factory.EnrollmentFactory;
 import com.ntt.language_center_management.mapper.ClassScheduleMapper;
+import com.ntt.language_center_management.mapper.CourseClassMapper;
+import com.ntt.language_center_management.mapper.CourseMapper;
+import com.ntt.language_center_management.mapper.EnrollmentMapper;
+import com.ntt.language_center_management.policy.EnrollmentAccessPolicy;
+import com.ntt.language_center_management.policy.EnrollmentCancellationPolicy;
+import com.ntt.language_center_management.policy.EnrollmentEligibilityPolicy;
+import com.ntt.language_center_management.policy.EnrollmentTransferPolicy;
 import com.ntt.language_center_management.repository.ClassScheduleRepository;
 import com.ntt.language_center_management.repository.CourseClassRepository;
 import com.ntt.language_center_management.repository.EnrollmentRepository;
 import com.ntt.language_center_management.repository.StudentRepository;
 import com.ntt.language_center_management.repository.UserRepository;
-import com.ntt.language_center_management.service.EnrollmentService;
 import com.ntt.language_center_management.security.CurrentUserResolver;
+import com.ntt.language_center_management.service.EnrollmentLifecycle;
+import com.ntt.language_center_management.service.EnrollmentService;
+import com.ntt.language_center_management.validation.EnrollmentValidationContext;
+import com.ntt.language_center_management.validation.EnrollmentValidationPipelines;
 import java.security.Principal;
-import java.util.Date;
 import java.util.List;
-import java.util.Set;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-
 import static com.ntt.language_center_management.policy.EnrollmentPolicy.CAPACITY_RESERVED_STATUSES;
 
 @Service
@@ -68,6 +73,13 @@ public class EnrollmentServiceImpl implements EnrollmentService {
   private final ClassScheduleMapper classScheduleMapper;
   private final ClassScheduleRepository classScheduleRepository;
   private final CurrentUserResolver currentUserResolver;
+  private final EnrollmentAccessPolicy accessPolicy;
+  private final EnrollmentEligibilityPolicy eligibilityPolicy;
+  private final EnrollmentCancellationPolicy cancellationPolicy;
+  private final EnrollmentTransferPolicy transferPolicy;
+  private final EnrollmentFactory enrollmentFactory;
+  private final EnrollmentLifecycle lifecycle;
+  private final EnrollmentValidationPipelines pipelines;
 
   public EnrollmentServiceImpl(
       EnrollmentRepository enrollmentRepository,
@@ -79,7 +91,12 @@ public class EnrollmentServiceImpl implements EnrollmentService {
       CourseClassMapper courseClassMapper,
       ClassScheduleMapper classScheduleMapper,
       ClassScheduleRepository classScheduleRepository,
-      CurrentUserResolver currentUserResolver) {
+      CurrentUserResolver currentUserResolver,
+      EnrollmentAccessPolicy accessPolicy,
+      EnrollmentEligibilityPolicy eligibilityPolicy,
+      EnrollmentCancellationPolicy cancellationPolicy,
+      EnrollmentTransferPolicy transferPolicy,
+      EnrollmentFactory enrollmentFactory, EnrollmentLifecycle lifecycle, EnrollmentValidationPipelines pipelines) {
     this.enrollmentRepository = enrollmentRepository;
     this.courseClassRepository = courseClassRepository;
     this.studentRepository = studentRepository;
@@ -90,6 +107,14 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     this.classScheduleMapper = classScheduleMapper;
     this.classScheduleRepository = classScheduleRepository;
     this.currentUserResolver = currentUserResolver;
+    this.accessPolicy = accessPolicy;
+    this.eligibilityPolicy = eligibilityPolicy;
+    this.cancellationPolicy = cancellationPolicy;
+    this.transferPolicy = transferPolicy;
+    this.enrollmentFactory = enrollmentFactory;
+    this.lifecycle = lifecycle;
+    this.pipelines = pipelines;
+
   }
 
   @Override
@@ -208,17 +233,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
       Integer classId, Principal principal) {
     Courseclass courseClass = findClass(classId);
     User user = findCurrentUser(principal);
-    String role = user.getRoleId().getRoleCode();
-
-    boolean canView = Set.of("ADMIN", "CONSULTANT").contains(role);
-    if ("TEACHER".equals(role)
-        && courseClass.getTeacherId() != null
-        && courseClass.getTeacherId().getUserId().getId().equals(user.getId())) {
-      canView = true;
-    }
-    if (!canView) {
-      throw new ForbiddenException("Bạn không được xem danh sách học viên của lớp này");
-    }
+    accessPolicy.requireClassRosterAccess(courseClass, user);
 
     return enrollmentRepository.findByCourseClassId_IdOrderByEnrollmentDateDesc(classId).stream()
         .map(enrollmentMapper::toSummaryResponse)
@@ -231,12 +246,10 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     Enrollment enrollment = lockEnrollment(enrollmentId);
     Student currentStudent = findCurrentStudent(principal);
 
-    if (!enrollment.getStudentId().getId().equals(currentStudent.getId())) {
-      throw new ForbiddenException("Bạn không được hủy đăng ký của học viên khác");
-    }
+    accessPolicy.requireOwner(enrollment, currentStudent);
 
-    validateCancellationPolicy(enrollment);
-    cancel(enrollment, request.cancellationReason());
+    cancellationPolicy.validate(enrollment);
+    lifecycle.cancel(enrollment, request.cancellationReason());
     reopenClassIfNeeded(lockClass(enrollment.getCourseClassId().getId()));
     return enrollmentMapper.toResponse(enrollmentRepository.save(enrollment));
   }
@@ -249,27 +262,15 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     if (currentStatus == requestedStatus) {
       return enrollmentMapper.toResponse(enrollment);
     }
-    if (currentStatus == EnrollmentStatus.CANCELLED) {
-      throw new IllegalArgumentException("Không thể thay đổi đăng ký đã hủy");
-    }
-    if (currentStatus == EnrollmentStatus.CONFIRMED
-        && requestedStatus == EnrollmentStatus.PENDING) {
-      throw new IllegalArgumentException("Không thể chuyển đăng ký đã xác nhận về chờ xử lý");
-    }
+    lifecycle.validateTransition(enrollment, requestedStatus);
 
     Courseclass courseClass = lockClass(enrollment.getCourseClassId().getId());
     if (requestedStatus == EnrollmentStatus.CANCELLED) {
-      validateCancellationPolicy(enrollment);
-      cancel(enrollment, "Hủy bởi nhân viên");
+      cancellationPolicy.validate(enrollment);
+      lifecycle.cancel(enrollment, "Hủy bởi nhân viên");
       reopenClassIfNeeded(courseClass);
     } else {
-      if (!Set.of("OPEN", "FULL").contains(courseClass.getStatus())) {
-        throw new IllegalArgumentException("Lớp học không còn nhận xử lý đăng ký");
-      }
-      enrollment.setEnrollmentStatus(requestedStatus);
-      if (requestedStatus == EnrollmentStatus.CONFIRMED) {
-        enrollment.setConfirmedAt(new Date());
-      }
+      lifecycle.confirm(enrollment, courseClass);
     }
     return enrollmentMapper.toResponse(enrollmentRepository.save(enrollment));
   }
@@ -277,34 +278,19 @@ public class EnrollmentServiceImpl implements EnrollmentService {
   @Override
   public EnrollmentResponse transfer(Integer enrollmentId, TransferEnrollmentRequest request) {
     Enrollment enrollment = lockEnrollment(enrollmentId);
-    validateActiveStudent(enrollment.getStudentId());
-    if (enrollment.getEnrollmentStatus() != EnrollmentStatus.CONFIRMED
-        || enrollment.getPaymentStatus() != EnrollmentPaymentStatus.PENDING) {
-      throw new IllegalArgumentException(
-          "Chỉ được chuyển lớp cho đăng ký đã xác nhận và chưa thanh toán");
-    }
-    validateTransferPolicy(enrollment.getCourseClassId());
+    eligibilityPolicy.validateActiveStudent(enrollment.getStudentId());
+    transferPolicy.validateSource(enrollment);
 
     Integer sourceClassId = enrollment.getCourseClassId().getId();
     Integer targetClassId = request.targetCourseClassId();
-    if (sourceClassId.equals(targetClassId)) {
-      throw new IllegalArgumentException("Lớp chuyển đến phải khác lớp hiện tại");
-    }
+    transferPolicy.validateDifferentClass(sourceClassId, targetClassId);
 
     Courseclass[] lockedClasses = lockClassesInOrder(sourceClassId, targetClassId);
     Courseclass sourceClass = findLockedClass(lockedClasses, sourceClassId);
     Courseclass targetClass = findLockedClass(lockedClasses, targetClassId);
 
-    if (!sourceClass.getCourseId().getId().equals(targetClass.getCourseId().getId())) {
-      throw new IllegalArgumentException("Chỉ được chuyển sang lớp thuộc cùng khóa học");
-    }
-
-    validateOpenClassAndCapacity(targetClass);
-    if (enrollmentRepository.existsByStudentId_IdAndCourseClassId_Id(
-        enrollment.getStudentId().getId(), targetClassId)) {
-      throw new DuplicateResourceException("Học viên đã từng đăng ký lớp chuyển đến");
-    }
-    validateNoScheduleConflict(enrollment.getStudentId().getId(), targetClassId);
+    pipelines.validateTransferTarget(EnrollmentValidationContext.transfer(
+        enrollment.getStudentId(), sourceClass, targetClass, enrollment.getId()));
 
     enrollment.setCourseClassId(targetClass);
     enrollment.setAmountDue(targetClass.getAppliedTuitionFee());
@@ -319,27 +305,11 @@ public class EnrollmentServiceImpl implements EnrollmentService {
   }
 
   private EnrollmentResponse createEnrollment(Student student, Integer courseClassId) {
-    validateActiveStudent(student);
+    eligibilityPolicy.validateActiveStudent(student);
     Courseclass courseClass = lockClass(courseClassId);
-    validateOpenClassAndCapacity(courseClass);
-    if (enrollmentRepository.existsByStudentId_IdAndCourseClassId_Id(
-        student.getId(), courseClassId)) {
-      throw new DuplicateResourceException("Học viên đã từng đăng ký lớp học này");
-    }
-    validateNoScheduleConflict(student.getId(), courseClassId);
+    pipelines.validateRegistrationTarget(EnrollmentValidationContext.registration(student, courseClass));
 
-    Enrollment enrollment = new Enrollment();
-    enrollment.setStudentId(student);
-    enrollment.setCourseClassId(courseClass);
-    Date now = new Date();
-    enrollment.setEnrollmentDate(now);
-    enrollment.setPaymentDeadline(Date.from(now.toInstant().plusSeconds(2 * 24 * 60 * 60L)));
-    enrollment.setAmountDue(courseClass.getAppliedTuitionFee());
-    enrollment.setEnrollmentStatus(EnrollmentStatus.CONFIRMED);
-    enrollment.setPaymentStatus(
-        courseClass.getAppliedTuitionFee().compareTo(java.math.BigDecimal.ZERO) == 0
-            ? EnrollmentPaymentStatus.PAID : EnrollmentPaymentStatus.PENDING);
-    enrollment.setConfirmedAt(now);
+    Enrollment enrollment = enrollmentFactory.createConfirmed(student, courseClass);
 
     try {
       Enrollment saved = enrollmentRepository.saveAndFlush(enrollment);
@@ -347,51 +317,6 @@ public class EnrollmentServiceImpl implements EnrollmentService {
       return enrollmentMapper.toResponse(saved);
     } catch (DataIntegrityViolationException exception) {
       throw new DuplicateResourceException("Học viên đã đăng ký lớp học này");
-    }
-  }
-
-  private void validateOpenClassAndCapacity(Courseclass courseClass) {
-    if (courseClass.getStatus() != ClassStatus.OPEN) {
-      throw new IllegalArgumentException("Lớp học hiện không mở đăng ký");
-    }
-    if (countActiveEnrollments(courseClass.getId()) >= courseClass.getMaxStudents()) {
-      throw new IllegalArgumentException("Lớp học đã đủ số lượng học viên");
-    }
-  }
-
-  private void validateNoScheduleConflict(Integer studentId, Integer courseClassId) {
-    if (enrollmentRepository.existsScheduleConflict(
-        studentId, courseClassId, CAPACITY_RESERVED_STATUSES)) {
-      throw new IllegalArgumentException("Lớp học bị trùng thời gian với đăng ký hiện tại");
-    }
-  }
-
-  private void validateCancellationPolicy(Enrollment enrollment) {
-    Courseclass courseClass = enrollment.getCourseClassId();
-    if (!Set.of(ClassStatus.OPEN, ClassStatus.FULL).contains(courseClass.getStatus())) {
-      throw new IllegalArgumentException("Không thể hủy đăng ký khi lớp đã bắt đầu hoặc kết thúc");
-    }
-    if (!courseClass.getStartDate().after(new Date())) {
-      throw new IllegalArgumentException("Đã quá thời hạn hủy đăng ký trước ngày khai giảng");
-    }
-    if (enrollment.getPaymentStatus() != EnrollmentPaymentStatus.PENDING) {
-      throw new IllegalArgumentException(
-          "Đăng ký đã phát sinh thanh toán, cần xử lý hoàn tiền trước khi hủy");
-    }
-  }
-
-  private void validateTransferPolicy(Courseclass sourceClass) {
-    if (!Set.of(ClassStatus.OPEN, ClassStatus.FULL).contains(sourceClass.getStatus())) {
-      throw new IllegalArgumentException("Không thể chuyển khi lớp hiện tại đã bắt đầu hoặc kết thúc");
-    }
-    if (!sourceClass.getStartDate().after(new Date())) {
-      throw new IllegalArgumentException("Đã quá thời hạn chuyển lớp trước ngày khai giảng");
-    }
-  }
-
-  private void validateActiveStudent(Student student) {
-    if (student.getUserId() == null || student.getUserId().getStatus() != AccountStatus.ACTIVE) {
-      throw new IllegalArgumentException("Tài khoản học viên không ở trạng thái ACTIVE");
     }
   }
 
@@ -405,18 +330,6 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     if (courseClass.getStatus() == ClassStatus.FULL
         && countActiveEnrollments(courseClass.getId()) < courseClass.getMaxStudents()) {
       courseClass.setStatus(ClassStatus.OPEN);
-    }
-  }
-
-  private void cancel(Enrollment enrollment, String reason) {
-    if (enrollment.getEnrollmentStatus() == EnrollmentStatus.CANCELLED) {
-      throw new IllegalArgumentException("Đăng ký đã được hủy trước đó");
-    }
-    enrollment.setEnrollmentStatus(EnrollmentStatus.CANCELLED);
-    enrollment.setCancelledAt(new Date());
-    enrollment.setCancellationReason(reason.trim());
-    if (enrollment.getPaymentStatus() == EnrollmentPaymentStatus.PENDING) {
-      enrollment.setPaymentStatus(EnrollmentPaymentStatus.CANCELLED);
     }
   }
 
@@ -456,7 +369,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         studentRepository
             .findByUserId_EmailIgnoreCase(user.getEmail())
             .orElseThrow(() -> new ForbiddenException("Tài khoản chưa có hồ sơ học viên"));
-    validateActiveStudent(student);
+    eligibilityPolicy.validateActiveStudent(student);
     return student;
   }
 

@@ -35,6 +35,10 @@ class LearningServiceImplTest {
   @Mock QuizAttemptRepository attempts;
   @Mock QuizAttemptAnswerRepository answers;
   @Mock EntityManager entityManager;
+  @Spy com.ntt.language_center_management.learning.FixedIntervalReviewStrategy reviewScheduling =
+      new com.ntt.language_center_management.learning.FixedIntervalReviewStrategy();
+  @Spy com.ntt.language_center_management.learning.SingleAnswerGradingStrategy questionGrading =
+      new com.ntt.language_center_management.learning.SingleAnswerGradingStrategy();
   @InjectMocks LearningServiceImpl service;
   Course course;
   CourseContent content;

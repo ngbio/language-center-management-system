@@ -13,6 +13,20 @@ import org.springframework.data.repository.query.Param;
 
 public interface NotificationRepository extends JpaRepository<Notification, Integer> {
 
+  @Modifying
+  @Query(value = """
+      INSERT INTO notification
+          (user_id, title, content, notification_type, is_read, created_at, read_at, dedup_key)
+      VALUES (:userId, :title, :content, 'PAYMENT', FALSE, :createdAt, NULL, :dedupKey)
+      ON DUPLICATE KEY UPDATE dedup_key = dedup_key
+      """, nativeQuery = true)
+  int insertPaymentNotification(
+      @Param("userId") Integer userId,
+      @Param("title") String title,
+      @Param("content") String content,
+      @Param("createdAt") Date createdAt,
+      @Param("dedupKey") String dedupKey);
+
   Page<Notification> findByUserId_IdOrderByCreatedAtDesc(Integer userId, Pageable pageable);
 
   Optional<Notification> findByIdAndUserId_Id(Integer id, Integer userId);

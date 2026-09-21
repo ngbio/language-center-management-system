@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
+@lombok.Builder
 public record CourseClassResponse(
     Integer id,
     String classCode,

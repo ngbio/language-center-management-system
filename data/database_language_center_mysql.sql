@@ -414,13 +414,15 @@ CREATE TABLE enrollment (
     confirmed_at            DATETIME NULL,
     cancelled_at            DATETIME NULL,
     cancellation_reason     VARCHAR(500) NULL,
+    active_slot             INT GENERATED ALWAYS AS
+        (CASE WHEN enrollment_status IN ('PENDING', 'CONFIRMED') THEN 1 ELSE NULL END) STORED,
     PRIMARY KEY (id),
     CONSTRAINT fk_enrollment_student
         FOREIGN KEY (student_id) REFERENCES student(id),
     CONSTRAINT fk_enrollment_courseclass
         FOREIGN KEY (course_class_id) REFERENCES courseclass(id),
-    CONSTRAINT uq_enrollment_student_class
-        UNIQUE (student_id, course_class_id),
+    CONSTRAINT uq_enrollment_student_class_active
+        UNIQUE (student_id, course_class_id, active_slot),
     CONSTRAINT ck_enrollment_amount_due CHECK (amount_due >= 0),
     CONSTRAINT ck_enrollment_status
         CHECK (enrollment_status IN ('PENDING', 'CONFIRMED', 'CANCELLED')),
