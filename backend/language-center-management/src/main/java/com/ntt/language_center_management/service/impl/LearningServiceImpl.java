@@ -1,9 +1,12 @@
 package com.ntt.language_center_management.service.impl;
 
+import com.ntt.language_center_management.policy.QuizSubmissionValidator;
+import com.ntt.language_center_management.policy.QuizEditingPolicy;
+import com.ntt.language_center_management.policy.QuizAttemptPolicy;
+import com.ntt.language_center_management.policy.LearningAccessPolicy;
 import com.ntt.language_center_management.dto.request.LearningRequest;
 import com.ntt.language_center_management.dto.response.LearningResponse;
 import com.ntt.language_center_management.entity.*;
-import com.ntt.language_center_management.enums.CatalogStatus;
 import com.ntt.language_center_management.enums.PublicationStatus;
 import com.ntt.language_center_management.exception.*;
 import com.ntt.language_center_management.repository.*;
@@ -27,13 +30,16 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class LearningServiceImpl implements LearningService {
+  private final QuizSubmissionValidator submissionValidator;
+  private final QuizAttemptPolicy attemptPolicy;
+  private final QuizEditingPolicy editingPolicy;
+  private final LearningAccessPolicy accessPolicy;
   private final com.ntt.language_center_management.learning.ReviewSchedulingStrategy reviewScheduling;
   private final com.ntt.language_center_management.learning.QuestionGradingStrategy questionGrading;
   private final CourseRepository courses;
   private final CourseSectionRepository sections;
   private final CourseContentRepository contents;
   private final StudentRepository students;
-  private final EnrollmentRepository enrollments;
   private final FlashcardRepository cards;
   private final FlashcardReviewRepository reviews;
   private final QuizRepository quizzes;
@@ -53,35 +59,16 @@ public class LearningServiceImpl implements LearningService {
         .orElseThrow(() -> new ForbiddenException("Chức năng lưu lịch sử dành cho học viên"));
   }
   private Student optionalStudent(Principal principal) { return principal == null ? null : student(principal); }
-  private boolean accessible(Course course, Student student) {
-    return course.getStatus() == CatalogStatus.ACTIVE
-        && course.getPublicationStatus() == PublicationStatus.PUBLISHED
-        && ((course.getTuitionFee() != null && course.getTuitionFee().signum() == 0)
-            || (student != null && enrollments.existsPaidConfirmedAccess(student.getId(), course.getId())));
-  }
-  private void access(Course course, Student student) {
-    if (!accessible(course, student)) throw new ForbiddenException("Khóa học chưa được mở hoặc bạn chưa có quyền học");
-  }
+
   private CourseContent content(Integer id) { return contents.findById(id).orElseThrow(this::missing); }
-  private void access(CourseContent content, Student student) {
-    if (content.getPublicationStatus() != PublicationStatus.PUBLISHED) throw missing();
-    access(content.getSectionId().getCourseId(), student);
-  }
+
   private Quiz quiz(Long id) { return quizzes.findById(id).orElseThrow(this::missing); }
   private Quiz lockedQuiz(Long id) { return quizzes.lockById(id).orElseThrow(this::missing); }
-  private void access(Quiz quiz, Student student) {
-    if (!"PUBLISHED".equals(quiz.getStatus())) throw missing();
-    access(quiz.getContent(), student);
-  }
-  private void editable(Quiz quiz) {
-    if (!"DRAFT".equals(quiz.getStatus()) || attempts.existsByQuiz_Id(quiz.getId()))
-      throw new IllegalArgumentException("Chỉ sửa câu hỏi của quiz nháp chưa có lượt làm. Hãy tạo quiz mới.");
-  }
 
   @Override
   public LearningResponse.Course course(Integer id, Principal principal) {
     var course = courses.findById(id).orElseThrow(this::missing);
-    access(course, optionalStudent(principal));
+    accessPolicy.access(course, optionalStudent(principal));
     return new LearningResponse.Course(id, course.getCourseName(),
         sections.findByCourseId_IdOrderByDisplayOrderAsc(id).stream().map(section ->
             new LearningResponse.Section(section.getId(), section.getTitle(),
@@ -100,7 +87,7 @@ public class LearningServiceImpl implements LearningService {
   @Override
   public List<LearningResponse.Card> cards(Integer contentId, Principal principal) {
     var student = optionalStudent(principal);
-    access(content(contentId), student);
+    accessPolicy.access(content(contentId), student);
     var time = now();
     return cards.findByContent_IdOrderByDisplayOrderAsc(contentId).stream()
         .filter(c -> "ACTIVE".equals(c.getStatus())).map(c -> cardView(c, student))
@@ -114,7 +101,7 @@ public class LearningServiceImpl implements LearningService {
         .stream().map(FlashcardReview::getFlashcard)
         .filter(c -> "ACTIVE".equals(c.getStatus())
             && c.getContent().getPublicationStatus() == PublicationStatus.PUBLISHED
-            && accessible(c.getContent().getSectionId().getCourseId(), student))
+            && accessPolicy.accessible(c.getContent().getSectionId().getCourseId(), student))
         .map(c -> cardView(c, student)).toList();
   }
   @Override @Transactional
@@ -122,7 +109,7 @@ public class LearningServiceImpl implements LearningService {
     var student = student(principal);
     entityManager.lock(student, LockModeType.PESSIMISTIC_WRITE);
     var card = cards.findById(id).orElseThrow(this::missing);
-    access(card.getContent(), student);
+    accessPolicy.access(card.getContent(), student);
     if (!"ACTIVE".equals(card.getStatus())) throw missing();
     int days = reviewScheduling.intervalDays(request.masteryLevel());
     var review = reviews.findByStudent_IdAndFlashcard_Id(student.getId(), id).orElseGet(FlashcardReview::new);
@@ -142,21 +129,14 @@ public class LearningServiceImpl implements LearningService {
   }
   @Override
   public List<LearningResponse.Quiz> quizzes(Integer contentId, Principal principal) {
-    access(content(contentId), optionalStudent(principal));
+    accessPolicy.access(content(contentId), optionalStudent(principal));
     return quizzes.findByContent_IdOrderByIdAsc(contentId).stream().filter(q -> "PUBLISHED".equals(q.getStatus()))
         .map(this::quizView).toList();
   }
 
   private LearningResponse.Result grade(Quiz quiz, LearningRequest.Submission request, QuizAttempt attempt) {
     var items = questions.findByQuiz_IdOrderByDisplayOrderAsc(quiz.getId());
-    if (items.isEmpty()) throw new IllegalArgumentException("Quiz chưa có câu hỏi");
-    Map<Long, Long> selected = new HashMap<>();
-    Set<Long> questionIds = items.stream().map(QuizQuestion::getId).collect(Collectors.toSet());
-    for (var answer : request.answers()) {
-      if (!questionIds.contains(answer.questionId()) || selected.containsKey(answer.questionId()))
-        throw new IllegalArgumentException("Câu hỏi bị trùng hoặc không thuộc quiz");
-      selected.put(answer.questionId(), answer.selectedOptionId());
-    }
+    Map<Long, Long> selected = submissionValidator.validateAnswers(items, request);
     BigDecimal total = BigDecimal.ZERO, earned = BigDecimal.ZERO;
     List<LearningResponse.Answer> results = new ArrayList<>();
     List<QuizAttemptAnswer> saved = new ArrayList<>();
@@ -179,7 +159,7 @@ public class LearningServiceImpl implements LearningService {
         answer.setCorrect(isCorrect); answer.setPointsAwarded(points); saved.add(answer);
       }
     }
-    if (total.signum() <= 0) throw new IllegalArgumentException("Tổng điểm phải lớn hơn 0");
+    submissionValidator.validateTotal(total);
     BigDecimal score = earned.multiply(BigDecimal.valueOf(100)).divide(total, 2, RoundingMode.HALF_UP);
     boolean passed = score.compareTo(quiz.getPassingScore()) >= 0;
     if (attempt != null) {
@@ -190,19 +170,18 @@ public class LearningServiceImpl implements LearningService {
   }
   @Override
   public LearningResponse.Result evaluate(Long quizId, LearningRequest.Submission request) {
-    var quiz = quiz(quizId); access(quiz, null);
+    var quiz = quiz(quizId); accessPolicy.access(quiz, null);
     return grade(quiz, request, null);
   }
   @Override @Transactional
   public LearningResponse.Attempt start(Long quizId, Principal principal) {
     var student = student(principal);
-    var quiz = lockedQuiz(quizId); access(quiz, student);
+    var quiz = lockedQuiz(quizId); accessPolicy.access(quiz, student);
     var history = attempts.findByStudent_IdAndQuiz_IdOrderByAttemptNumberDesc(student.getId(), quizId);
     // Resume an unfinished attempt; repeated requests do not consume the limit.
     var open = history.stream().filter(a -> a.getSubmittedAt() == null).findFirst();
     if (open.isPresent()) return attemptView(open.get());
-    if (quiz.getMaxAttempts() != null && history.size() >= quiz.getMaxAttempts())
-      throw new IllegalArgumentException("Bạn đã sử dụng hết số lần làm quiz");
+    attemptPolicy.validateLimit(quiz, history.size());
     var attempt = new QuizAttempt(); attempt.setQuiz(quiz); attempt.setStudent(student);
     attempt.setAttemptNumber(history.isEmpty() ? 1 : history.getFirst().getAttemptNumber() + 1);
     attempt.setStartedAt(now()); attempts.saveAndFlush(attempt);
@@ -212,9 +191,9 @@ public class LearningServiceImpl implements LearningService {
   public LearningResponse.Result submit(Long id, LearningRequest.Submission request, Principal principal) {
     var student = student(principal);
     var attempt = attempts.lockById(id).orElseThrow(this::missing);
-    if (!attempt.getStudent().getId().equals(student.getId())) throw new ForbiddenException("Lượt làm không thuộc về bạn");
-    access(attempt.getQuiz(), student);
-    if (attempt.getSubmittedAt() != null) throw new IllegalArgumentException("Lượt làm này đã được nộp");
+    attemptPolicy.validateOwner(attempt, student);
+    accessPolicy.access(attempt.getQuiz(), student);
+    attemptPolicy.validateNotSubmitted(attempt);
     return grade(attempt.getQuiz(), request, attempt);
   }
   private LearningResponse.Attempt attemptView(QuizAttempt attempt) {
@@ -235,7 +214,7 @@ public class LearningServiceImpl implements LearningService {
   public List<LearningResponse.Attempt> history(Long quizId, Principal principal) {
     var student = student(principal);
     // Archived quizzes remain in the owner's history as long as course access remains valid.
-    access(quiz(quizId).getContent(), student);
+    accessPolicy.access(quiz(quizId).getContent(), student);
     return attempts.findByStudent_IdAndQuiz_IdOrderByAttemptNumberDesc(student.getId(), quizId)
         .stream().map(this::attemptView).toList();
   }
@@ -288,25 +267,12 @@ public class LearningServiceImpl implements LearningService {
     content(contentId);
     return quizzes.findByContent_IdOrderByIdAsc(contentId).stream().map(this::adminQuiz).toList();
   }
-  private void validQuestion(String type, List<Boolean> correct) {
-    if (correct.size() < 2 || correct.stream().filter(Boolean::booleanValue).count() != 1
-        || ("TRUE_FALSE".equals(type) && correct.size() != 2))
-      throw new IllegalArgumentException("Mỗi câu cần đúng một đáp án đúng; câu đúng/sai cần đúng hai lựa chọn");
-  }
+
   @Override @Transactional
   public LearningResponse.AdminQuiz saveQuiz(Integer contentId, Long id, LearningRequest.Quiz request) {
     var quiz = id == null ? new Quiz() : lockedQuiz(id);
     if (id == null) quiz.setContent(content(contentId));
-    if (id != null && attempts.existsByQuiz_Id(id)
-        && (quiz.getPassingScore().compareTo(request.passingScore()) != 0
-            || !Objects.equals(quiz.getMaxAttempts(), request.maxAttempts())))
-      throw new IllegalArgumentException("Không thay đổi thang đạt hoặc giới hạn sau khi có lượt làm");
-    if ("PUBLISHED".equals(request.status())) {
-      var items = id == null ? List.<QuizQuestion>of() : questions.findByQuiz_IdOrderByDisplayOrderAsc(id);
-      if (items.isEmpty()) throw new IllegalArgumentException("Hãy thêm câu hỏi trước khi xuất bản");
-      for (var q : items) validQuestion(q.getQuestionType(),
-          options.findByQuestion_IdOrderByDisplayOrderAsc(q.getId()).stream().map(QuizOption::isCorrect).toList());
-    }
+    editingPolicy.validateConfiguration(quiz, id, request);
     quiz.setTitle(request.title().trim()); quiz.setPassingScore(request.passingScore());
     quiz.setMaxAttempts(request.maxAttempts()); quiz.setStatus(request.status());
     return adminQuiz(quizzes.saveAndFlush(quiz));
@@ -317,11 +283,10 @@ public class LearningServiceImpl implements LearningService {
   @Override @Transactional
   public LearningResponse.AdminQuiz saveQuestion(Long quizId, Long id, LearningRequest.Question request) {
     var question = id == null ? new QuizQuestion() : questions.findById(id).orElseThrow(this::missing);
-    var quiz = lockedQuiz(id == null ? quizId : question.getQuiz().getId()); editable(quiz);
-    validQuestion(request.questionType(), request.options().stream().map(LearningRequest.Option::correct).toList());
+    var quiz = lockedQuiz(id == null ? quizId : question.getQuiz().getId()); editingPolicy.editable(quiz);
+    editingPolicy.validQuestion(request.questionType(), request.options().stream().map(LearningRequest.Option::correct).toList());
     if (id == null) {
-      if (questions.findByQuiz_IdOrderByDisplayOrderAsc(quiz.getId()).size() >= 200)
-        throw new IllegalArgumentException("Quiz tối đa 200 câu");
+      editingPolicy.validateQuestionCapacity(quiz);
       question.setQuiz(quiz);
       question.setDisplayOrder(questions.findByQuiz_IdOrderByDisplayOrderAsc(quiz.getId()).stream()
           .mapToInt(QuizQuestion::getDisplayOrder).max().orElse(0) + 1);
@@ -340,7 +305,7 @@ public class LearningServiceImpl implements LearningService {
   }
   @Override @Transactional public void deleteQuestion(Long id) {
     var question = questions.findById(id).orElseThrow(this::missing);
-    editable(lockedQuiz(question.getQuiz().getId()));
+    editingPolicy.editable(lockedQuiz(question.getQuiz().getId()));
     options.deleteAll(options.findByQuestion_IdOrderByDisplayOrderAsc(id)); options.flush();
     questions.delete(question);
   }

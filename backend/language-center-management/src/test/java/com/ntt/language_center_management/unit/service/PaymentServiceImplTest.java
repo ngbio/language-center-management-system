@@ -1,5 +1,6 @@
 package com.ntt.language_center_management.unit.service;
 
+import com.ntt.language_center_management.policy.PaymentEligibilityPolicy;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -78,7 +79,8 @@ class PaymentServiceImplTest {
     zalo = new ZaloPayPaymentGateway(mapper, client);
     return new PaymentServiceImpl(payments, enrollments, currentUserResolver, expiration,
         transactionExecutor, eventPublisher,
-        new PaymentGatewayRegistry(java.util.List.of(momo, zalo)), new EnrollmentLifecycle(java.time.Clock.systemUTC()));
+        new PaymentGatewayRegistry(java.util.List.of(momo, zalo)), new EnrollmentLifecycle(java.time.Clock.systemUTC()),
+        new PaymentEligibilityPolicy());
   }
 
   @BeforeEach

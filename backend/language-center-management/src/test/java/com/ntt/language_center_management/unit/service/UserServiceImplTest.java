@@ -1,5 +1,7 @@
 package com.ntt.language_center_management.unit.service;
 
+import com.ntt.language_center_management.policy.PasswordChangePolicy;
+import com.ntt.language_center_management.policy.AccountUniquenessValidator;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -47,7 +49,9 @@ class UserServiceImplTest {
     notificationService = mock(NotificationService.class);
     eventPublisher = mock(ApplicationEventPublisher.class);
     service = new UserServiceImpl(users, students, teachers, roles, new UserMapper(), encoder,
-        new CurrentUserResolver(users, students, teachers), notificationService, eventPublisher);
+        new CurrentUserResolver(users, students, teachers), notificationService, eventPublisher,
+        new AccountUniquenessValidator(users),
+        new PasswordChangePolicy(encoder));
   }
 
   @Test

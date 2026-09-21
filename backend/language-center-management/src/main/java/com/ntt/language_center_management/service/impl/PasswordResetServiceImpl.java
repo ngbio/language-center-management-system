@@ -1,5 +1,6 @@
 package com.ntt.language_center_management.service.impl;
 
+import com.ntt.language_center_management.policy.PasswordChangePolicy;
 import com.ntt.language_center_management.dto.request.ResetPasswordRequest;
 import com.ntt.language_center_management.entity.PasswordResetToken;
 import com.ntt.language_center_management.entity.User;
@@ -39,6 +40,8 @@ public class PasswordResetServiceImpl implements PasswordResetService {
   private final int expirationMinutes;
   private final int cooldownSeconds;
 
+  private final PasswordChangePolicy passwordPolicy;
+
   public PasswordResetServiceImpl(
       UserRepository users,
       PasswordResetTokenRepository tokens,
@@ -46,7 +49,9 @@ public class PasswordResetServiceImpl implements PasswordResetService {
       ApplicationEventPublisher events,
       @Value("${app.password-reset.frontend-url:http://localhost:5173}") String frontendUrl,
       @Value("${app.password-reset.expiration-minutes:30}") int expirationMinutes,
-      @Value("${app.password-reset.cooldown-seconds:60}") int cooldownSeconds) {
+      @Value("${app.password-reset.cooldown-seconds:60}") int cooldownSeconds,
+      PasswordChangePolicy passwordPolicy) {
+    this.passwordPolicy = passwordPolicy;
     if (!StringUtils.hasText(frontendUrl)) {
       throw new IllegalArgumentException("APP_FRONTEND_URL không được để trống");
     }
@@ -104,9 +109,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 
   @Override
   public void resetPassword(ResetPasswordRequest request) {
-    if (!request.newPassword().equals(request.confirmPassword())) {
-      throw new IllegalArgumentException("Xác nhận mật khẩu mới không khớp");
-    }
+    passwordPolicy.validateConfirmation(request.newPassword(), request.confirmPassword());
     PasswordResetToken token = tokens.lockByTokenHash(hash(request.token().trim()))
         .orElseThrow(() -> new IllegalArgumentException(INVALID_TOKEN_MESSAGE));
     Date now = new Date();
@@ -118,9 +121,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     if (user.getStatus() != AccountStatus.ACTIVE) {
       throw new IllegalArgumentException(INVALID_TOKEN_MESSAGE);
     }
-    if (passwordEncoder.matches(request.newPassword(), user.getPasswordHash())) {
-      throw new IllegalArgumentException("Mật khẩu mới phải khác mật khẩu hiện tại");
-    }
+    passwordPolicy.validateDifferent(request.newPassword(), user);
 
     user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
     user.setPasswordChangedAt(now);

@@ -1,31 +1,23 @@
 package com.ntt.language_center_management.service.impl;
 
-import com.ntt.language_center_management.enums.DeliveryMode;
-import com.ntt.language_center_management.enums.ClassStatus;
-import com.ntt.language_center_management.enums.RoomStatus;
-
+import com.ntt.language_center_management.policy.ScheduleLocationPolicy;
+import com.ntt.language_center_management.policy.ScheduleConflictChecker;
+import com.ntt.language_center_management.policy.ScheduleChangePolicy;
 
 import com.ntt.language_center_management.dto.request.ClassScheduleRequest;
 import com.ntt.language_center_management.dto.response.ClassScheduleResponse;
 import com.ntt.language_center_management.entity.Classschedule;
 import com.ntt.language_center_management.entity.Courseclass;
 import com.ntt.language_center_management.entity.Room;
-import com.ntt.language_center_management.exception.DuplicateResourceException;
 import com.ntt.language_center_management.exception.ResourceNotFoundException;
 import com.ntt.language_center_management.mapper.ClassScheduleMapper;
 import com.ntt.language_center_management.repository.ClassScheduleRepository;
 import com.ntt.language_center_management.repository.CourseClassRepository;
-import com.ntt.language_center_management.repository.LessonRepository;
-import com.ntt.language_center_management.repository.RoomRepository;
 import com.ntt.language_center_management.service.ClassScheduleService;
-import com.ntt.language_center_management.util.ApplicationDateTimeUtils;
-import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
 import org.springframework.stereotype.Service;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
@@ -34,24 +26,27 @@ import org.springframework.util.StringUtils;
 public class ClassScheduleServiceImpl implements ClassScheduleService {
   private final ClassScheduleRepository classScheduleRepository;
   private final CourseClassRepository courseClassRepository;
-  private final LessonRepository lessonRepository;
-  private final RoomRepository roomRepository;
   private final ClassScheduleMapper classScheduleMapper;
-  private final ZoneId applicationZone;
+
+  private final ScheduleLocationPolicy locationPolicy;
+
+  private final ScheduleChangePolicy changePolicy;
+
+  private final ScheduleConflictChecker conflictChecker;
 
   public ClassScheduleServiceImpl(
       ClassScheduleRepository classScheduleRepository,
       CourseClassRepository courseClassRepository,
-      LessonRepository lessonRepository,
-      RoomRepository roomRepository,
       ClassScheduleMapper classScheduleMapper,
-      @Value("${app.time-zone:Asia/Ho_Chi_Minh}") String applicationTimeZone) {
+      ScheduleLocationPolicy locationPolicy,
+      ScheduleChangePolicy changePolicy,
+      ScheduleConflictChecker conflictChecker) {
+    this.conflictChecker = conflictChecker;
+    this.changePolicy = changePolicy;
+    this.locationPolicy = locationPolicy;
     this.classScheduleRepository = classScheduleRepository;
     this.courseClassRepository = courseClassRepository;
-    this.lessonRepository = lessonRepository;
-    this.roomRepository = roomRepository;
     this.classScheduleMapper = classScheduleMapper;
-    this.applicationZone = ZoneId.of(applicationTimeZone);
   }
 
   @Override
@@ -68,13 +63,13 @@ public class ClassScheduleServiceImpl implements ClassScheduleService {
   @Override
   public ClassScheduleResponse create(Integer classId, ClassScheduleRequest request) {
     Courseclass courseClass = lockClass(classId);
-    ensureClassAllowsScheduleChanges(courseClass);
-    ensureLessonsNotGenerated(courseClass.getId());
+    changePolicy.ensureClassAllowsScheduleChanges(courseClass);
+    changePolicy.ensureLessonsNotGenerated(courseClass.getId());
 
     Classschedule schedule = new Classschedule();
     schedule.setCourseClassId(courseClass);
     applyRequest(schedule, request);
-    validateConflicts(schedule);
+    conflictChecker.validateConflicts(schedule);
     return classScheduleMapper.toResponse(classScheduleRepository.save(schedule));
   }
 
@@ -83,11 +78,11 @@ public class ClassScheduleServiceImpl implements ClassScheduleService {
     Classschedule schedule = lockSchedule(id);
     Courseclass courseClass = lockClass(schedule.getCourseClassId().getId());
     schedule.setCourseClassId(courseClass);
-    ensureClassAllowsScheduleChanges(courseClass);
-    ensureLessonsNotGenerated(courseClass.getId());
+    changePolicy.ensureClassAllowsScheduleChanges(courseClass);
+    changePolicy.ensureLessonsNotGenerated(courseClass.getId());
 
     applyRequest(schedule, request);
-    validateConflicts(schedule);
+    conflictChecker.validateConflicts(schedule);
     return classScheduleMapper.toResponse(classScheduleRepository.save(schedule));
   }
 
@@ -96,22 +91,15 @@ public class ClassScheduleServiceImpl implements ClassScheduleService {
     Classschedule schedule = lockSchedule(id);
     Courseclass courseClass = lockClass(schedule.getCourseClassId().getId());
     schedule.setCourseClassId(courseClass);
-    ensureClassAllowsScheduleChanges(courseClass);
-    if (lessonRepository.existsByClassScheduleId_Id(id)) {
-      throw new IllegalArgumentException("Không thể xóa lịch đã sinh buổi học");
-    }
+    changePolicy.ensureClassAllowsScheduleChanges(courseClass);
+    changePolicy.validateDeletion(id);
     classScheduleRepository.delete(schedule);
   }
 
   private void applyRequest(Classschedule schedule, ClassScheduleRequest request) {
-    if (request.dayOfWeek() < 1 || request.dayOfWeek() > 7) {
-      throw new IllegalArgumentException("Ngày trong tuần phải từ 1 đến 7");
-    }
-    if (!request.startTime().isBefore(request.endTime())) {
-      throw new IllegalArgumentException("Giờ bắt đầu phải trước giờ kết thúc");
-    }
+    changePolicy.validateTimes(request);
 
-    Room room = validateLocation(request, schedule.getCourseClassId());
+    Room room = locationPolicy.validateLocation(request, schedule.getCourseClassId());
     schedule.setRoomId(room);
     schedule.setDayOfWeek(request.dayOfWeek());
     schedule.setStartTime(toDate(request.startTime()));
@@ -119,91 +107,6 @@ public class ClassScheduleServiceImpl implements ClassScheduleService {
     schedule.setDeliveryMode(request.deliveryMode());
     schedule.setMeetingUrl(
         StringUtils.hasText(request.meetingUrl()) ? request.meetingUrl().trim() : null);
-  }
-
-  private Room validateLocation(ClassScheduleRequest request, Courseclass courseClass) {
-    if (request.deliveryMode() == DeliveryMode.IN_PERSON) {
-      if (request.roomId() == null) {
-        throw new IllegalArgumentException("Lịch học trực tiếp phải chọn phòng");
-      }
-      if (StringUtils.hasText(request.meetingUrl())) {
-        throw new IllegalArgumentException("Lịch học trực tiếp không được có đường dẫn online");
-      }
-      Room room =
-          roomRepository
-              .findByIdAndStatus(request.roomId(), RoomStatus.ACTIVE)
-              .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy phòng đang hoạt động"));
-      if (room.getCapacity() < courseClass.getMaxStudents()) {
-        throw new IllegalArgumentException("Sức chứa phòng nhỏ hơn sĩ số tối đa của lớp");
-      }
-      return room;
-    }
-
-    if (request.roomId() != null) {
-      throw new IllegalArgumentException("Lịch học online không được chọn phòng học");
-    }
-    if (!StringUtils.hasText(request.meetingUrl())) {
-      throw new IllegalArgumentException("Lịch học online phải có đường dẫn phòng học");
-    }
-    return null;
-  }
-
-  private void validateConflicts(Classschedule schedule) {
-    Courseclass courseClass = schedule.getCourseClassId();
-    Integer scheduleId = schedule.getId();
-    Integer roomId = schedule.getRoomId() == null ? null : schedule.getRoomId().getId();
-    Integer teacherId = courseClass.getTeacherId() == null ? null : courseClass.getTeacherId().getId();
-
-    if (classScheduleRepository.existsClassTimeConflict(
-        scheduleId,
-        courseClass.getId(),
-        schedule.getDayOfWeek(),
-        schedule.getStartTime(),
-        schedule.getEndTime())) {
-      throw new DuplicateResourceException("Lịch mới bị chồng thời gian với lịch khác trong lớp");
-    }
-
-    if (classScheduleRepository.existsResourceConflict(
-        scheduleId,
-        roomId,
-        teacherId,
-        courseClass.getStartDate(),
-        courseClass.getEndDate(),
-        schedule.getDayOfWeek(),
-        schedule.getStartTime(),
-        schedule.getEndTime())) {
-      throw new DuplicateResourceException("Lịch học bị trùng phòng hoặc giảng viên");
-    }
-
-    LocalDate date = toLocalDate(courseClass.getStartDate());
-    LocalDate endDate = toLocalDate(courseClass.getEndDate());
-    while (!date.isAfter(endDate)) {
-      if (date.getDayOfWeek().getValue() == schedule.getDayOfWeek()
-          && lessonRepository.existsResourceConflictOnDate(
-              null,
-              courseClass.getId(),
-              roomId,
-              teacherId,
-              toDate(date),
-              schedule.getStartTime(),
-              schedule.getEndTime())) {
-        throw new DuplicateResourceException("Lịch học bị trùng với buổi học thực tế đã có");
-      }
-      date = date.plusDays(1);
-    }
-  }
-
-  private void ensureClassAllowsScheduleChanges(Courseclass courseClass) {
-    if (courseClass.getStatus() == ClassStatus.COMPLETED
-        || courseClass.getStatus() == ClassStatus.CANCELLED) {
-      throw new IllegalArgumentException("Không thể thay đổi lịch của lớp đã kết thúc hoặc đã hủy");
-    }
-  }
-
-  private void ensureLessonsNotGenerated(Integer classId) {
-    if (lessonRepository.countByClassScheduleId_CourseClassId_Id(classId) > 0) {
-      throw new IllegalArgumentException("Không thể thay đổi lịch sau khi đã sinh buổi học");
-    }
   }
 
   private Courseclass findClass(Integer id) {
@@ -218,12 +121,6 @@ public class ClassScheduleServiceImpl implements ClassScheduleService {
         .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp học"));
   }
 
-  private Classschedule findSchedule(Integer id) {
-    return classScheduleRepository
-        .findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lịch học"));
-  }
-
   private Classschedule lockSchedule(Integer id) {
     return classScheduleRepository
         .lockById(id)
@@ -234,11 +131,4 @@ public class ClassScheduleServiceImpl implements ClassScheduleService {
     return java.sql.Time.valueOf(value);
   }
 
-  private Date toDate(LocalDate value) {
-    return java.sql.Date.valueOf(value);
-  }
-
-  private LocalDate toLocalDate(Date value) {
-    return ApplicationDateTimeUtils.toLocalDate(value, applicationZone);
-  }
 }

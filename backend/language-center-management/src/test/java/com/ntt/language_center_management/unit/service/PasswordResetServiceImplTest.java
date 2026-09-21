@@ -1,5 +1,6 @@
 package com.ntt.language_center_management.unit.service;
 
+import com.ntt.language_center_management.policy.PasswordChangePolicy;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -39,7 +40,8 @@ class PasswordResetServiceImplTest {
     passwordEncoder = org.mockito.Mockito.mock(PasswordEncoder.class);
     events = org.mockito.Mockito.mock(ApplicationEventPublisher.class);
     service = new PasswordResetServiceImpl(
-        users, tokens, passwordEncoder, events, "https://app.example.com/", 30, 60);
+        users, tokens, passwordEncoder, events, "https://app.example.com/", 30, 60,
+        new PasswordChangePolicy(passwordEncoder));
   }
 
   @Test

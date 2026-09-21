@@ -1,7 +1,8 @@
 package com.ntt.language_center_management.service.impl;
 
+import com.ntt.language_center_management.policy.AttendanceUpdatePolicy;
+import com.ntt.language_center_management.policy.AttendanceAccessPolicy;
 import com.ntt.language_center_management.enums.AttendanceStatus;
-import com.ntt.language_center_management.enums.ClassStatus;
 import com.ntt.language_center_management.enums.LessonStatus;
 import com.ntt.language_center_management.enums.EnrollmentPaymentStatus;
 import com.ntt.language_center_management.enums.EnrollmentStatus;
@@ -27,24 +28,16 @@ import com.ntt.language_center_management.repository.CourseClassRepository;
 import com.ntt.language_center_management.repository.EnrollmentRepository;
 import com.ntt.language_center_management.repository.LessonRepository;
 import com.ntt.language_center_management.repository.StudentRepository;
-import com.ntt.language_center_management.repository.TeacherRepository;
 import com.ntt.language_center_management.service.AttendanceService;
-import com.ntt.language_center_management.util.ApplicationDateTimeUtils;
 import java.security.Principal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -60,35 +53,34 @@ public class AttendanceServiceImpl implements AttendanceService {
   private final LessonRepository lessonRepository;
   private final EnrollmentRepository enrollmentRepository;
   private final StudentRepository studentRepository;
-  private final TeacherRepository teacherRepository;
   private final CourseClassRepository courseClassRepository;
-  private final int editWindowDays;
-  private final ZoneId applicationZone;
+
+  private final AttendanceAccessPolicy accessPolicy;
+
+  private final AttendanceUpdatePolicy updatePolicy;
 
   public AttendanceServiceImpl(
       AttendanceRepository attendanceRepository,
       LessonRepository lessonRepository,
       EnrollmentRepository enrollmentRepository,
       StudentRepository studentRepository,
-      TeacherRepository teacherRepository,
       CourseClassRepository courseClassRepository,
-      @Value("${attendance.edit-window-days:7}") int editWindowDays,
-      @Value("${app.time-zone:Asia/Ho_Chi_Minh}") String applicationTimeZone) {
+      AttendanceAccessPolicy accessPolicy,
+      AttendanceUpdatePolicy updatePolicy) {
+    this.updatePolicy = updatePolicy;
+    this.accessPolicy = accessPolicy;
     this.attendanceRepository = attendanceRepository;
     this.lessonRepository = lessonRepository;
     this.enrollmentRepository = enrollmentRepository;
     this.studentRepository = studentRepository;
-    this.teacherRepository = teacherRepository;
     this.courseClassRepository = courseClassRepository;
-    this.editWindowDays = editWindowDays;
-    this.applicationZone = ZoneId.of(applicationTimeZone);
   }
 
   @Override
   @Transactional(readOnly = true)
   public AttendanceSheetResponse getSheet(Integer lessonId, Principal principal) {
     Lesson lesson = findLesson(lessonId);
-    requireAssignedTeacher(lesson.getClassScheduleId().getCourseClassId(), principal);
+    accessPolicy.requireAssignedTeacher(lesson.getClassScheduleId().getCourseClassId(), principal);
     return buildSheet(lesson);
   }
 
@@ -96,23 +88,16 @@ public class AttendanceServiceImpl implements AttendanceService {
   public AttendanceSheetResponse saveBulk(
       Integer lessonId, AttendanceBulkRequest request, Principal principal) {
     Lesson lesson = findLesson(lessonId);
-    Teacher teacher = requireAssignedTeacher(lesson.getClassScheduleId().getCourseClassId(), principal);
-    Set<Integer> studentIds = new HashSet<>();
-    for (AttendanceItemRequest item : request.attendances()) {
-      if (!studentIds.add(item.studentId())) {
-        throw new IllegalArgumentException("Danh sách điểm danh chứa học viên bị trùng");
-      }
-    }
+    Teacher teacher = accessPolicy.requireAssignedTeacher(lesson.getClassScheduleId().getCourseClassId(), principal);
+    Set<Integer> studentIds = updatePolicy.validateStudentIds(request);
 
     Map<Integer, Enrollment> validEnrollments = new HashMap<>();
     for (Enrollment enrollment : validEnrollments(lesson.getClassScheduleId().getCourseClassId().getId())) {
       validEnrollments.put(enrollment.getStudentId().getId(), enrollment);
     }
-    if (!validEnrollments.keySet().containsAll(studentIds)) {
-      throw new IllegalArgumentException("Có học viên không thuộc lớp hoặc chưa thanh toán hợp lệ");
-    }
+    updatePolicy.validateEnrollmentMembership(validEnrollments, studentIds);
 
-    ensureCanUpdateAttendance(lesson);
+    updatePolicy.ensureCanUpdateAttendance(lesson);
 
     Date markedAt = new Date();
     Map<Integer, Attendance> existingByStudent = new HashMap<>();
@@ -146,8 +131,8 @@ public class AttendanceServiceImpl implements AttendanceService {
       Integer attendanceId, AttendanceUpdateRequest request, Principal principal) {
     Attendance attendance = findAttendance(attendanceId);
     Lesson lesson = attendance.getLessonId();
-    Teacher teacher = requireAssignedTeacher(lesson.getClassScheduleId().getCourseClassId(), principal);
-    ensureCanUpdateAttendance(lesson);
+    Teacher teacher = accessPolicy.requireAssignedTeacher(lesson.getClassScheduleId().getCourseClassId(), principal);
+    updatePolicy.ensureCanUpdateAttendance(lesson);
     attendance.setStatus(request.status());
     attendance.setNote(trimToNull(request.note()));
     attendance.setUpdatedAt(new Date());
@@ -179,7 +164,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         courseClassRepository
             .findById(classId)
             .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp học"));
-    requireAssignedTeacher(courseClass, principal);
+    accessPolicy.requireAssignedTeacher(courseClass, principal);
     List<Enrollment> enrollments = validEnrollments(classId);
     List<Attendance> records =
         attendanceRepository.findByClassId(classId);
@@ -251,43 +236,6 @@ public class AttendanceServiceImpl implements AttendanceService {
     return enrollmentRepository
         .findByCourseClassId_IdAndEnrollmentStatusAndPaymentStatusOrderByStudentId_UserId_FullNameAsc(
             classId, EnrollmentStatus.CONFIRMED, EnrollmentPaymentStatus.PAID);
-  }
-
-  private Teacher requireAssignedTeacher(Courseclass courseClass, Principal principal) {
-    Teacher teacher =
-        teacherRepository
-            .findByUserId_EmailIgnoreCase(principalName(principal))
-            .orElseThrow(() -> new ForbiddenException("Chỉ giảng viên mới được quản lý điểm danh"));
-    if (courseClass.getTeacherId() == null || !courseClass.getTeacherId().getId().equals(teacher.getId())) {
-      throw new ForbiddenException("Bạn không phải giảng viên phụ trách lớp học này");
-    }
-    return teacher;
-  }
-
-  private void ensureAttendanceAllowed(Lesson lesson) {
-    if (lesson.getStatus() == LessonStatus.CANCELLED) {
-      throw new IllegalArgumentException("Không thể điểm danh buổi học đã hủy");
-    }
-    if (lesson.getClassScheduleId().getCourseClassId().getStatus() == ClassStatus.CANCELLED) {
-      throw new IllegalArgumentException("Không thể điểm danh cho lớp học đã hủy");
-    }
-  }
-
-  private void ensureCanUpdateAttendance(Lesson lesson) {
-    ensureAttendanceAllowed(lesson);
-    LocalDate lessonDate = ApplicationDateTimeUtils.toLocalDate(lesson.getLessonDate(), applicationZone);
-    LocalDateTime now = LocalDateTime.now(applicationZone);
-    LocalDateTime lessonStart =
-        LocalDateTime.of(lessonDate,
-            ApplicationDateTimeUtils.toLocalTime(
-                lesson.getClassScheduleId().getStartTime(), applicationZone));
-    if (now.isBefore(lessonStart)) {
-      throw new IllegalArgumentException("Chỉ được điểm danh sau thời gian bắt đầu buổi học");
-    }
-    if (now.toLocalDate().isAfter(lessonDate.plusDays(editWindowDays))) {
-      throw new IllegalArgumentException(
-          "Đã quá thời hạn sửa điểm danh " + editWindowDays + " ngày sau buổi học");
-    }
   }
 
   private AttendanceResponse toResponse(Attendance attendance) {

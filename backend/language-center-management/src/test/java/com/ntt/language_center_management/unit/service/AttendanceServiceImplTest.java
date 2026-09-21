@@ -1,5 +1,7 @@
 package com.ntt.language_center_management.unit.service;
 
+import com.ntt.language_center_management.policy.AttendanceUpdatePolicy;
+import com.ntt.language_center_management.policy.AttendanceAccessPolicy;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -64,8 +66,13 @@ class AttendanceServiceImplTest {
     students = mock(StudentRepository.class);
     teachers = mock(TeacherRepository.class);
     classes = mock(CourseClassRepository.class);
-    service = new AttendanceServiceImpl(attendances, lessons, enrollments, students, teachers,
-        classes, 7, "Asia/Ho_Chi_Minh");
+    service = new AttendanceServiceImpl(attendances,
+        lessons,
+        enrollments,
+        students,
+        classes,
+        new AttendanceAccessPolicy(teachers),
+        new AttendanceUpdatePolicy(7, java.time.Clock.system(java.time.ZoneId.of("Asia/Ho_Chi_Minh"))));
     teacher = teacher(3, "teacher@example.com");
     courseClass = courseClass(10, teacher);
     lesson = lesson(20, courseClass, LocalDate.now());

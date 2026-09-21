@@ -29,3 +29,6 @@ replay_pid*
 
 # Local database seed data
 /seed_language_center_mysql.sql
+
+# Local documentation checklists
+/docs/checklist/

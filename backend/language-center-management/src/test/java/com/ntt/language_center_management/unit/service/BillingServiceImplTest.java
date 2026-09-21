@@ -1,5 +1,6 @@
 package com.ntt.language_center_management.unit.service;
 
+import com.ntt.language_center_management.policy.RefundEligibilityPolicy;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
@@ -73,7 +74,8 @@ class BillingServiceImplTest {
     momo = new MomoRefundGateway(client);
     zalo = new ZaloPayRefundGateway(client);
     return new BillingServiceImpl(enrollments, payments, refunds, currentUserResolver,
-        transactionExecutor, new RefundGatewayRegistry(List.of(momo, zalo)), new EnrollmentLifecycle(java.time.Clock.systemUTC()), classes);
+        transactionExecutor, new RefundGatewayRegistry(List.of(momo, zalo)), new EnrollmentLifecycle(java.time.Clock.systemUTC()), classes,
+        new RefundEligibilityPolicy(refunds));
   }
 
   @BeforeEach

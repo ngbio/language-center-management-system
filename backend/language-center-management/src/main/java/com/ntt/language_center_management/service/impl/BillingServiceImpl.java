@@ -1,5 +1,6 @@
 package com.ntt.language_center_management.service.impl;
 
+import com.ntt.language_center_management.policy.RefundEligibilityPolicy;
 import com.ntt.language_center_management.dto.request.RefundRequest;
 import com.ntt.language_center_management.dto.response.InvoiceResponse;
 import com.ntt.language_center_management.dto.response.PaymentResponse;
@@ -9,7 +10,6 @@ import com.ntt.language_center_management.entity.Payment;
 import com.ntt.language_center_management.entity.Refund;
 import com.ntt.language_center_management.entity.User;
 import com.ntt.language_center_management.enums.ClassStatus;
-import com.ntt.language_center_management.enums.EnrollmentPaymentStatus;
 import com.ntt.language_center_management.enums.PaymentTransactionStatus;
 import com.ntt.language_center_management.enums.RefundStatus;
 import com.ntt.language_center_management.exception.ResourceNotFoundException;
@@ -46,10 +46,14 @@ public class BillingServiceImpl implements BillingService {
   private final EnrollmentLifecycle lifecycle;
   private final CourseClassRepository courseClassRepository;
 
+  private final RefundEligibilityPolicy refundPolicy;
+
   public BillingServiceImpl(EnrollmentRepository enrollmentRepository, PaymentRepository paymentRepository,
       RefundRepository refundRepository, CurrentUserResolver currentUserResolver,
       TransactionExecutor transactionExecutor, RefundGatewayRegistry gateways, EnrollmentLifecycle lifecycle,
-      CourseClassRepository courseClassRepository) {
+      CourseClassRepository courseClassRepository,
+      RefundEligibilityPolicy refundPolicy) {
+    this.refundPolicy = refundPolicy;
     this.enrollmentRepository = enrollmentRepository;
     this.paymentRepository = paymentRepository;
     this.refundRepository = refundRepository;
@@ -125,28 +129,18 @@ public class BillingServiceImpl implements BillingService {
         .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đăng ký"));
     Refund previous = refundRepository.findByIdempotencyKey(request.idempotencyKey().trim()).orElse(null);
     if (previous != null) {
-      if (!previous.getEnrollment().getId().equals(enrollmentId)
-          || (request.amount() != null && previous.getAmount().compareTo(request.amount()) != 0)) {
-        throw new IllegalArgumentException("Idempotency key đã được dùng cho yêu cầu hoàn tiền khác");
-      }
+      refundPolicy.validateIdempotency(previous, enrollmentId, request);
       return new RefundPreparation(previous, false);
     }
     List<Payment> paidPayments = paymentRepository
         .findByEnrollmentId_IdAndStatusOrderByCompletedAtDesc(
             enrollmentId, PaymentTransactionStatus.PAID);
-    if (paidPayments.isEmpty() || enrollment.getPaymentStatus() != EnrollmentPaymentStatus.PAID) {
-      throw new IllegalArgumentException("Đăng ký chưa có khoản thanh toán thành công để hoàn");
-    }
-    if (refundRepository.existsByEnrollment_IdAndStatus(enrollmentId, RefundStatus.PENDING)) {
-      throw new IllegalArgumentException("Đăng ký đang có một yêu cầu hoàn tiền chờ xử lý");
-    }
+    refundPolicy.validateEligibility(enrollment, paidPayments);
     BigDecimal paid = paidPayments.stream().map(Payment::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
     BigDecimal refunded = completedRefundTotal(enrollmentId);
     BigDecimal refundable = paid.subtract(refunded);
     BigDecimal amount = request.amount() == null ? refundable : request.amount();
-    if (amount.compareTo(BigDecimal.ZERO) <= 0 || amount.compareTo(refundable) > 0) {
-      throw new IllegalArgumentException("Số tiền hoàn vượt quá số tiền thực thu còn lại: " + refundable);
-    }
+    refundPolicy.validateAmount(amount, refundable);
 
     Payment payment = paidPayments.get(0);
     RefundGateway gateway = gateways.getRequired(payment.getMethod());

@@ -1,18 +1,16 @@
 package com.ntt.language_center_management.service.impl;
 
+import com.ntt.language_center_management.policy.PaymentEligibilityPolicy;
 import com.ntt.language_center_management.dto.request.CreatePaymentRequest;
 import com.ntt.language_center_management.dto.response.PaymentResponse;
 import com.ntt.language_center_management.entity.Enrollment;
 import com.ntt.language_center_management.entity.Payment;
 import com.ntt.language_center_management.entity.Student;
 import com.ntt.language_center_management.entity.User;
-import com.ntt.language_center_management.enums.EnrollmentPaymentStatus;
-import com.ntt.language_center_management.enums.EnrollmentStatus;
 import com.ntt.language_center_management.enums.PaymentMethod;
 import com.ntt.language_center_management.enums.PaymentTransactionStatus;
 import com.ntt.language_center_management.event.PaymentSucceededEvent;
 import com.ntt.language_center_management.exception.ResourceNotFoundException;
-import com.ntt.language_center_management.exception.UnauthorizedException;
 import com.ntt.language_center_management.payment.PaymentCallback;
 import com.ntt.language_center_management.payment.PaymentCheckout;
 import com.ntt.language_center_management.payment.PaymentCommand;
@@ -24,7 +22,6 @@ import com.ntt.language_center_management.service.EnrollmentExpirationService;
 import com.ntt.language_center_management.service.EnrollmentLifecycle;
 import com.ntt.language_center_management.service.PaymentService;
 import com.ntt.language_center_management.transaction.TransactionExecutor;
-import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.security.Principal;
 import java.util.Date;
@@ -46,10 +43,14 @@ public class PaymentServiceImpl implements PaymentService {
   private final PaymentGatewayRegistry gateways;
   private final EnrollmentLifecycle lifecycle;
 
+  private final PaymentEligibilityPolicy eligibilityPolicy;
+
   public PaymentServiceImpl(PaymentRepository paymentRepository,
       EnrollmentRepository enrollmentRepository, CurrentUserResolver currentUserResolver,
       EnrollmentExpirationService enrollmentExpirationService, TransactionExecutor transactionExecutor,
-      ApplicationEventPublisher eventPublisher, PaymentGatewayRegistry gateways, EnrollmentLifecycle lifecycle) {
+      ApplicationEventPublisher eventPublisher, PaymentGatewayRegistry gateways, EnrollmentLifecycle lifecycle,
+      PaymentEligibilityPolicy eligibilityPolicy) {
+    this.eligibilityPolicy = eligibilityPolicy;
     this.paymentRepository = paymentRepository;
     this.enrollmentRepository = enrollmentRepository;
     this.currentUserResolver = currentUserResolver;
@@ -77,21 +78,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
     Enrollment enrollment = enrollmentRepository.lockById(request.enrollmentId())
         .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đăng ký"));
-    if (!enrollment.getStudentId().getId().equals(student.getId())) {
-      throw new UnauthorizedException("Bạn không được thanh toán đăng ký của học viên khác");
-    }
-    if (enrollment.getEnrollmentStatus() == EnrollmentStatus.CANCELLED) {
-      throw new IllegalArgumentException("Đăng ký đã bị hủy");
-    }
-    if (enrollment.getEnrollmentStatus() != EnrollmentStatus.CONFIRMED) {
-      throw new IllegalArgumentException("Đăng ký không ở trạng thái được phép thanh toán");
-    }
-    if (enrollment.getPaymentStatus() == EnrollmentPaymentStatus.PAID) {
-      throw new IllegalArgumentException("Đăng ký đã được thanh toán");
-    }
-    if (enrollment.getAmountDue() == null || enrollment.getAmountDue().compareTo(BigDecimal.ZERO) <= 0) {
-      throw new IllegalArgumentException("Đăng ký miễn phí không cần tạo giao dịch thanh toán");
-    }
+    eligibilityPolicy.validate(enrollment, student);
 
     return new PaymentPreparation(enrollment,
         new PaymentCommand(enrollment.getId(), student.getId(),
