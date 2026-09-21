@@ -355,6 +355,7 @@ Response `data`:
 
 - Quyền: STUDENT
 - Công dụng: học viên hiện tại đăng ký một lớp.
+- Có thể đăng ký lại cùng lớp nếu lần trước có `enrollmentStatus = CANCELLED` và lớp vẫn đáp ứng điều kiện đăng ký. API tạo enrollment mới với ID/hạn thanh toán mới, giữ lịch sử cũ; chỉ các bản `PENDING` hoặc `CONFIRMED` mới chặn trùng. Quy tắc này cũng áp dụng khi nhân viên đăng ký hộ và kiểm tra trùng lớp đích khi chuyển lớp.
 
 ```json
 {
@@ -514,6 +515,24 @@ Chỉ hủy trước ngày khai giảng và khi chưa phát sinh thanh toán.
 - Giao diện lịch sử đăng ký và thanh toán của Student có nút **Xem hóa đơn** và **Tải hóa đơn** đối với đăng ký `PAID` hoặc `REFUNDED`.
 - Font tiếng Việt Noto Sans được đóng gói trong backend; `INVOICE_PDF_FONT_PATH` chỉ dùng khi cần ghi đè bằng font riêng.
 
+### GET `/enrollments/{id}/invoice.html?download={boolean}`
+
+Bổ sung ngày 21/09/2026.
+
+- Quyền giống hóa đơn PDF: chủ enrollment hoặc ADMIN/CONSULTANT; cần JWT.
+- Trả HTML UTF-8 (`text/html;charset=UTF-8`), gồm thông tin học viên, khóa/lớp, số tiền và lịch sử payment/refund.
+- `download=false` mặc định trả inline; `download=true` trả attachment, tên `invoice-enrollment-{id}.html`.
+- Trả `Cache-Control: no-store`; escape dữ liệu động và cấm script bằng Content Security Policy.
+- Chưa có nút tải HTML trên frontend; endpoint PDF hiện tại giữ nguyên.
+
+### Thông báo sau thanh toán
+
+- Callback thành công phát event sau khi transaction thanh toán commit.
+- Học viên nhận thông báo loại `PAYMENT` qua API thông báo hiện có, kể cả khi cấu hình email bị tắt.
+- Mỗi giao dịch/người dùng chỉ lưu một thông báo nhờ `dedup_key`; nhận lại event không đặt lại trạng thái đã đọc.
+- Ghi thông báo dùng transaction riêng; lỗi thông báo không hoàn tác khoản thanh toán đã commit.
+- Event nội bộ chưa có Outbox/retry bền vững khi process dừng.
+
 ### POST `/payments/momo/ipn`
 
 - Public callback dành cho MoMo sandbox.
@@ -579,6 +598,7 @@ Chỉ hủy trước ngày khai giảng và khi chưa phát sinh thanh toán.
 
 - Quyền: ADMIN, TEACHER
 - Teacher chỉ sửa buổi học thuộc lớp mình phụ trách.
+- Từ chối sửa nội dung khi buổi học ở trạng thái `COMPLETED` hoặc `CANCELLED`.
 - Link học trực tuyến được lấy từ lịch học cố định (`classschedule`), không lưu riêng trên từng lesson.
 
 ```json
@@ -728,7 +748,7 @@ Staff đăng ký giúp cũng giữ chỗ ngay với `CONFIRMED + PENDING`; khôn
 }
 ```
 
-- Chỉ dời lesson `SCHEDULED` chưa đến giờ bắt đầu và chưa có điểm danh.
+- Không được dời lesson `COMPLETED` hoặc `CANCELLED`; buổi học phải chưa đến giờ bắt đầu và chưa có điểm danh.
 - Ngày mới phải khác ngày hiện tại, chưa diễn ra và nằm trong khoảng ngày của lớp.
 - Backend kiểm tra trùng lesson, phòng học và giáo viên tại ngày mới.
 - Chỉ ADMIN được phép dời lịch; hệ thống lưu ngày ban đầu, lý do và thời điểm dời.

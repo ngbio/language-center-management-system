@@ -146,3 +146,39 @@ test("admin sinh lesson từ lịch cố định của lớp", async ({ page }) 
   await page.getByRole("button", { name: "＋ Sinh buổi học" }).click();
   await expect.poll(() => generateCalls).toBe(1);
 });
+
+for (const status of ["CANCELLED", "PENDING", "CONFIRMED"]) {
+  test(`class re-registration with previous ${status} enrollment`, async ({ page }) => {
+    await useSession(page, "STUDENT");
+    let registrationPayload;
+    await page.route("**/api/**", async (route) => {
+      const request = route.request();
+      const path = new URL(request.url()).pathname;
+      if (path === "/api/classes/11") return json(route, {
+        id: 11, classCode: "EN-01", className: "English A1", courseName: "English",
+        startDate: "2026-10-01", endDate: "2026-12-31", appliedTuitionFee: 100000,
+        availableSeats: 10, schedules: [], status: "OPEN",
+      });
+      if (path === "/api/students/me/enrollments") return json(route, [
+        { id: 15, courseClassId: 11, enrollmentStatus: "CANCELLED", paymentStatus: "REFUNDED" },
+        { id: 14, courseClassId: 11, enrollmentStatus: status, paymentStatus: "PENDING" },
+      ]);
+      if (path === "/api/enrollments" && request.method() === "POST") {
+        registrationPayload = request.postDataJSON();
+        return json(route, { id: 16, courseClassId: 11, enrollmentStatus: "CONFIRMED", paymentStatus: "PENDING" });
+      }
+      return json(route, []);
+    });
+    await page.goto("/lop-hoc/11");
+    const register = page.locator("button.enroll-action");
+    if (status === "CANCELLED") {
+      await expect(register).toBeEnabled();
+      await register.click();
+      await expect.poll(() => registrationPayload).toEqual({ courseClassId: 11 });
+      await expect(page.locator(".already-enrolled")).toBeVisible();
+    } else {
+      await expect(page.locator(".already-enrolled")).toBeVisible();
+      await expect(register).toHaveCount(0);
+    }
+  });
+}

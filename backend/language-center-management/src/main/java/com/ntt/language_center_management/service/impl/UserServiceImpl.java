@@ -1,8 +1,8 @@
 package com.ntt.language_center_management.service.impl;
 
+import com.ntt.language_center_management.policy.PasswordChangePolicy;
+import com.ntt.language_center_management.policy.AccountUniquenessValidator;
 import com.ntt.language_center_management.enums.AccountStatus;
-import com.ntt.language_center_management.enums.Gender;
-
 
 import com.ntt.language_center_management.dto.request.LoginRequest;
 import com.ntt.language_center_management.dto.request.ChangePasswordRequest;
@@ -17,7 +17,6 @@ import com.ntt.language_center_management.entity.Role;
 import com.ntt.language_center_management.entity.Student;
 import com.ntt.language_center_management.entity.Teacher;
 import com.ntt.language_center_management.entity.User;
-import com.ntt.language_center_management.exception.DuplicateResourceException;
 import com.ntt.language_center_management.exception.ResourceNotFoundException;
 import com.ntt.language_center_management.exception.UnauthorizedException;
 import com.ntt.language_center_management.mapper.UserMapper;
@@ -65,6 +64,10 @@ public class UserServiceImpl implements UserService {
   private final NotificationService notificationService;
   private final ApplicationEventPublisher eventPublisher;
 
+  private final AccountUniquenessValidator uniquenessValidator;
+
+  private final PasswordChangePolicy passwordPolicy;
+
   public UserServiceImpl(
       UserRepository userRepository,
       StudentRepository studentRepository,
@@ -74,7 +77,11 @@ public class UserServiceImpl implements UserService {
       PasswordEncoder passwordEncoder,
       CurrentUserResolver currentUserResolver,
       NotificationService notificationService,
-      ApplicationEventPublisher eventPublisher) {
+      ApplicationEventPublisher eventPublisher,
+      AccountUniquenessValidator uniquenessValidator,
+      PasswordChangePolicy passwordPolicy) {
+    this.passwordPolicy = passwordPolicy;
+    this.uniquenessValidator = uniquenessValidator;
     this.userRepository = userRepository;
     this.studentRepository = studentRepository;
     this.teacherRepository = teacherRepository;
@@ -175,12 +182,7 @@ public class UserServiceImpl implements UserService {
   public UserResponse addUser(UserRegisterRequest request) {
     String normalizedEmail = request.email().trim().toLowerCase(Locale.ROOT);
     String normalizedUsername = request.username().trim();
-    if (userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
-      throw new DuplicateResourceException("Email này đã có người đăng ký!");
-    }
-    if (userRepository.existsByUsernameIgnoreCase(normalizedUsername)) {
-      throw new DuplicateResourceException("Tên đăng nhập này đã tồn tại!");
-    }
+    uniquenessValidator.validate(normalizedEmail, normalizedUsername);
 
     User user = userMapper.toEntity(request);
     user.setEmail(normalizedEmail);
@@ -225,12 +227,7 @@ public class UserServiceImpl implements UserService {
   private UserResponse createTeacher(TeacherRegisterRequest request, String initialStatus) {
     String normalizedEmail = request.email().trim().toLowerCase(Locale.ROOT);
     String normalizedUsername = request.username().trim();
-    if (userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
-      throw new DuplicateResourceException("Email này đã có người đăng ký!");
-    }
-    if (userRepository.existsByUsernameIgnoreCase(normalizedUsername)) {
-      throw new DuplicateResourceException("Tên đăng nhập này đã tồn tại!");
-    }
+    uniquenessValidator.validate(normalizedEmail, normalizedUsername);
 
     User user = new User();
     user.setUsername(normalizedUsername);
@@ -285,15 +282,9 @@ public class UserServiceImpl implements UserService {
   @Override
   public void changePassword(Principal principal, ChangePasswordRequest request) {
     User user = validateAndGetCurrentUser(principal);
-    if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
-      throw new IllegalArgumentException("Mật khẩu hiện tại không chính xác");
-    }
-    if (!request.newPassword().equals(request.confirmPassword())) {
-      throw new IllegalArgumentException("Xác nhận mật khẩu mới không khớp");
-    }
-    if (passwordEncoder.matches(request.newPassword(), user.getPasswordHash())) {
-      throw new IllegalArgumentException("Mật khẩu mới phải khác mật khẩu hiện tại");
-    }
+    passwordPolicy.validateCurrent(request.currentPassword(), user);
+    passwordPolicy.validateConfirmation(request.newPassword(), request.confirmPassword());
+    passwordPolicy.validateDifferent(request.newPassword(), user);
     user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
     Date now = new Date();
     user.setPasswordChangedAt(now);
@@ -399,12 +390,7 @@ public class UserServiceImpl implements UserService {
     if (!Set.of("ADMIN", "CONSULTANT").contains(normalizedRoleCode)) {
       throw new IllegalArgumentException("Vai trò chỉ được là ADMIN hoặc CONSULTANT");
     }
-    if (userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
-      throw new DuplicateResourceException("Email này đã có người đăng ký!");
-    }
-    if (userRepository.existsByUsernameIgnoreCase(normalizedUsername)) {
-      throw new DuplicateResourceException("Tên đăng nhập này đã tồn tại!");
-    }
+    uniquenessValidator.validate(normalizedEmail, normalizedUsername);
 
     Role role =
         roleRepository

@@ -43,7 +43,8 @@ export default function ClassDetailScreen() {
       .then((response) => {
         if (!active) return;
         const enrollment = (apiData(response) || []).find(
-          (candidate) => Number(candidate.courseClassId) === Number(id),
+          (candidate) => Number(candidate.courseClassId) === Number(id)
+            && ["PENDING", "CONFIRMED"].includes(candidate.enrollmentStatus),
         );
         setCurrentEnrollment(enrollment || null);
       })

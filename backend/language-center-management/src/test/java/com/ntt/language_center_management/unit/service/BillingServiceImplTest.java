@@ -1,5 +1,6 @@
 package com.ntt.language_center_management.unit.service;
 
+import com.ntt.language_center_management.policy.RefundEligibilityPolicy;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
@@ -28,6 +29,8 @@ import com.ntt.language_center_management.enums.RefundStatus;
 import com.ntt.language_center_management.exception.ResourceNotFoundException;
 import com.ntt.language_center_management.exception.UnauthorizedException;
 import com.ntt.language_center_management.repository.EnrollmentRepository;
+import com.ntt.language_center_management.repository.CourseClassRepository;
+import com.ntt.language_center_management.enums.ClassStatus;
 import com.ntt.language_center_management.repository.PaymentRepository;
 import com.ntt.language_center_management.repository.RefundRepository;
 import com.ntt.language_center_management.repository.UserRepository;
@@ -36,6 +39,7 @@ import com.ntt.language_center_management.repository.TeacherRepository;
 import com.ntt.language_center_management.security.CurrentUserResolver;
 import com.ntt.language_center_management.transaction.TransactionExecutor;
 import com.ntt.language_center_management.service.impl.BillingServiceImpl;
+import com.ntt.language_center_management.payment.*;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.Date;
@@ -43,6 +47,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeEach;
+import com.ntt.language_center_management.service.EnrollmentLifecycle;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -53,28 +58,40 @@ import org.springframework.web.client.RestClient;
 
 class BillingServiceImplTest {
   private EnrollmentRepository enrollments;
+  private CourseClassRepository classes;
   private PaymentRepository payments;
   private RefundRepository refunds;
   private UserRepository users;
   private BillingServiceImpl service;
+  private MomoRefundGateway momo;
+  private ZaloPayRefundGateway zalo;
   private CurrentUserResolver currentUserResolver;
   private TransactionExecutor transactionExecutor;
   private User owner;
   private Enrollment enrollment;
 
+  private BillingServiceImpl newService(RestClient client) {
+    momo = new MomoRefundGateway(client);
+    zalo = new ZaloPayRefundGateway(client);
+    return new BillingServiceImpl(enrollments, payments, refunds, currentUserResolver,
+        transactionExecutor, new RefundGatewayRegistry(List.of(momo, zalo)), new EnrollmentLifecycle(java.time.Clock.systemUTC()), classes,
+        new RefundEligibilityPolicy(refunds));
+  }
+
   @BeforeEach
   void setUp() {
     enrollments = mock(EnrollmentRepository.class);
+    classes = mock(CourseClassRepository.class);
     payments = mock(PaymentRepository.class);
     refunds = mock(RefundRepository.class);
     users = mock(UserRepository.class);
     currentUserResolver = new CurrentUserResolver(
         users, mock(StudentRepository.class), mock(TeacherRepository.class));
     transactionExecutor = new TransactionExecutor();
-    service = new BillingServiceImpl(
-        enrollments, payments, refunds, currentUserResolver, transactionExecutor);
+    service = newService(RestClient.builder().build());
     owner = user(70, "student@example.com", "STUDENT");
     enrollment = enrollment(owner);
+    when(classes.lockById(enrollment.getCourseClassId().getId())).thenReturn(Optional.of(enrollment.getCourseClassId()));
     when(enrollments.findById(15)).thenReturn(Optional.of(enrollment));
     when(users.findByEmailIgnoreCase("student@example.com")).thenReturn(Optional.of(owner));
   }
@@ -196,10 +213,14 @@ class BillingServiceImplTest {
     Payment paid = payment("TX15", "3200000", PaymentTransactionStatus.PAID);
     RestClient.Builder builder = RestClient.builder();
     MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-    service = new BillingServiceImpl(enrollments, payments, refunds, currentUserResolver,
-        transactionExecutor, builder.build());
+    service = newService(builder.build());
     configureMomoRefund();
     AtomicReference<Refund> created = prepareRefund(paid);
+    enrollment.getCourseClassId().setStatus(ClassStatus.FULL);
+    enrollment.getCourseClassId().setMaxStudents(20);
+    when(enrollments.countByCourseClassId_IdAndEnrollmentStatusIn(
+        org.mockito.ArgumentMatchers.eq(enrollment.getCourseClassId().getId()), org.mockito.ArgumentMatchers.anySet()))
+        .thenReturn(19L);
     server.expect(requestTo("https://momo.example.com/refund"))
         .andExpect(method(HttpMethod.POST))
         .andExpect(request -> {
@@ -218,7 +239,9 @@ class BillingServiceImplTest {
     assertThat(created.get().getGatewayRefundId()).isEqualTo("RF-GATEWAY-1");
     assertThat(enrollment.getPaymentStatus()).isEqualTo(EnrollmentPaymentStatus.REFUNDED);
     assertThat(enrollment.getEnrollmentStatus()).isEqualTo(EnrollmentStatus.CANCELLED);
-    verify(enrollments).save(enrollment);
+    verify(enrollments).saveAndFlush(enrollment);
+    assertThat(enrollment.getCourseClassId().getStatus()).isEqualTo(ClassStatus.OPEN);
+    verify(classes).save(enrollment.getCourseClassId());
     server.verify();
   }
 
@@ -229,8 +252,7 @@ class BillingServiceImplTest {
     paid.setMethod(PaymentMethod.ZALOPAY);
     RestClient.Builder builder = RestClient.builder();
     MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-    service = new BillingServiceImpl(enrollments, payments, refunds, currentUserResolver,
-        transactionExecutor, builder.build());
+    service = newService(builder.build());
     configureZaloRefund();
     AtomicReference<Refund> created = prepareRefund(paid);
     server.expect(requestTo("https://zalo.example.com/refund"))
@@ -260,8 +282,7 @@ class BillingServiceImplTest {
     Payment paid = payment("TX15", "3200000", PaymentTransactionStatus.PAID);
     RestClient.Builder builder = RestClient.builder();
     MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-    service = new BillingServiceImpl(enrollments, payments, refunds, currentUserResolver,
-        transactionExecutor, builder.build());
+    service = newService(builder.build());
     configureMomoRefund();
     AtomicReference<Refund> created = prepareRefund(paid);
     server.expect(requestTo("https://momo.example.com/refund"))
@@ -300,10 +321,9 @@ class BillingServiceImplTest {
     when(refunds.findByEnrollment_IdOrderByCreatedAtDesc(15)).thenReturn(List.of(pending));
     RestClient.Builder builder = RestClient.builder();
     MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-    service = new BillingServiceImpl(enrollments, payments, refunds, currentUserResolver,
-        transactionExecutor, builder.build());
+    service = newService(builder.build());
     configureMomoRefund();
-    ReflectionTestUtils.setField(service, "momoRefundQueryEndpoint", "https://momo.example.com/query");
+    ReflectionTestUtils.setField(momo, "momoRefundQueryEndpoint", "https://momo.example.com/query");
     server.expect(requestTo("https://momo.example.com/query"))
         .andExpect(request -> assertThat(((MockClientHttpRequest) request).getBodyAsString())
             .contains("\"orderId\":\"RF-KEY-1\"", "\"signature\":"))
@@ -329,10 +349,9 @@ class BillingServiceImplTest {
     when(refunds.findByEnrollment_IdOrderByCreatedAtDesc(15)).thenReturn(List.of(pending));
     RestClient.Builder builder = RestClient.builder();
     MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-    service = new BillingServiceImpl(enrollments, payments, refunds, currentUserResolver,
-        transactionExecutor, builder.build());
+    service = newService(builder.build());
     configureZaloRefund();
-    ReflectionTestUtils.setField(service, "zaloPayRefundQueryEndpoint", "https://zalo.example.com/query");
+    ReflectionTestUtils.setField(zalo, "zaloPayRefundQueryEndpoint", "https://zalo.example.com/query");
     server.expect(requestTo("https://zalo.example.com/query"))
         .andExpect(request -> assertThat(((MockClientHttpRequest) request).getBodyAsString())
             .contains("app_id=2553", "m_refund_id=RF-KEY-2", "mac="))
@@ -394,16 +413,16 @@ class BillingServiceImplTest {
   }
 
   private void configureMomoRefund() {
-    ReflectionTestUtils.setField(service, "momoRefundEndpoint", "https://momo.example.com/refund");
-    ReflectionTestUtils.setField(service, "momoPartnerCode", "PARTNER");
-    ReflectionTestUtils.setField(service, "momoAccessKey", "ACCESS");
-    ReflectionTestUtils.setField(service, "momoSecretKey", "SECRET");
+    ReflectionTestUtils.setField(momo, "momoRefundEndpoint", "https://momo.example.com/refund");
+    ReflectionTestUtils.setField(momo, "momoPartnerCode", "PARTNER");
+    ReflectionTestUtils.setField(momo, "momoAccessKey", "ACCESS");
+    ReflectionTestUtils.setField(momo, "momoSecretKey", "SECRET");
   }
 
   private void configureZaloRefund() {
-    ReflectionTestUtils.setField(service, "zaloPayRefundEndpoint", "https://zalo.example.com/refund");
-    ReflectionTestUtils.setField(service, "zaloPayAppId", "2553");
-    ReflectionTestUtils.setField(service, "zaloPayKey1", "ZALO-KEY-1");
+    ReflectionTestUtils.setField(zalo, "zaloPayRefundEndpoint", "https://zalo.example.com/refund");
+    ReflectionTestUtils.setField(zalo, "zaloPayAppId", "2553");
+    ReflectionTestUtils.setField(zalo, "zaloPayKey1", "ZALO-KEY-1");
   }
 
   private User user(int id, String email, String roleCode) {

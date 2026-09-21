@@ -1,5 +1,8 @@
 package com.ntt.language_center_management.unit.service;
 
+import com.ntt.language_center_management.policy.CourseClassTransitionPolicy;
+import com.ntt.language_center_management.policy.CourseClassOpeningPolicy;
+import com.ntt.language_center_management.policy.CourseClassChangePolicy;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
@@ -53,9 +56,19 @@ class CourseClassServiceImplTest {
     currentUserResolver = new CurrentUserResolver(
         mock(UserRepository.class), mock(StudentRepository.class), teachers);
     eventPublisher = mock(ApplicationEventPublisher.class);
-    service = new CourseClassServiceImpl(classes, courses, teachers, enrollments, schedules,
-        mapper, courseMapper, scheduleMapper, "Asia/Ho_Chi_Minh", currentUserResolver,
-        eventPublisher);
+    service = new CourseClassServiceImpl(classes,
+        courses,
+        teachers,
+        enrollments,
+        schedules,
+        mapper,
+        courseMapper,
+        scheduleMapper,
+        currentUserResolver,
+        eventPublisher,
+        new CourseClassOpeningPolicy(schedules, java.time.Clock.system(java.time.ZoneId.of("Asia/Ho_Chi_Minh"))),
+        new CourseClassTransitionPolicy(),
+        new CourseClassChangePolicy(classes, enrollments));
   }
 
   @Test

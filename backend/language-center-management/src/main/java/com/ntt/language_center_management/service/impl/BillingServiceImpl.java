@@ -1,11 +1,6 @@
 package com.ntt.language_center_management.service.impl;
 
-import com.ntt.language_center_management.enums.EnrollmentPaymentStatus;
-import com.ntt.language_center_management.enums.EnrollmentStatus;
-import com.ntt.language_center_management.enums.RefundStatus;
-import com.ntt.language_center_management.enums.PaymentMethod;
-import com.ntt.language_center_management.enums.PaymentTransactionStatus;
-
+import com.ntt.language_center_management.policy.RefundEligibilityPolicy;
 import com.ntt.language_center_management.dto.request.RefundRequest;
 import com.ntt.language_center_management.dto.response.InvoiceResponse;
 import com.ntt.language_center_management.dto.response.PaymentResponse;
@@ -14,35 +9,31 @@ import com.ntt.language_center_management.entity.Enrollment;
 import com.ntt.language_center_management.entity.Payment;
 import com.ntt.language_center_management.entity.Refund;
 import com.ntt.language_center_management.entity.User;
+import com.ntt.language_center_management.enums.ClassStatus;
+import com.ntt.language_center_management.enums.PaymentTransactionStatus;
+import com.ntt.language_center_management.enums.RefundStatus;
 import com.ntt.language_center_management.exception.ResourceNotFoundException;
 import com.ntt.language_center_management.exception.UnauthorizedException;
+import com.ntt.language_center_management.payment.RefundCommand;
+import com.ntt.language_center_management.payment.RefundGateway;
+import com.ntt.language_center_management.payment.RefundGatewayRegistry;
+import com.ntt.language_center_management.payment.RefundResult;
+import com.ntt.language_center_management.repository.CourseClassRepository;
 import com.ntt.language_center_management.repository.EnrollmentRepository;
 import com.ntt.language_center_management.repository.PaymentRepository;
 import com.ntt.language_center_management.repository.RefundRepository;
 import com.ntt.language_center_management.security.CurrentUserResolver;
-import com.ntt.language_center_management.transaction.TransactionExecutor;
 import com.ntt.language_center_management.service.BillingService;
+import com.ntt.language_center_management.service.EnrollmentLifecycle;
+import com.ntt.language_center_management.transaction.TransactionExecutor;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.security.Principal;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
-import org.springframework.web.client.RestClient;
-import tools.jackson.databind.JsonNode;
-
-import static com.ntt.language_center_management.util.PaymentGatewayUtils.hmacSha256;
-import static com.ntt.language_center_management.util.PaymentGatewayUtils.requireConfig;
+import static com.ntt.language_center_management.policy.EnrollmentPolicy.CAPACITY_RESERVED_STATUSES;
 
 @Service
 public class BillingServiceImpl implements BillingService {
@@ -50,36 +41,27 @@ public class BillingServiceImpl implements BillingService {
   private final PaymentRepository paymentRepository;
   private final RefundRepository refundRepository;
   private final CurrentUserResolver currentUserResolver;
-  private final RestClient restClient;
   private final TransactionExecutor transactionExecutor;
+  private final RefundGatewayRegistry gateways;
+  private final EnrollmentLifecycle lifecycle;
+  private final CourseClassRepository courseClassRepository;
 
-  @Value("${payment.momo.refund-endpoint}") private String momoRefundEndpoint;
-  @Value("${payment.momo.refund-query-endpoint}") private String momoRefundQueryEndpoint;
-  @Value("${payment.momo.partner-code}") private String momoPartnerCode;
-  @Value("${payment.momo.access-key}") private String momoAccessKey;
-  @Value("${payment.momo.secret-key}") private String momoSecretKey;
-  @Value("${payment.zalopay.refund-endpoint}") private String zaloPayRefundEndpoint;
-  @Value("${payment.zalopay.refund-query-endpoint}") private String zaloPayRefundQueryEndpoint;
-  @Value("${payment.zalopay.app-id}") private String zaloPayAppId;
-  @Value("${payment.zalopay.key1}") private String zaloPayKey1;
-
-  @Autowired
-  public BillingServiceImpl(EnrollmentRepository enrollmentRepository, PaymentRepository paymentRepository,
-      RefundRepository refundRepository, CurrentUserResolver currentUserResolver,
-      TransactionExecutor transactionExecutor) {
-    this(enrollmentRepository, paymentRepository, refundRepository, currentUserResolver,
-        transactionExecutor, RestClient.builder().build());
-  }
+  private final RefundEligibilityPolicy refundPolicy;
 
   public BillingServiceImpl(EnrollmentRepository enrollmentRepository, PaymentRepository paymentRepository,
       RefundRepository refundRepository, CurrentUserResolver currentUserResolver,
-      TransactionExecutor transactionExecutor, RestClient restClient) {
+      TransactionExecutor transactionExecutor, RefundGatewayRegistry gateways, EnrollmentLifecycle lifecycle,
+      CourseClassRepository courseClassRepository,
+      RefundEligibilityPolicy refundPolicy) {
+    this.refundPolicy = refundPolicy;
     this.enrollmentRepository = enrollmentRepository;
     this.paymentRepository = paymentRepository;
     this.refundRepository = refundRepository;
     this.currentUserResolver = currentUserResolver;
     this.transactionExecutor = transactionExecutor;
-    this.restClient = restClient;
+    this.gateways = gateways;
+    this.lifecycle = lifecycle;
+    this.courseClassRepository = courseClassRepository;
   }
 
   @Override @Transactional(readOnly = true)
@@ -130,8 +112,7 @@ public class BillingServiceImpl implements BillingService {
     if (!preparation.shouldSubmit()) return refundResponse(refund);
     Payment payment = refund.getPayment();
     try {
-      if (payment.getMethod() == PaymentMethod.MOMO) submitMomoRefund(refund);
-      else submitZaloPayRefund(refund);
+      applyRefundResult(refund, gateways.getRequired(payment.getMethod()).submit(refundCommand(refund)));
     } catch (RuntimeException exception) {
       // Timeout/mất kết nối không chứng minh gateway đã từ chối. Giữ PENDING để đối soát.
       refund.setErrorMessage(gatewayMessage(exception));
@@ -148,37 +129,28 @@ public class BillingServiceImpl implements BillingService {
         .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đăng ký"));
     Refund previous = refundRepository.findByIdempotencyKey(request.idempotencyKey().trim()).orElse(null);
     if (previous != null) {
-      if (!previous.getEnrollment().getId().equals(enrollmentId)
-          || (request.amount() != null && previous.getAmount().compareTo(request.amount()) != 0)) {
-        throw new IllegalArgumentException("Idempotency key đã được dùng cho yêu cầu hoàn tiền khác");
-      }
+      refundPolicy.validateIdempotency(previous, enrollmentId, request);
       return new RefundPreparation(previous, false);
     }
     List<Payment> paidPayments = paymentRepository
         .findByEnrollmentId_IdAndStatusOrderByCompletedAtDesc(
             enrollmentId, PaymentTransactionStatus.PAID);
-    if (paidPayments.isEmpty() || enrollment.getPaymentStatus() != EnrollmentPaymentStatus.PAID) {
-      throw new IllegalArgumentException("Đăng ký chưa có khoản thanh toán thành công để hoàn");
-    }
-    if (refundRepository.existsByEnrollment_IdAndStatus(enrollmentId, RefundStatus.PENDING)) {
-      throw new IllegalArgumentException("Đăng ký đang có một yêu cầu hoàn tiền chờ xử lý");
-    }
+    refundPolicy.validateEligibility(enrollment, paidPayments);
     BigDecimal paid = paidPayments.stream().map(Payment::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
     BigDecimal refunded = completedRefundTotal(enrollmentId);
     BigDecimal refundable = paid.subtract(refunded);
     BigDecimal amount = request.amount() == null ? refundable : request.amount();
-    if (amount.compareTo(BigDecimal.ZERO) <= 0 || amount.compareTo(refundable) > 0) {
-      throw new IllegalArgumentException("Số tiền hoàn vượt quá số tiền thực thu còn lại: " + refundable);
-    }
+    refundPolicy.validateAmount(amount, refundable);
 
     Payment payment = paidPayments.get(0);
-    validateRefundGateway(payment);
+    RefundGateway gateway = gateways.getRequired(payment.getMethod());
+    gateway.validate(payment.getReferenceCode());
     Date now = new Date();
     Refund refund = new Refund();
     refund.setEnrollment(enrollment);
     refund.setPayment(payment);
     refund.setProcessedBy(actor);
-    refund.setRefundCode(createRefundCode(payment, enrollmentId));
+    refund.setRefundCode(gateway.createRefundCode(enrollmentId));
     refund.setIdempotencyKey(request.idempotencyKey().trim());
     refund.setAmount(amount);
     refund.setReason(request.reason().trim());
@@ -194,8 +166,7 @@ public class BillingServiceImpl implements BillingService {
         .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy yêu cầu hoàn tiền"));
     if (refund.getStatus() != RefundStatus.PENDING) return refundResponse(refund);
     try {
-      if (refund.getPayment().getMethod() == PaymentMethod.MOMO) queryMomoRefund(refund);
-      else queryZaloPayRefund(refund);
+      applyRefundResult(refund, gateways.getRequired(refund.getPayment().getMethod()).query(refundCommand(refund)));
     } catch (RuntimeException exception) {
       refund.setErrorMessage(gatewayMessage(exception));
       updateState(() -> refundRepository.save(refund));
@@ -203,129 +174,24 @@ public class BillingServiceImpl implements BillingService {
     return refundResponse(refund);
   }
 
-  private void validateRefundGateway(Payment payment) {
-    if (!StringUtils.hasText(payment.getReferenceCode())) {
-      throw new IllegalArgumentException("Payment chưa có mã giao dịch từ cổng thanh toán");
-    }
-    if (payment.getMethod() == PaymentMethod.MOMO) {
-      requireConfig(momoPartnerCode, "MOMO_PARTNER_CODE");
-      requireConfig(momoAccessKey, "MOMO_ACCESS_KEY");
-      requireConfig(momoSecretKey, "MOMO_SECRET_KEY");
-      parseLong(payment.getReferenceCode(), "Mã giao dịch MoMo không hợp lệ");
-    } else if (payment.getMethod() == PaymentMethod.ZALOPAY) {
-      requireConfig(zaloPayAppId, "ZALOPAY_APP_ID");
-      requireConfig(zaloPayKey1, "ZALOPAY_KEY1");
-      parseLong(payment.getReferenceCode(), "Mã giao dịch ZaloPay không hợp lệ");
-    } else {
-      throw new IllegalArgumentException("Phương thức thanh toán không hỗ trợ hoàn tiền");
-    }
+  private RefundCommand refundCommand(Refund refund) {
+    return new RefundCommand(refund.getRefundCode(), refund.getIdempotencyKey(),
+        refund.getPayment().getReferenceCode(), refund.getAmount(), refund.getReason());
   }
 
-  private void submitMomoRefund(Refund refund) {
-    long amount = amount(refund.getAmount());
-    String orderId = refund.getRefundCode();
-    String requestId = refund.getIdempotencyKey();
-    String transId = refund.getPayment().getReferenceCode();
-    String description = refund.getReason();
-    String raw = "accessKey=" + momoAccessKey + "&amount=" + amount + "&description=" + description
-        + "&orderId=" + orderId + "&partnerCode=" + momoPartnerCode
-        + "&requestId=" + requestId + "&transId=" + transId;
-    Map<String, Object> body = new LinkedHashMap<>();
-    body.put("partnerCode", momoPartnerCode);
-    body.put("orderId", orderId);
-    body.put("requestId", requestId);
-    body.put("amount", amount);
-    body.put("transId", Long.parseLong(transId));
-    body.put("lang", "vi");
-    body.put("description", description);
-    body.put("signature", hmacSha256(raw, momoSecretKey));
-    JsonNode response = restClient.post().uri(momoRefundEndpoint).contentType(MediaType.APPLICATION_JSON)
-        .body(body).retrieve().body(JsonNode.class);
-    int code = response == null ? -1 : response.path("resultCode").asInt(-1);
-    String message = response == null ? "MoMo không trả về dữ liệu" : response.path("message").asText();
-    if (code == 0) {
-      refund.setGatewayRefundId(response.path("transId").asText());
-      updateState(() -> completeRefund(refund));
-    } else if (code == 7002 || code == 1000) {
-      refund.setErrorMessage(message);
-      updateState(() -> refundRepository.save(refund));
-    } else updateState(() -> failRefund(refund, message));
-  }
-
-  private void submitZaloPayRefund(Refund refund) {
-    long timestamp = System.currentTimeMillis();
-    long amount = amount(refund.getAmount());
-    String transId = refund.getPayment().getReferenceCode();
-    String description = refund.getReason();
-    String macInput = zaloPayAppId + "|" + transId + "|" + amount + "|" + description + "|" + timestamp;
-    MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
-    form.add("app_id", zaloPayAppId);
-    form.add("m_refund_id", refund.getRefundCode());
-    form.add("zp_trans_id", transId);
-    form.add("amount", String.valueOf(amount));
-    form.add("timestamp", String.valueOf(timestamp));
-    form.add("description", description);
-    form.add("mac", hmacSha256(macInput, zaloPayKey1));
-    JsonNode response = restClient.post().uri(zaloPayRefundEndpoint)
-        .contentType(MediaType.APPLICATION_FORM_URLENCODED).body(form).retrieve().body(JsonNode.class);
-    int code = response == null ? -1 : response.path("return_code").asInt(-1);
-    String message = response == null ? "ZaloPay không trả về dữ liệu" : response.path("return_message").asText();
-    if (response != null && response.has("refund_id")) {
-      refund.setGatewayRefundId(response.path("refund_id").asText());
-    }
-    if (code == 1) updateState(() -> completeRefund(refund));
-    else if (code == 3) {
-      refund.setErrorMessage(message);
-      updateState(() -> refundRepository.save(refund));
-    } else updateState(() -> failRefund(refund, message));
-  }
-
-  private void queryMomoRefund(Refund refund) {
-    String requestId = "QUERY" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
-    String raw = "accessKey=" + momoAccessKey + "&orderId=" + refund.getRefundCode()
-        + "&partnerCode=" + momoPartnerCode + "&requestId=" + requestId;
-    Map<String, Object> body = Map.of("partnerCode", momoPartnerCode, "requestId", requestId,
-        "orderId", refund.getRefundCode(), "lang", "vi", "signature", hmacSha256(raw, momoSecretKey));
-    JsonNode response = restClient.post().uri(momoRefundQueryEndpoint).contentType(MediaType.APPLICATION_JSON)
-        .body(body).retrieve().body(JsonNode.class);
-    int code = response == null ? -1 : response.path("resultCode").asInt(-1);
-    String message = response == null ? "MoMo không trả về dữ liệu" : response.path("message").asText();
-    if (code == 0 && momoQueryContainsSuccess(response, refund)) {
-      updateState(() -> completeRefund(refund));
-    } else if (code == 7002 || code == 1000) {
-      refund.setErrorMessage(message);
-      updateState(() -> refundRepository.save(refund));
-    } else updateState(() -> failRefund(refund, message));
-  }
-
-  private boolean momoQueryContainsSuccess(JsonNode response, Refund refund) {
-    for (JsonNode item : response.path("refundTrans")) {
-      if (refund.getRefundCode().equals(item.path("orderId").asText())
-          && item.path("resultCode").asInt(-1) == 0) {
-        if (item.has("transId")) refund.setGatewayRefundId(item.path("transId").asText());
-        return true;
+  private void applyRefundResult(Refund refund, RefundResult result) {
+    updateState(() -> {
+      if (result.gatewayRefundId() != null) refund.setGatewayRefundId(result.gatewayRefundId());
+      switch (result.status()) {
+        case COMPLETED -> completeRefund(refund);
+        case FAILED -> failRefund(refund, result.message());
+        case PENDING -> {
+          refund.setErrorMessage(result.message());
+          refundRepository.save(refund);
+        }
+        default -> throw new IllegalArgumentException("Trạng thái hoàn tiền từ gateway không hợp lệ");
       }
-    }
-    return !response.has("refundTrans");
-  }
-
-  private void queryZaloPayRefund(Refund refund) {
-    long timestamp = System.currentTimeMillis();
-    String macInput = zaloPayAppId + "|" + refund.getRefundCode() + "|" + timestamp;
-    MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
-    form.add("app_id", zaloPayAppId);
-    form.add("m_refund_id", refund.getRefundCode());
-    form.add("timestamp", String.valueOf(timestamp));
-    form.add("mac", hmacSha256(macInput, zaloPayKey1));
-    JsonNode response = restClient.post().uri(zaloPayRefundQueryEndpoint)
-        .contentType(MediaType.APPLICATION_FORM_URLENCODED).body(form).retrieve().body(JsonNode.class);
-    int code = response == null ? -1 : response.path("return_code").asInt(-1);
-    String message = response == null ? "ZaloPay không trả về dữ liệu" : response.path("return_message").asText();
-    if (code == 1) updateState(() -> completeRefund(refund));
-    else if (code == 3) {
-      refund.setErrorMessage(message);
-      updateState(() -> refundRepository.save(refund));
-    } else updateState(() -> failRefund(refund, message));
+    });
   }
 
   private void completeRefund(Refund refund) {
@@ -339,12 +205,18 @@ public class BillingServiceImpl implements BillingService {
         refund.getEnrollment().getId(), PaymentTransactionStatus.PAID).stream().map(Payment::getAmount)
         .reduce(BigDecimal.ZERO, BigDecimal::add);
     if (completedRefundTotal(refund.getEnrollment().getId()).compareTo(paid) >= 0) {
-      Enrollment enrollment = refund.getEnrollment();
-      enrollment.setPaymentStatus(EnrollmentPaymentStatus.REFUNDED);
-      enrollment.setEnrollmentStatus(EnrollmentStatus.CANCELLED);
-      enrollment.setCancelledAt(now);
-      enrollment.setCancellationReason(refund.getReason());
-      enrollmentRepository.save(enrollment);
+      Enrollment enrollment = enrollmentRepository.lockById(refund.getEnrollment().getId())
+          .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đăng ký"));
+      var courseClass = courseClassRepository.lockById(enrollment.getCourseClassId().getId())
+          .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp học"));
+      lifecycle.markFullyRefunded(enrollment, refund.getReason(), now);
+      enrollmentRepository.saveAndFlush(enrollment);
+      if (courseClass.getStatus() == ClassStatus.FULL
+          && enrollmentRepository.countByCourseClassId_IdAndEnrollmentStatusIn(
+              courseClass.getId(), CAPACITY_RESERVED_STATUSES) < courseClass.getMaxStudents()) {
+        courseClass.setStatus(ClassStatus.OPEN);
+        courseClassRepository.save(courseClass);
+      }
     }
   }
 
@@ -415,22 +287,6 @@ public class BillingServiceImpl implements BillingService {
       refund.getProcessedBy().getId(), refund.getProcessedBy().getFullName(),
       refund.getCreatedAt(), refund.getCompletedAt()); }
 
-  private long amount(BigDecimal value) {
-    return value.setScale(0, RoundingMode.UNNECESSARY).longValueExact();
-  }
-  private String createRefundCode(Payment payment, Integer enrollmentId) {
-    String suffix = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
-    if (payment.getMethod() == PaymentMethod.ZALOPAY) {
-      return java.time.LocalDate.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"))
-          .format(java.time.format.DateTimeFormatter.ofPattern("yyMMdd"))
-          + "_" + zaloPayAppId + "_RF" + enrollmentId + suffix;
-    }
-    return "RF" + enrollmentId + suffix;
-  }
-  private long parseLong(String value, String message) {
-    try { return Long.parseLong(value); }
-    catch (NumberFormatException exception) { throw new IllegalArgumentException(message); }
-  }
   private String gatewayMessage(RuntimeException exception) {
     return StringUtils.hasText(exception.getMessage()) ? exception.getMessage() : "Không thể kết nối cổng thanh toán";
   }

@@ -7,6 +7,7 @@ import com.ntt.language_center_management.dto.response.PaymentResponse;
 import com.ntt.language_center_management.dto.response.RefundResponse;
 import com.ntt.language_center_management.service.BillingService;
 import com.ntt.language_center_management.service.InvoicePdfService;
+import com.ntt.language_center_management.service.impl.InvoiceHtmlService;
 import jakarta.validation.Valid;
 import java.security.Principal;
 import java.util.List;
@@ -27,10 +28,13 @@ import org.springframework.http.ResponseEntity;
 public class BillingApiController {
   private final BillingService billingService;
   private final InvoicePdfService invoicePdfService;
+  private final InvoiceHtmlService invoiceHtmlService;
 
-  public BillingApiController(BillingService billingService, InvoicePdfService invoicePdfService) {
+  public BillingApiController(BillingService billingService, InvoicePdfService invoicePdfService,
+      InvoiceHtmlService invoiceHtmlService) {
     this.billingService = billingService;
     this.invoicePdfService = invoicePdfService;
+    this.invoiceHtmlService = invoiceHtmlService;
   }
 
   @GetMapping("/enrollments/{id}/payments")
@@ -90,5 +94,23 @@ public class BillingApiController {
         .contentLength(pdf.length)
         .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
         .body(pdf);
+  }
+
+  @GetMapping(value = "/enrollments/{id}/invoice.html", produces = "text/html;charset=UTF-8")
+  public ResponseEntity<byte[]> invoiceHtml(
+      @PathVariable Integer id,
+      @RequestParam(defaultValue = "false") boolean download,
+      Principal principal) {
+    var document = invoiceHtmlService.export(id, principal);
+    ContentDisposition disposition = download
+        ? ContentDisposition.attachment().filename(document.filename()).build()
+        : ContentDisposition.inline().filename(document.filename()).build();
+    return ResponseEntity.ok()
+        .contentType(MediaType.parseMediaType(document.contentType()))
+        .contentLength(document.content().length)
+        .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+        .header(HttpHeaders.CACHE_CONTROL, "no-store")
+        .header("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox")
+        .body(document.content());
   }
 }

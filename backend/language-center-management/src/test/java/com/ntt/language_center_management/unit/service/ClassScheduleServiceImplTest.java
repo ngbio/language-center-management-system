@@ -1,6 +1,8 @@
 package com.ntt.language_center_management.unit.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import com.ntt.language_center_management.policy.ScheduleLocationPolicy;
+import com.ntt.language_center_management.policy.ScheduleConflictChecker;
+import com.ntt.language_center_management.policy.ScheduleChangePolicy;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -31,8 +33,12 @@ class ClassScheduleServiceImplTest {
     schedules = mock(ClassScheduleRepository.class); classes = mock(CourseClassRepository.class);
     lessons = mock(LessonRepository.class); rooms = mock(RoomRepository.class);
     mapper = mock(ClassScheduleMapper.class);
-    service = new ClassScheduleServiceImpl(
-        schedules, classes, lessons, rooms, mapper, "Asia/Ho_Chi_Minh");
+    service = new ClassScheduleServiceImpl(schedules,
+        classes,
+        mapper,
+        new ScheduleLocationPolicy(rooms),
+        new ScheduleChangePolicy(lessons),
+        new ScheduleConflictChecker(schedules, lessons, java.time.Clock.system(java.time.ZoneId.of("Asia/Ho_Chi_Minh"))));
   }
 
   @Test

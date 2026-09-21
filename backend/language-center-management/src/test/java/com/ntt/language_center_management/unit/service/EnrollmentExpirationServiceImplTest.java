@@ -21,6 +21,7 @@ import com.ntt.language_center_management.service.impl.EnrollmentExpirationServi
 import java.util.Date;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
+import com.ntt.language_center_management.service.EnrollmentLifecycle;
 import org.junit.jupiter.api.Test;
 
 class EnrollmentExpirationServiceImplTest {
@@ -32,7 +33,7 @@ class EnrollmentExpirationServiceImplTest {
   void setUp() {
     enrollmentRepository = mock(EnrollmentRepository.class);
     classRepository = mock(CourseClassRepository.class);
-    service = new EnrollmentExpirationServiceImpl(enrollmentRepository, classRepository);
+    service = new EnrollmentExpirationServiceImpl(enrollmentRepository, classRepository, new EnrollmentLifecycle(java.time.Clock.systemUTC()), java.time.Clock.systemUTC());
   }
 
   @Test

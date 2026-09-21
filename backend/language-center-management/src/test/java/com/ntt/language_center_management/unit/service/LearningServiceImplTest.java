@@ -1,5 +1,9 @@
 package com.ntt.language_center_management.unit.service;
 
+import com.ntt.language_center_management.policy.QuizSubmissionValidator;
+import com.ntt.language_center_management.policy.QuizEditingPolicy;
+import com.ntt.language_center_management.policy.QuizAttemptPolicy;
+import com.ntt.language_center_management.policy.LearningAccessPolicy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -35,7 +39,11 @@ class LearningServiceImplTest {
   @Mock QuizAttemptRepository attempts;
   @Mock QuizAttemptAnswerRepository answers;
   @Mock EntityManager entityManager;
-  @InjectMocks LearningServiceImpl service;
+  @Spy com.ntt.language_center_management.learning.FixedIntervalReviewStrategy reviewScheduling =
+      new com.ntt.language_center_management.learning.FixedIntervalReviewStrategy();
+  @Spy com.ntt.language_center_management.learning.SingleAnswerGradingStrategy questionGrading =
+      new com.ntt.language_center_management.learning.SingleAnswerGradingStrategy();
+  LearningServiceImpl service;
   Course course;
   CourseContent content;
   Quiz quiz;
@@ -43,6 +51,24 @@ class LearningServiceImplTest {
   Principal principal = () -> "student@example.com";
 
   @BeforeEach void setup() {
+    service = new LearningServiceImpl(new QuizSubmissionValidator(),
+        new QuizAttemptPolicy(),
+        new QuizEditingPolicy(attempts, questions, options),
+        new LearningAccessPolicy(enrollments),
+        reviewScheduling,
+        questionGrading,
+        courses,
+        sections,
+        contents,
+        students,
+        cards,
+        reviews,
+        quizzes,
+        questions,
+        options,
+        attempts,
+        answers,
+        entityManager);
     course = new Course(); course.setId(1); course.setTuitionFee(BigDecimal.ZERO);
     course.setStatus(CatalogStatus.ACTIVE); course.setPublicationStatus(PublicationStatus.PUBLISHED);
     var section = new CourseSection(); section.setId(2); section.setCourseId(course);

@@ -2,7 +2,7 @@ package com.ntt.language_center_management.service.impl;
 
 import com.ntt.language_center_management.event.AccountCreatedMailEvent;
 import com.ntt.language_center_management.event.ClassOpenedMailEvent;
-import com.ntt.language_center_management.event.PaymentSucceededMailEvent;
+import com.ntt.language_center_management.event.PaymentSucceededEvent;
 import com.ntt.language_center_management.event.PasswordResetRequestedMailEvent;
 import com.ntt.language_center_management.event.PasswordResetCompletedMailEvent;
 import com.ntt.language_center_management.repository.UserRepository;
@@ -59,7 +59,7 @@ public class MailNotificationEventListener {
 
   @Async("mailTaskExecutor")
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-  public void paymentSucceeded(PaymentSucceededMailEvent event) {
+  public void paymentSucceeded(PaymentSucceededEvent event) {
     send(event.email(), "Xác nhận thanh toán học phí thành công",
         "Xin chào " + displayName(event.fullName()) + ",\n\n"
             + "Hệ thống đã ghi nhận thanh toán thành công cho lớp " + event.className() + ".\n"

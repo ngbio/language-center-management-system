@@ -49,8 +49,42 @@ class PaymentRefundControllerIntegrationTest {
   @MockitoBean private PaymentService paymentService;
   @MockitoBean private BillingService billingService;
   @MockitoBean private InvoicePdfService invoicePdfService;
+  @MockitoBean private com.ntt.language_center_management.service.impl.InvoiceHtmlService invoiceHtmlService;
   @MockitoBean private UserService userService;
   @MockitoBean private JwtUtils jwtUtils;
+
+  @Test
+  @WithMockUser(username = "student@example.com", roles = "STUDENT")
+  void invoiceHtmlSupportsInlineAndDownloadWithUtf8AndNoCache() throws Exception {
+    byte[] html = "<!doctype html><html lang=\"vi\">Hóa đơn</html>".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    when(invoiceHtmlService.export(eq(15), any(Principal.class)))
+        .thenReturn(new com.ntt.language_center_management.invoice.ExportedDocument(
+            html, "text/html;charset=UTF-8", "invoice-enrollment-15.html"));
+    mockMvc.perform(get("/api/enrollments/15/invoice.html"))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType("text/html;charset=UTF-8"))
+        .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"invoice-enrollment-15.html\""))
+        .andExpect(header().string(HttpHeaders.CACHE_CONTROL, "no-store"))
+        .andExpect(content().bytes(html));
+    mockMvc.perform(get("/api/enrollments/15/invoice.html").param("download", "true"))
+        .andExpect(status().isOk())
+        .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"invoice-enrollment-15.html\""));
+  }
+
+  @Test
+  void invoiceHtmlRequiresAuthentication() throws Exception {
+    mockMvc.perform(get("/api/enrollments/15/invoice.html")).andExpect(status().isUnauthorized());
+    org.mockito.Mockito.verifyNoInteractions(invoiceHtmlService);
+  }
+
+  @Test
+  @WithMockUser(username = "other@example.com", roles = "STUDENT")
+  void invoiceHtmlPreservesOwnershipRejection() throws Exception {
+    when(invoiceHtmlService.export(eq(15), any(Principal.class)))
+        .thenThrow(new com.ntt.language_center_management.exception.UnauthorizedException("Không có quyền xử lý tài chính"));
+    mockMvc.perform(get("/api/enrollments/15/invoice.html"))
+        .andExpect(status().isUnauthorized());
+  }
 
   @Test
   @WithMockUser(username = "student@example.com", roles = "STUDENT")

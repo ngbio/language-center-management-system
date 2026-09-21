@@ -11,7 +11,7 @@ import static org.mockito.Mockito.when;
 
 import com.ntt.language_center_management.event.AccountCreatedMailEvent;
 import com.ntt.language_center_management.event.ClassOpenedMailEvent;
-import com.ntt.language_center_management.event.PaymentSucceededMailEvent;
+import com.ntt.language_center_management.event.PaymentSucceededEvent;
 import com.ntt.language_center_management.event.PasswordResetCompletedMailEvent;
 import com.ntt.language_center_management.event.PasswordResetRequestedMailEvent;
 import com.ntt.language_center_management.repository.UserRepository;
@@ -43,7 +43,7 @@ class MailNotificationEventListenerTest {
   @Test
   void shouldSendWelcomeAndPaymentEmails() {
     listener.accountCreated(new AccountCreatedMailEvent("student@example.com", "Nguyễn An"));
-    listener.paymentSucceeded(new PaymentSucceededMailEvent(
+    listener.paymentSucceeded(new PaymentSucceededEvent(9,
         "student@example.com", "Nguyễn An", "TX-01", "English A1",
         new BigDecimal("3200000")));
 

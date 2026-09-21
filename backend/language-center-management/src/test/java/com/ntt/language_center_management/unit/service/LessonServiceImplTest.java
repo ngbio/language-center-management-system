@@ -1,5 +1,7 @@
 package com.ntt.language_center_management.unit.service;
 
+import com.ntt.language_center_management.policy.LessonChangePolicy;
+import com.ntt.language_center_management.policy.LessonAccessPolicy;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
@@ -37,9 +39,13 @@ class LessonServiceImplTest {
     users = mock(UserRepository.class); mapper = mock(LessonMapper.class);
     StudentRepository students = mock(StudentRepository.class);
     currentUserResolver = new CurrentUserResolver(users, students, mock(TeacherRepository.class));
-    service = new LessonServiceImpl(lessons, schedules, classes, attendance,
-        mock(EnrollmentRepository.class), students, currentUserResolver, mapper,
-        "Asia/Ho_Chi_Minh");
+    service = new LessonServiceImpl(lessons,
+        schedules,
+        classes,
+        mapper,
+        "Asia/Ho_Chi_Minh",
+        new LessonAccessPolicy(students, mock(EnrollmentRepository.class), currentUserResolver),
+        new LessonChangePolicy(attendance, lessons));
   }
 
   @Test
@@ -249,6 +255,39 @@ class LessonServiceImplTest {
   private User user(int id, String roleCode) {
     User user = new User(); user.setId(id); user.setEmail(roleCode.toLowerCase() + "@example.com");
     user.setRoleId(new Role(1, roleCode, roleCode)); return user;
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.EnumSource(value = LessonStatus.class, names = {"COMPLETED", "CANCELLED"})
+  void shouldRejectContentUpdateForTerminalLessonEvenWhenClassIsOpen(LessonStatus status) {
+    Lesson lesson = lesson(schedule(courseClass(ClassStatus.OPEN, 2), 2), LocalDate.now().plusDays(12));
+    lesson.setId(9);
+    lesson.setStatus(status);
+    lesson.setTopic("Original topic");
+    when(lessons.lockById(9)).thenReturn(Optional.of(lesson));
+    when(users.findByEmailIgnoreCase("admin@example.com")).thenReturn(Optional.of(user(10, "ADMIN")));
+
+    assertThatThrownBy(() -> service.update(9, new LessonUpdateRequest("Changed"), () -> "admin@example.com"))
+        .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Không thể sửa nội dung");
+    assertThat(lesson.getTopic()).isEqualTo("Original topic");
+    verify(lessons, never()).save(any());
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.EnumSource(value = LessonStatus.class, names = {"COMPLETED", "CANCELLED"})
+  void shouldRejectRescheduleForTerminalLessonEvenWhenDateAndClassAreValid(LessonStatus status) {
+    LocalDate oldDate = LocalDate.now().plusDays(12);
+    Lesson lesson = lesson(schedule(courseClass(ClassStatus.OPEN, 2), 2), oldDate);
+    lesson.setId(9);
+    lesson.setStatus(status);
+    when(lessons.lockById(9)).thenReturn(Optional.of(lesson));
+
+    assertThatThrownBy(() -> service.reschedule(9, new LessonRescheduleRequest(oldDate.plusDays(1), "Reason")))
+        .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Không thể dời buổi học");
+    assertThat(localDate(lesson.getLessonDate())).isEqualTo(oldDate);
+    assertThat(lesson.getOriginalLessonDate()).isNull();
+    verifyNoInteractions(attendance);
+    verify(lessons, never()).save(any());
   }
   private Courseclass courseClass(ClassStatus status, int sessions) {
     Course course = new Course(2); course.setTotalSessions(sessions);

@@ -19,7 +19,8 @@ class BillingApiControllerTest {
   @BeforeEach
   void setUp() {
     invoicePdfService = mock(InvoicePdfService.class);
-    controller = new BillingApiController(mock(BillingService.class), invoicePdfService);
+    controller = new BillingApiController(mock(BillingService.class), invoicePdfService,
+        mock(com.ntt.language_center_management.service.impl.InvoiceHtmlService.class));
     principal = () -> "student@example.com";
     when(invoicePdfService.createInvoicePdf(15, principal)).thenReturn("%PDF".getBytes());
   }
