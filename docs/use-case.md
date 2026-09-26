@@ -112,8 +112,7 @@ Người dùng
 
 ## 5. Use Case Diagram
 
-<img width="1240" height="1178" alt="UseCase" src="https://github.com/user-attachments/assets/62da368b-8e0a-4afd-9338-083c088c0f1e" />
-
+<img width="1240" height="1178" alt="UseCase" src="https://github.com/user-attachments/assets/0c22ecc2-86b7-4e91-af86-4ed2cc57a245" />
 
 ## 6. Đặc tả các Use Case chính
 
