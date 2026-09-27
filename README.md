@@ -275,7 +275,7 @@ Nếu database đã tồn tại từ phiên bản trước, chạy một lần
 
 - [API Documentation](docs/API_DOCUMENTATION.md): endpoint, quyền truy cập, request và response.
 - [Use cases](docs/use-case.md): tác nhân và các trường hợp sử dụng chính.
-- [File báo cáo](https://drive.google.com/file/d/1izncXsp4AjCH-MiX_U-j2z7ZNOhBFdKy/view?usp=sharing):
+- [File báo cáo](https://drive.google.com/file/d/1izncXsp4AjCH-MiX_U-j2z7ZNOhBFdKy/view?usp=sharing)
 
 ## Định hướng phát triển
 
