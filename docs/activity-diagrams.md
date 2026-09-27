@@ -6,7 +6,7 @@ Tài liệu mô tả luồng công việc, các bước xử lý, điều kiện
 
 ### Vị trí chèn sơ đồ
 
-<!-- Dán ảnh sơ đồ hoạt động UC01 tại đây. -->
+<img width="1602" height="1069" alt="activeUC01" src="https://github.com/user-attachments/assets/f8277095-f3a0-43e9-952a-9e020a25399b" />
 
 ### Mô tả luồng xử lý
 
@@ -25,7 +25,7 @@ Tài liệu mô tả luồng công việc, các bước xử lý, điều kiện
 
 ### Vị trí chèn sơ đồ
 
-<!-- Dán ảnh sơ đồ hoạt động UC02 tại đây. -->
+<img width="1940" height="1386" alt="activeUC02" src="https://github.com/user-attachments/assets/3f63510d-4c56-4a48-977e-b0014cc16b07" />
 
 ### Mô tả luồng xử lý
 
@@ -46,7 +46,7 @@ Tài liệu mô tả luồng công việc, các bước xử lý, điều kiện
 
 ### Vị trí chèn sơ đồ
 
-<!-- Dán ảnh sơ đồ hoạt động UC03 tại đây. -->
+<img width="1854" height="969" alt="activeUC03" src="https://github.com/user-attachments/assets/4d65ad6a-9eb7-4b87-b38c-f763988f2adb" />
 
 ### Mô tả luồng xử lý
 
@@ -66,7 +66,7 @@ Tài liệu mô tả luồng công việc, các bước xử lý, điều kiện
 
 ### Vị trí chèn sơ đồ
 
-<!-- Dán ảnh sơ đồ hoạt động UC04 tại đây. -->
+<img width="1618" height="962" alt="activeUC04" src="https://github.com/user-attachments/assets/3273040d-f695-4864-9cfb-0ebaf626f82e" />
 
 ### Mô tả luồng xử lý
 
