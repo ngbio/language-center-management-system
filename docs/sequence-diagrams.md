@@ -4,9 +4,7 @@ Tài liệu mô tả thứ tự trao đổi thông điệp giữa tác nhân, gi
 
 ## UC01. Đăng ký lớp học
 
-### Vị trí chèn sơ đồ
-
-<!-- Dán ảnh sơ đồ tuần tự UC01 tại đây. -->
+<img width="1778" height="882" alt="sequenceUC01" src="https://github.com/user-attachments/assets/5e2aedb0-3c19-4065-accc-f74b71378f1a" />
 
 ### Mô tả luồng xử lý
 
@@ -25,9 +23,7 @@ Nếu lớp vừa đủ sĩ số, enrollment bị trùng hoặc dữ liệu khô
 
 ## UC02. Thanh toán học phí
 
-### Vị trí chèn sơ đồ
-
-<!-- Dán ảnh sơ đồ tuần tự UC02 tại đây. -->
+<img width="1814" height="1834" alt="sequenceUC02" src="https://github.com/user-attachments/assets/875d42d9-82ee-4e81-8e53-dba3b923727d" />
 
 ### Mô tả luồng xử lý
 
@@ -46,9 +42,7 @@ Nếu giao dịch thất bại, payment chuyển thành `FAILED`, còn enrollmen
 
 ## UC03. Điểm danh học viên
 
-### Vị trí chèn sơ đồ
-
-<!-- Dán ảnh sơ đồ tuần tự UC03 tại đây. -->
+<img width="1686" height="1313" alt="sequenceUC03" src="https://github.com/user-attachments/assets/578f695d-29d8-44a0-b224-9edb85cc797d" />
 
 ### Mô tả luồng xử lý
 
@@ -67,9 +61,7 @@ Nếu giảng viên không phụ trách lớp, lesson không hợp lệ hoặc d
 
 ## UC04. Quản lý khóa học
 
-### Vị trí chèn sơ đồ
-
-<!-- Dán ảnh sơ đồ tuần tự UC04 tại đây. -->
+<img width="1781" height="1001" alt="sequenceUC04" src="https://github.com/user-attachments/assets/446904b6-acbe-4c8e-922e-1e73ea006d5b" />
 
 ### Mô tả luồng xử lý
 
