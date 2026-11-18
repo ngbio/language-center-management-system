@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import "../../styles/PublicSite.css";
+import "../../styles/Christmas.css";
+import { isChristmas } from "../../configs/uiEvent";
 import {
   SESSION_KEYS,
   clearSession,
@@ -12,6 +14,9 @@ import StudentNotificationBell from "../notifications/StudentNotificationBell";
 
 export default function PublicLayout() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const learning = pathname.startsWith("/on-tap/");
+  const [snow, setSnow] = useState(() => localStorage.getItem("christmasSnow") !== "off");
   const accountMenuRef = useRef(null);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -83,7 +88,8 @@ export default function PublicLayout() {
   const accountLabel = session.email.split("@")[0] || "Tài khoản";
 
   return (
-    <div className={`public-site ${darkMode ? "dark" : ""}`}>
+    <div className={`public-site ${isChristmas ? "christmas-theme" : ""} ${darkMode ? "dark" : ""} ${isChristmas && snow ? "christmas-snow-on" : ""}`}>
+      {isChristmas && !learning && <div className="christmas-greeting"><div className="public-container"><span className="christmas-greeting-star" aria-hidden="true">✦</span><p><strong>Mùa của những điều kỳ diệu</strong><span>Giáng sinh an lành · Học thêm một ngôn ngữ, mở thêm một thế giới.</span></p><button type="button" aria-pressed={snow} onClick={() => setSnow((current) => { localStorage.setItem("christmasSnow", current ? "off" : "on"); return !current; })}>{snow ? "Tắt tuyết" : "Bật tuyết"}<span aria-hidden="true"> ❄</span></button></div></div>}
       <header className="public-header">
         <div className="public-container public-nav">
           <Link className="public-brand" to="/">

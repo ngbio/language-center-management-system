@@ -2,6 +2,7 @@ import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { SESSION_KEYS, clearSession } from "../utils/authSession";
 import { disconnectFirebaseChat } from "../services/firebaseChat";
+import SeasonalAccent from "./SeasonalAccent";
 
 export default function StaffLayout() {
   const [open, setOpen] = useState(false);
@@ -19,6 +20,7 @@ export default function StaffLayout() {
           <span className="brand-mark">LC</span>
           <div><strong>Lingua Center</strong><small>Staff workspace</small></div>
         </div>
+        <SeasonalAccent />
         <nav>
           <NavLink to="/staff/profile" onClick={() => setOpen(false)}>
             <span className="nav-icon">S</span>Hồ sơ cá nhân

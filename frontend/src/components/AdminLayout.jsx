@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { SESSION_KEYS, clearSession } from "../utils/authSession";
+import SeasonalAccent from "./SeasonalAccent";
 
 const navigation = [
   ["/admin/profile", "A", "Hồ sơ cá nhân"],
@@ -35,6 +36,7 @@ export default function AdminLayout() {
             <small>Admin workspace</small>
           </div>
         </div>
+        <SeasonalAccent />
         <nav>
           {navigation.map(([to, icon, label]) => (
             <NavLink
