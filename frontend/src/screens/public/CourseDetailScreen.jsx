@@ -4,6 +4,7 @@ import api, { authApis, endpoints } from "../../configs/Apis";
 import { apiData, apiError, formatDate, formatMoney } from "../../utils/api";
 import { isTokenActive, SESSION_KEYS } from "../../utils/authSession";
 import LessonContent from "../../components/LessonContent";
+import "../../styles/CourseDetail.css";
 
 export default function CourseDetailScreen() {
   const { slug } = useParams();
@@ -137,7 +138,8 @@ export default function CourseDetailScreen() {
   if (error && !course) return <div className="public-container detail-loading"><div className="public-alert">{error}</div><Link to="/">← Về trang chủ</Link></div>;
 
   return course && (
-    <>
+    <div className="course-detail-page">
+      <nav className="public-container course-detail-breadcrumb" aria-label="Đường dẫn"><Link to="/">Trang chủ</Link><span>›</span><Link to="/khoa-hoc">Khóa học</Link><span>›</span><span>{course.courseName}</span></nav>
       <section className={`detail-hero ${course.bannerUrl ? "has-banner" : ""}`}>
         {course.bannerUrl && (
           <img
@@ -147,25 +149,26 @@ export default function CourseDetailScreen() {
           />
         )}
         <div className="public-container detail-hero-grid">
+          <div className="course-detail-cover">{course.thumbnailUrl ? <img src={course.thumbnailUrl} alt={course.courseName} /> : <span>{course.languageCode === "JA" ? "あ ア" : course.languageCode || "LC"}</span>}<small>{course.courseCode}</small></div>
           <div><Link className="breadcrumb" to="/">Trang chủ</Link><span className="breadcrumb"> / Khóa học</span><span className="section-kicker">{course.languageName} · {course.levelName}</span><h1>{course.courseName}</h1><p>{course.shortDescription || course.description}</p><div className="detail-facts"><span><b>{course.totalSessions}</b> buổi học</span><span><b>{course.durationHours || "—"}</b> giờ</span><span><b>{sections.length}</b> phần nội dung</span></div></div>
-          <aside className="enroll-card"><span>Học phí khóa học</span><strong>{Number(course.tuitionFee) === 0 ? "Miễn phí" : formatMoney(course.tuitionFee)}</strong>{currentEnrollment ? <><div className="already-enrolled">✓ {enrollmentStatusText(currentEnrollment)}</div><Link className="enroll-curriculum-link" to="/lich-su-dang-ky">Xem đăng ký của tôi →</Link></> : canRegister && <button className="primary-cta enroll-action" type="button" onClick={beginEnrollment}>Đăng ký khóa học</button>}<a className="enroll-curriculum-link" href="#curriculum">Xem chương trình</a><small>{currentEnrollment ? `Lớp: ${currentEnrollment.className}` : canRegister ? "Chọn một lớp đang mở và gửi yêu cầu đăng ký tới trung tâm." : "Tài khoản giảng viên và nhân viên không đăng ký khóa học."}</small></aside>
+          <aside className="enroll-card"><span>Học phí trọn khóa</span><strong>{Number(course.tuitionFee) === 0 ? "Miễn phí" : formatMoney(course.tuitionFee)}</strong>{Number(course.tuitionFee) === 0 && <Link className="primary-cta enroll-action" to={`/on-tap/${course.id}`}>Học miễn phí ngay →</Link>}{currentEnrollment ? <><div className="already-enrolled">✓ {enrollmentStatusText(currentEnrollment)}</div><Link className="enroll-curriculum-link" to="/lich-su-dang-ky">Xem đăng ký của tôi →</Link></> : canRegister && <button className={Number(course.tuitionFee) === 0 ? "enroll-secondary" : "primary-cta enroll-action"} type="button" onClick={beginEnrollment}>{Number(course.tuitionFee) === 0 ? "Xem lớp đang mở" : "Đăng ký khóa học →"}</button>}<a className="enroll-curriculum-link" href="#curriculum">Xem chương trình ↓</a><small>{currentEnrollment ? `Lớp: ${currentEnrollment.className}` : canRegister ? "Chọn lớp phù hợp với lịch học của bạn." : "Tài khoản giảng viên và nhân viên không đăng ký khóa học."}</small></aside>
         </div>
       </section>
 
       <section className="detail-body public-container">
         <div className="detail-main">
-          {(Number(course.tuitionFee) === 0 || (currentEnrollment?.enrollmentStatus === "CONFIRMED" && currentEnrollment?.paymentStatus === "PAID")) &&
+          {Number(course.tuitionFee) > 0 && currentEnrollment?.enrollmentStatus === "CONFIRMED" && currentEnrollment?.paymentStatus === "PAID" &&
             <div className="detail-panel"><Link className="primary-cta" to={`/on-tap/${course.id}`}>Ôn tập, flashcard và quiz →</Link></div>}
-          <div className="detail-panel"><span className="section-kicker">TỔNG QUAN</span><h2>Bạn sẽ nhận được gì?</h2><p>{course.learningOutcomes || course.description || "Nội dung đang được cập nhật."}</p>{course.targetAudience && <><h3>Khóa học dành cho ai?</h3><p>{course.targetAudience}</p></>}{course.prerequisites && <><h3>Yêu cầu đầu vào</h3><p>{course.prerequisites}</p></>}</div>
+          <div className="detail-panel"><span className="section-kicker">TỔNG QUAN</span><h2>Bạn sẽ học được gì?</h2><ul className="course-outcomes">{(course.learningOutcomes || course.description || "Nội dung đang được cập nhật.").split(/\n+/).filter((line) => line.trim()).map((line, index) => <li key={index}><span aria-hidden="true">✓</span>{line.replace(/^[-•]\s*/, "")}</li>)}</ul></div>
           <div className="curriculum" id="curriculum"><div className="curriculum-heading"><div><span className="section-kicker">CHƯƠNG TRÌNH HỌC</span><h2>Nội dung theo từng bài</h2></div><span>{sections.length} phần</span></div>{error && <div className="public-alert">{error}</div>}{sections.map((section) => {
             const open = openSection === section.id;
             return <article className={`curriculum-item ${open ? "open" : ""}`} key={section.id}><button onClick={() => toggleSection(section.id)} type="button"><span><small>PHẦN {section.displayOrder}</small><strong>{section.title}</strong><em>{section.description}</em></span><b>{open ? "−" : "+"}</b></button>{open && <div className="content-list">{sectionLoading === section.id && <p>Đang tải nội dung...</p>}{contents[section.id]?.map((content) => <div className="content-row" key={content.id}><span className="content-icon">文</span><div><strong>{content.title}</strong><p>{content.summary}</p>{content.contentHtml && <LessonContent html={content.contentHtml} />}</div><span className="content-type">{content.contentType}</span></div>)}{sectionLoading !== section.id && contents[section.id]?.length === 0 && <p>Phần này chưa có nội dung.</p>}</div>}</article>;
           })}{sections.length === 0 && <div className="public-empty">Chương trình học đang được cập nhật.</div>}</div>
         </div>
-        <aside className="detail-side"><div><span className="section-kicker">THÔNG TIN</span><h3>Tổng quan khóa học</h3><dl><dt>Mã khóa học</dt><dd>{course.courseCode}</dd><dt>Trình độ</dt><dd>{course.levelName}</dd><dt>Ngôn ngữ</dt><dd>{course.languageName}</dd><dt>Chứng chỉ</dt><dd>{course.certificateInfo || "Đang cập nhật"}</dd></dl></div></aside>
+        <aside className="detail-side">{course.targetAudience && <div><h3>Khóa học phù hợp với</h3><p>{course.targetAudience}</p></div>}{course.prerequisites && <div><h3>Yêu cầu đầu vào</h3><p>{course.prerequisites}</p></div>}<div><span className="section-kicker">THÔNG TIN</span><h3>Tổng quan khóa học</h3><dl><dt>Mã khóa học</dt><dd>{course.courseCode}</dd><dt>Trình độ</dt><dd>{course.levelName}</dd><dt>Ngôn ngữ</dt><dd>{course.languageName}</dd><dt>Chứng chỉ</dt><dd>{course.certificateInfo || "Đang cập nhật"}</dd></dl></div></aside>
       </section>
       {enrollmentOpen && <div className="public-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setEnrollmentOpen(false); }}><section className="public-enrollment-modal" role="dialog" aria-modal="true" aria-labelledby="enrollment-title"><button className="public-modal-close" type="button" onClick={() => setEnrollmentOpen(false)}>×</button><span className="section-kicker">ĐĂNG KÝ KHÓA HỌC</span><h2 id="enrollment-title">Chọn lớp cho {course.courseName}</h2>{enrollmentMessage && <div className={openClasses.length ? "public-alert" : "register-note"}>{enrollmentMessage}</div>}{enrollmentLoading && <div className="public-empty">Đang xử lý...</div>}{!enrollmentLoading && openClasses.length > 0 && <><div className="enrollment-class-list">{openClasses.map((item) => <button type="button" className={selectedClass?.id === item.id ? "selected" : ""} onClick={() => chooseClass(item)} key={item.id}><span><strong>{item.className}</strong><small>{item.classCode} · {item.levelCode}</small></span><span><b>{formatDate(item.startDate)}</b><small>{item.availableSeats} chỗ còn lại</small></span></button>)}</div>{selectedClass && <div className="enrollment-confirm"><h3>Thông tin đăng ký</h3><dl><div><dt>Lớp</dt><dd>{selectedClass.className}</dd></div><div><dt>Thời gian</dt><dd>{formatDate(selectedClass.startDate)} – {formatDate(selectedClass.endDate)}</dd></div><div><dt>Lịch cố định</dt><dd>{formatWeeklySchedules(selectedSchedules)}</dd></div><div><dt>Giáo viên</dt><dd>{selectedClass.teacherName || "Đang cập nhật"}</dd></div><div><dt>Học phí</dt><dd>{formatMoney(selectedClass.appliedTuitionFee)}</dd></div></dl><p className="payment-later-note">Bạn có thể thanh toán sau trong mục Lịch sử đăng ký.</p><button className="primary-cta" type="button" onClick={confirmEnrollment}>Xác nhận đăng ký</button></div>}</>}{!enrollmentLoading && !enrollmentMessage && openClasses.length === 0 && <div className="public-empty">Khóa học này chưa có lớp đang mở đăng ký.</div>}</section></div>}
-    </>
+    </div>
   );
 }
 

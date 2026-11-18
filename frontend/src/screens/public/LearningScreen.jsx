@@ -4,6 +4,7 @@ import api, { authApis, endpoints } from "../../configs/Apis";
 import { apiData, apiError, formatDateTime } from "../../utils/api";
 import { SESSION_KEYS, isTokenActive } from "../../utils/authSession";
 import "../../styles/Learning.css";
+import "../../styles/LearningExperience.css";
 
 export default function LearningScreen() {
   const { courseId } = useParams();
@@ -27,26 +28,30 @@ function LearningCourse({ courseId, student }) {
       }).catch((e) => { if (active) setError(apiError(e)); });
     return () => { active = false; };
   }, [courseId, student]);
-  return <main className="learning-page public-container">
-    <Link to="/khoa-hoc">← Danh sách khóa học</Link>
-    <h1>{course?.title || "Ôn tập khóa học"}</h1>
-    {!student && <p className="learning-notice">Bạn đang học ở chế độ khách. <Link to="/login">Đăng nhập học viên</Link> để lưu lịch ôn flashcard và kết quả quiz.</p>}
-    {error && <p role="alert" className="public-alert">{error}</p>}
-    {!course && !error && <p role="status">Đang tải nội dung...</p>}
-    {course && <div className="learning-layout">
-      <nav className="learning-sidebar" aria-label="Danh sách bài học">
-        {course.sections.map((section) => <section key={section.id}>
-          <h2>{section.title}</h2>
+  return <div className="learning-page learning-workspace">
+      <aside className="learning-sidebar">
+        <Link className="public-brand learning-brand" to="/"><span className="public-brand-mark">LC</span><span><strong>Lingua Center</strong><small>Không gian học tập</small></span></Link>
+        <Link className="learning-back" to="/khoa-hoc">← Trở về khóa học</Link>
+        <nav aria-label="Danh sách bài học">
+        {course?.sections.map((section, sectionIndex) => <section key={section.id}>
+          <span className="section-kicker">Chương {sectionIndex + 1}</span><h2>{section.title}</h2>
           {section.contents.length === 0 && <p>Chưa có bài được xuất bản.</p>}
-          {section.contents.map((content) => <button key={content.id} type="button"
+          {section.contents.map((content, index) => <button key={content.id} type="button"
             aria-current={selected?.id === content.id ? "page" : undefined}
-            onClick={() => setSelected(content)}>{content.title}</button>)}
+            onClick={() => setSelected(content)}><span className="learning-lesson-number">{index + 1}</span><span>{content.title}</span></button>)}
         </section>)}
-      </nav>
-      {selected ? <LessonPractice key={selected.id} content={selected} student={student} />
-        : <p>Khóa học chưa có nội dung được xuất bản.</p>}
-    </div>}
-  </main>;
+        </nav>
+      </aside>
+      <div className="learning-stage">
+        <header className="learning-topbar"><div><h1>{course?.title || "Ôn tập khóa học"}</h1><strong>{selected?.title || "Nội dung học tập"}</strong></div><Link to="/khoa-hoc" className="learning-exit">Thoát bài học ↗</Link></header>
+        <main className="learning-stage-body">
+          {!student && <p className="learning-notice">Bạn đang học ở chế độ khách. <Link to="/login">Đăng nhập học viên</Link> để lưu lịch ôn flashcard và kết quả quiz.</p>}
+          {error && <p role="alert" className="public-alert">{error}</p>}
+          {!course && !error && <p role="status">Đang tải nội dung...</p>}
+          {course && (selected ? <LessonPractice key={selected.id} content={selected} student={student} /> : <p>Khóa học chưa có nội dung được xuất bản.</p>)}
+        </main>
+      </div>
+  </div>;
 }
 
 function LessonPractice({ content, student }) {
@@ -72,12 +77,12 @@ function LessonPractice({ content, student }) {
   const srcDoc = '<!doctype html><html lang="vi"><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; img-src https: data:"><style>body{font:16px/1.7 system-ui;padding:12px;color:#253749;overflow-wrap:anywhere}img,table{max-width:100%}pre{white-space:pre-wrap}</style></head><body>'
     + (content.contentHtml || "") + "</body></html>";
   return <section className="learning-main">
-    <h2>{content.title}</h2>
     <div className="learning-tabs" aria-label="Nội dung học tập">
       {[["lesson", "Ôn tập bài"], ["cards", "Flashcard"], ["quiz", "Quiz"]].map(([key, label]) =>
         <button key={key} type="button" aria-pressed={tab === key} onClick={() => setTab(key)}>{label}</button>)}
     </div>
-    {tab === "lesson" && <article>
+    {tab === "lesson" && <article className="learning-reading-card">
+      <span className="section-kicker">Nội dung bài học</span><h1>{content.title}</h1>
       {content.summary && <p>{content.summary}</p>}
       {content.contentHtml ? <iframe title={content.title} className="learning-content-frame" sandbox="" srcDoc={srcDoc} />
         : <p>Bài học chưa có nội dung chi tiết.</p>}
@@ -121,17 +126,19 @@ function Flashcards({ cards, student }) {
     {notice && <p role="status">{notice}</p>}
     {error && <p role="alert">{error}</p>}
     {!card ? <p>{cards.length ? "Không còn thẻ cần ôn hôm nay." : "Bài này chưa có flashcard."}</p> : <>
-      <p>Thẻ {position + 1} / {available.length}</p>
-      <div className="learning-flashcard">
+      <div className="learning-practice-heading"><div><span className="section-kicker">Flashcard</span><h2>Ôn tập và ghi nhớ</h2></div><span>Thẻ {position + 1} / {available.length}</span></div>
+      <div className={`learning-flashcard ${flipped ? "is-flipped" : ""}`}>
+        <small>{flipped ? "MẶT SAU · NGHĨA VÀ GIẢI THÍCH" : "MẶT TRƯỚC · TỪ VỰNG"}</small>
         <p className="learning-card-text">{flipped ? card.backText : card.frontText}</p>
         {flipped && card.exampleSentence && <p>{card.exampleSentence}</p>}
-        {!flipped && <button type="button" onClick={() => setFlipped(true)}>Xem đáp án</button>}
+        <button className="learning-flip-button" type="button" onClick={() => setFlipped(!flipped)}>{flipped ? "↶ Xem lại mặt trước" : "↻ Xem đáp án"}</button>
       </div>
-      {flipped && <div className="learning-actions">
+      <div className="learning-actions learning-ratings">
         {[["AGAIN", "Chưa nhớ"], ["HARD", "Khó"], ["REMEMBERED", "Đã nhớ"]].map(([value, label]) =>
-          <button type="button" disabled={busy} key={value} onClick={() => rate(value)}>{label}</button>)}
-      </div>}
-      <div className="learning-actions">
+          <button className={`rating-${value.toLowerCase()}`} type="button" disabled={busy || !flipped} key={value} onClick={() => rate(value)}>{label}</button>)}
+      </div>
+      {!flipped && <p className="learning-rating-hint">Xem đáp án trước khi đánh giá mức độ ghi nhớ.</p>}
+      <div className="learning-actions learning-card-navigation">
         <button type="button" disabled={busy} onClick={() => { setIndex((position - 1 + available.length) % available.length); setFlipped(false); }}>← Thẻ trước</button>
         <button type="button" disabled={busy} onClick={() => { setIndex(position + 1); setFlipped(false); }}>Thẻ tiếp →</button>
       </div>
@@ -147,7 +154,9 @@ function QuizPractice({ quizzes, student }) {
   const [history, setHistory] = useState([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [questionIndex, setQuestionIndex] = useState(0);
   async function begin(quiz) {
+    setQuestionIndex(0);
     setBusy(true); setError(""); setSelected({}); setResult(null); setHistory([]); setActive(null);
     try {
       if (student) {
@@ -189,23 +198,31 @@ function QuizPractice({ quizzes, student }) {
       onClick={() => { setActive(item.quiz); setResult(item.result); }}>
       Lần {item.attemptNumber} · {item.submittedAt ? `${item.score}/100 · ${formatDateTime(item.submittedAt)}` : "Chưa nộp — chọn Làm quiz để tiếp tục"}
     </button>)}
-    {active && <form onSubmit={submit}>
+    {active && <form className="learning-quiz-form" onSubmit={submit}>
       <h3>{active.title}</h3>
+      {!result && <div className="learning-question-progress"><span>Câu {questionIndex + 1} / {active.questions.length}</span><span>Đã chọn {Object.keys(selected).length} / {active.questions.length}</span><progress value={Object.keys(selected).length} max={active.questions.length} /></div>}
       {result && <p className="learning-result" role="status">{result.passed ? "Đạt" : "Chưa đạt"} · {result.score}/100</p>}
       {active.questions.map((question, index) => {
+        if (!result && index !== questionIndex) return null;
         const answer = result?.answers.find((a) => a.questionId === question.id);
         return <fieldset key={question.id} disabled={busy || Boolean(result)}>
           <legend>{index + 1}. {question.questionText} ({question.points} điểm)</legend>
-          {question.options.map((option) => <label className="learning-option" key={option.id}>
-            <input type="radio" name={`question-${question.id}`} value={option.id}
+          {question.options.map((option, optionIndex) => <label className={`learning-option ${(answer ? answer.selectedOptionId : selected[question.id]) === option.id ? "is-selected" : ""} ${answer?.correctOptionId === option.id ? "is-correct" : ""}`} key={option.id}>
+            <input type="radio" aria-label={option.optionText} name={`question-${question.id}`} value={option.id}
               checked={(answer ? answer.selectedOptionId : selected[question.id]) === option.id}
               onChange={() => setSelected((current) => ({ ...current, [question.id]: option.id }))} />
-            <span>{option.optionText}{answer?.correctOptionId === option.id ? " ✓ Đáp án đúng" : ""}</span>
+            <b className="learning-option-letter">{String.fromCharCode(65 + optionIndex)}</b><span>{option.optionText}{answer?.correctOptionId === option.id ? " ✓ Đáp án đúng" : ""}</span>
           </label>)}
           {answer && <p>{answer.correct ? "Chính xác." : "Chưa chính xác."} {answer.explanation}</p>}
         </fieldset>;
       })}
-      {!result && <button type="submit" disabled={busy}>Nộp bài</button>}
+      {!result && <div className="learning-quiz-navigation">
+        <button type="button" disabled={busy || questionIndex === 0} onClick={() => setQuestionIndex(questionIndex - 1)}>← Câu trước</button>
+        <small>Lựa chọn được giữ khi chuyển câu trong bài.</small>
+        {questionIndex < active.questions.length - 1
+          ? <button key="next-question" className="learning-next" type="button" disabled={busy} onClick={(event) => { event.preventDefault(); setQuestionIndex(questionIndex + 1); }}>Câu tiếp theo →</button>
+          : <button key="submit-quiz" className="learning-next" type="submit" disabled={busy}>Nộp bài</button>}
+      </div>}
     </form>}
   </div>;
 }
