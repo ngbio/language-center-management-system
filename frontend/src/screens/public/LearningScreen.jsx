@@ -5,6 +5,7 @@ import { apiData, apiError, formatDateTime } from "../../utils/api";
 import { SESSION_KEYS, isTokenActive } from "../../utils/authSession";
 import "../../styles/Learning.css";
 import "../../styles/LearningExperience.css";
+import SeasonalAccent from "../../components/SeasonalAccent";
 
 export default function LearningScreen() {
   const { courseId } = useParams();
@@ -32,6 +33,7 @@ function LearningCourse({ courseId, student }) {
       <aside className="learning-sidebar">
         <Link className="public-brand learning-brand" to="/"><span className="public-brand-mark">LC</span><span><strong>Lingua Center</strong><small>Không gian học tập</small></span></Link>
         <Link className="learning-back" to="/khoa-hoc">← Trở về khóa học</Link>
+        <SeasonalAccent />
         <nav aria-label="Danh sách bài học">
         {course?.sections.map((section, sectionIndex) => <section key={section.id}>
           <span className="section-kicker">Chương {sectionIndex + 1}</span><h2>{section.title}</h2>

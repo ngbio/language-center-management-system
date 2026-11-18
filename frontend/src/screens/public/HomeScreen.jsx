@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import APIs, { endpoints } from "../../configs/Apis";
 import { apiData } from "../../utils/api";
+import ChristmasScene from "../../components/public/ChristmasScene";
+import { isChristmas } from "../../configs/uiEvent";
 
 export default function HomeScreen() {
   const [teachers, setTeachers] = useState([]);
@@ -28,12 +30,13 @@ export default function HomeScreen() {
 
   return (
     <>
-      <section className="public-hero">
+      <section className={`public-hero ${isChristmas ? "christmas-hero" : ""}`}>
+        {isChristmas && <div className="christmas-snow" aria-hidden="true">{Array.from({ length: 16 }, (_, index) => <i key={index} style={{ "--flake": index }} />)}</div>}
         <div className="public-container hero-grid">
           <div className="hero-copy">
-            <span className="eyebrow-pill">LỘ TRÌNH HỌC THỰC TẾ</span>
+            {isChristmas ? <span className="eyebrow-pill christmas-eyebrow"><span aria-hidden="true">✦</span> MỘT MÙA GIÁNG SINH, NHIỀU KHỞI ĐẦU MỚI</span> : <span className="eyebrow-pill">LỘ TRÌNH HỌC THỰC TẾ</span>}
             <h1>Chạm gần hơn đến thế giới bằng một ngôn ngữ mới.</h1>
-            <p>Khóa học có cấu trúc rõ ràng, nội dung theo từng bài và lịch học linh hoạt dành cho mọi trình độ.</p>
+            <p>{isChristmas ? "Mùa lễ hội này, dành tặng bản thân một khởi đầu mới. Khám phá những ngôn ngữ, kết nối những câu chuyện và học thêm điều hay mỗi ngày." : "Khóa học có cấu trúc rõ ràng, nội dung theo từng bài và lịch học linh hoạt dành cho mọi trình độ."}</p>
             <div className="hero-actions">
               <Link className="primary-cta" to="/khoa-hoc">Khám phá khóa học</Link>
               <a className="text-cta" href="/downloads/lingua-center-1.0.0.apk" download>Tải ứng dụng Android <span>↓</span></a>
@@ -41,12 +44,10 @@ export default function HomeScreen() {
             </div>
             <div className="hero-stats"><div><strong>25+</strong><span>Bài học chọn lọc</span></div><div><strong>{languages.length || "—"}</strong><span>Ngôn ngữ</span></div><div><strong>4.9/5</strong><span>Đánh giá học viên</span></div></div>
           </div>
-          <div className="hero-visual" aria-label="Minh họa học ngoại ngữ">
-            <div className="sun-disc" />
-            <div className="hero-card hero-card-main"><span>日本語</span><strong>Học từng bài.<br />Tiến bộ mỗi ngày.</strong><small>Trung tâm ngoại ngữ</small></div>
-            <div className="hero-card hero-card-float"><b>あ</b><span>New lesson<br /><strong>ready to learn</strong></span></div>
-            <div className="hero-dots">••••••••••••</div>
-          </div>
+          {isChristmas ? <div className="hero-visual christmas-visual">
+            <ChristmasScene />
+            <div className="christmas-language-note"><span aria-hidden="true">✦</span><div><small>MỘT LỜI CHÚC, NHIỀU NGÔN NGỮ</small><strong>Merry Christmas!</strong><span>メリークリスマス · Giáng sinh an lành</span></div></div>
+          </div> : <div className="hero-visual" aria-label="Minh họa học ngoại ngữ"><div className="sun-disc" /><div className="hero-card hero-card-main"><span>日本語</span><strong>Học từng bài.<br />Tiến bộ mỗi ngày.</strong><small>Trung tâm ngoại ngữ</small></div><div className="hero-card hero-card-float"><b>あ</b><span>New lesson<br /><strong>ready to learn</strong></span></div><div className="hero-dots">••••••••••••</div></div>}
         </div>
       </section>
 
