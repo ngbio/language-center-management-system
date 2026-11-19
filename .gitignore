@@ -33,3 +33,8 @@ replay_pid*
 # Local documentation checklists
 /docs/checklist/
 /docs/backend-study/
+
+# Downloaded design reference; application assets live in frontend/src/assets/christmas
+/Christmas.2006/
+/__MACOSX/
+.DS_Store

@@ -16,6 +16,35 @@ const targets = [
   ["/on-tap/1", null, ".learning-topbar"],
 ];
 
+test("Christmas window follows theme, snow preference and manual music playback", async ({ page }) => {
+  test.skip(event !== "christmas", "Seasonal presentation is disabled");
+  await page.addInitScript(() => {
+    if (!localStorage.getItem("publicTheme")) localStorage.setItem("publicTheme", "light");
+  });
+  await page.route("**/api/**", (route) => route.fulfill({ contentType: "application/json", body: JSON.stringify({ status: 200, data: [] }) }));
+  await page.goto(baseURL ? `${baseURL}/` : "/");
+  const garden = page.locator(".christmas-window-garden");
+  await expect(garden).toHaveCSS("background-image", /garden-day/);
+  await page.getByRole("button", { name: "Chuyển sang giao diện tối" }).click();
+  await expect(garden).toHaveCSS("background-image", /garden-night/);
+  await page.getByRole("button", { name: /Tắt tuyết/ }).click();
+  await expect(page.locator(".christmas-window-snow")).toBeHidden();
+  await page.reload();
+  await expect(garden).toHaveCSS("background-image", /garden-night/);
+  await expect(page.locator(".christmas-window-snow")).toBeHidden();
+  const audio = page.locator("audio");
+  expect(await audio.evaluate((element) => element.paused)).toBe(true);
+  await page.getByRole("button", { name: "Bật nhạc Giáng sinh" }).click();
+  await expect(page.getByRole("button", { name: "Tắt nhạc Giáng sinh" })).toHaveAttribute("aria-pressed", "true");
+  expect(await audio.evaluate((element) => element.paused)).toBe(false);
+  await page.getByRole("button", { name: "Tắt nhạc Giáng sinh" }).click();
+  expect(await audio.evaluate((element) => element.paused)).toBe(true);
+  await page.getByRole("button", { name: /Bật tuyết/ }).click();
+  await expect(page.locator(".christmas-window-snow")).toBeVisible();
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(page.locator(".christmas-window-snow")).toBeHidden();
+});
+
 for (const [path, role, selector] of targets) {
   test(`${event}: ${path} giữ chức năng và bật/tắt đúng trang trí`, async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });

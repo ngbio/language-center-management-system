@@ -1,3 +1,4 @@
+import ChristmasAuthScene from "../../components/public/ChristmasAuthScene";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import api, { endpoints } from "../../configs/Apis";
@@ -43,6 +44,7 @@ export default function ResetPasswordScreen() {
         <Link className="public-brand" to="/"><span className="public-brand-mark">LC</span><span><strong>Lingua Center</strong><small>Học ngoại ngữ mỗi ngày</small></span></Link>
         <div><span className="section-kicker">BẢO MẬT TÀI KHOẢN</span><h1>Tạo mật khẩu mới.</h1><p>Mật khẩu mới cần có ít nhất 8 ký tự, chữ thường, chữ số và ký tự đặc biệt.</p></div>
         <span className="student-login-japanese">安全</span>
+        <ChristmasAuthScene />
       </section>
       <section className="student-login-panel">
         <form className="student-login-form" onSubmit={submit}>

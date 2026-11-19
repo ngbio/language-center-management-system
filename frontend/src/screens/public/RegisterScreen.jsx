@@ -1,3 +1,4 @@
+import ChristmasAuthScene from "../../components/public/ChristmasAuthScene";
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import api, { endpoints } from "../../configs/Apis";
@@ -84,6 +85,7 @@ export default function RegisterScreen() {
         </Link>
         <div><span className="section-kicker">BẮT ĐẦU HỌC TẬP</span><h1>Tạo tài khoản của bạn.</h1><p>Học viên có thể sử dụng ngay. Hồ sơ giáo viên cần được quản trị viên xác minh và kích hoạt.</p></div>
         <span className="student-login-japanese">始める</span>
+        <ChristmasAuthScene />
       </section>
       <section className="student-login-panel register-panel">
         <form className="student-login-form register-form" onSubmit={submit}>
