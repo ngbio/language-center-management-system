@@ -1,3 +1,4 @@
+import ChristmasAuthScene from "../../components/public/ChristmasAuthScene";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import api, { endpoints } from "../../configs/Apis";
@@ -32,6 +33,7 @@ export default function ForgotPasswordScreen() {
         <Link className="public-brand" to="/"><span className="public-brand-mark">LC</span><span><strong>Lingua Center</strong><small>Học ngoại ngữ mỗi ngày</small></span></Link>
         <div><span className="section-kicker">KHÔI PHỤC TÀI KHOẢN</span><h1>Quay lại hành trình học tập.</h1><p>Nhập email đã đăng ký, chúng tôi sẽ gửi cho bạn liên kết đặt lại mật khẩu an toàn.</p></div>
         <span className="student-login-japanese">再開</span>
+        <ChristmasAuthScene />
       </section>
       <section className="student-login-panel">
         <form className="student-login-form" onSubmit={submit}>

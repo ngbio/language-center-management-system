@@ -105,3 +105,78 @@
   [data-ui-event="christmas"] :is(.catalog-hero, .student-learning-hero, .my-courses-hero)::after { width: 110px; height: 90px; opacity: .35; }
   [data-ui-event="christmas"] .learning-sidebar .seasonal-accent { margin-bottom: 14px; padding: 8px 12px; }
 }
+
+/* Christmas.2006 window and garden, adapted for React and the existing theme. */
+.christmas-theme .christmas-hero {
+  background: radial-gradient(ellipse at 80% 20%, #e1eee5, transparent 65%), #fffaf3;
+}
+.christmas-theme .christmas-hero .hero-copy h1 { color: #234f43; }
+.christmas-theme .christmas-eyebrow { color: #a3323b; border-color: #bf3c4130; background: #fff1ec; font-size: .875rem; letter-spacing: .04em; }
+.christmas-theme .christmas-hero .primary-cta { background: #a9333d; box-shadow: 0 10px 25px #a9333d25; }
+.christmas-theme .christmas-hero .primary-cta:hover { background: #8c2832; }
+.christmas-theme .christmas-visual { padding-bottom: 120px; min-height: 0; }
+.christmas-scene { width: 100%; filter: none; }
+.christmas-window { position: relative; width: 100%; aspect-ratio: 680 / 600; }
+.christmas-window-garden, .christmas-window-snow { position: absolute; inset: 8.5% 15% 11.5%; overflow: hidden; }
+.christmas-window-garden { background: url("../assets/christmas/christmas-festive-garden-day-v1-2x.jpg") 42% center / cover; }
+.christmas-window-frame { position: relative; display: block; width: 100%; height: auto; pointer-events: none; }
+.christmas-window-snow { display: none; pointer-events: none; }
+.christmas-snow-on .christmas-window-snow { display: block; }
+.christmas-window-snow i { position: absolute; left: calc(var(--flake) * 6.5%); top: -12px; width: 4px; height: 4px; border-radius: 50%; background: #fff; box-shadow: 0 0 5px #fff8; animation: christmas-window-fall calc(7s + var(--flake) * .35s) linear infinite; animation-delay: calc(var(--flake) * -1.2s); }
+@keyframes christmas-window-fall { to { transform: translate(20px, 500px); } }
+.christmas-music { position: relative; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: -12px; }
+.christmas-music button { display: inline-flex; justify-content: center; align-items: center; gap: 8px; min-height: 44px; padding: 9px 16px; border: 1px solid #c6ac78; border-radius: 24px; background: #fffaf2; color: #315447; font: inherit; font-size: .875rem; cursor: pointer; }
+.christmas-music button:hover { background: #f3e6d0; }
+.christmas-music button:focus-visible { outline: 3px solid #b64848; outline-offset: 4px; }
+.christmas-music button[aria-pressed="true"] { color: #fff8ed; background: #315447; }
+.christmas-music-status { width: 100%; text-align: center; color: #6c756d; font-size: .875rem; line-height: 1.5; }
+.christmas-theme .christmas-language-note { bottom: 0; width: max-content; max-width: 100%; }
+.christmas-theme .christmas-language-note small { font-size: .75rem; letter-spacing: .06em; }
+.christmas-theme .christmas-language-note div > span { font-size: .875rem; line-height: 1.5; }
+.christmas-greeting strong, .christmas-greeting button { font-size: .875rem; }
+.christmas-greeting p { font-size: .875rem; }
+.public-site.dark.christmas-theme .christmas-hero .hero-copy h1 { color: #f3e7ce; }
+.public-site.dark .christmas-window-garden { background-image: url("../assets/christmas/christmas-festive-garden-night-v1-2x.jpg"); }
+.public-site.dark .christmas-scene { filter: none; }
+.public-site.dark .christmas-music button { color: #f2d7a1; background: #24372f; border-color: #927a50; }
+.public-site.dark .christmas-music button[aria-pressed="true"] { background: #42614f; }
+.public-site.dark .christmas-music-status { color: #becabb; }
+
+[data-ui-event="christmas"] .student-login-visual {
+  justify-content: flex-start; gap: 28px; padding: 36px clamp(24px, 3vw, 52px);
+  background: linear-gradient(#741e2be8, #641d2aeb), url("../assets/christmas/christmas-red-snowflake-texture-v1.jpg") center / cover;
+}
+[data-ui-event="christmas"] .student-login-visual :is(h1, .public-brand strong) { color: #fff5e4; }
+[data-ui-event="christmas"] .student-login-visual :is(p, .public-brand small) { color: #f3dfcd; }
+[data-ui-event="christmas"] .student-login-visual .section-kicker { color: #f4d396; font-size: .875rem; }
+[data-ui-event="christmas"] .student-login-visual h1 { font-size: clamp(32px, 3.6vw, 50px); }
+[data-ui-event="christmas"] .student-login-visual::before { display: none; }
+[data-ui-event="christmas"] .student-login-visual .student-login-japanese { display: none; }
+.christmas-auth-scene { width: min(520px, 100%); margin: auto auto 0; }
+.christmas-auth-scene .christmas-music button { background: #fff5e4; color: #7c2531; }
+.christmas-auth-scene .christmas-music button[aria-pressed="true"] { background: #315447; color: #fff5e4; }
+[data-ui-event="christmas"] .christmas-auth-scene .christmas-music-status { color: #f3dfcd; }
+[data-ui-event="christmas"] .christmas-auth-scene .christmas-auth-wish { max-width: none; margin: 20px 0 0; text-align: center; font-size: 1rem; }
+[data-ui-event="christmas"] .student-login-panel { background: #fffcf7; }
+[data-ui-event="christmas"] .student-login-form :is(label, input) { font-size: .875rem; }
+[data-ui-event="christmas"] .dark .student-login-visual { background: linear-gradient(#321e28eb, #1d2530ef), url("../assets/christmas/christmas-red-snowflake-texture-v1.jpg") center / cover; }
+@media (max-width: 900px) {
+  .christmas-theme .christmas-visual { width: min(540px, 100%); }
+}
+@media (max-width: 760px) {
+  [data-ui-event="christmas"] .student-login-visual { gap: 18px; padding: 28px 24px; }
+  .christmas-auth-scene { width: min(350px, 100%); }
+  .christmas-auth-scene .christmas-window { margin-top: -12px; }
+  [data-ui-event="christmas"] .student-login-visual h1 { font-size: 34px; }
+}
+@media (max-width: 620px) {
+  .christmas-theme .christmas-visual { padding-bottom: 128px; }
+  .christmas-theme .christmas-language-note { padding: 14px 12px; gap: 8px; }
+  .christmas-theme .christmas-language-note > span { font-size: 24px; }
+  .christmas-theme .christmas-language-note div > span { font-size: .75rem; }
+  .christmas-greeting > div { flex-wrap: wrap; justify-content: center; }
+  .christmas-greeting p { text-align: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .christmas-window-snow { display: none !important; }
+}
