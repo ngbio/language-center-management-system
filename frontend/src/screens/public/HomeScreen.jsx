@@ -4,6 +4,7 @@ import APIs, { endpoints } from "../../configs/Apis";
 import { apiData } from "../../utils/api";
 import ChristmasScene from "../../components/public/ChristmasScene";
 import { isChristmas } from "../../configs/uiEvent";
+import ScrollReveal from "../../components/public/ScrollReveal";
 
 export default function HomeScreen() {
   const [teachers, setTeachers] = useState([]);
@@ -33,7 +34,7 @@ export default function HomeScreen() {
       <section className={`public-hero ${isChristmas ? "christmas-hero" : ""}`}>
         {isChristmas && <div className="christmas-snow" aria-hidden="true">{Array.from({ length: 16 }, (_, index) => <i key={index} style={{ "--flake": index }} />)}</div>}
         <div className="public-container hero-grid">
-          <div className="hero-copy">
+          <ScrollReveal className="hero-copy">
             {isChristmas ? <span className="eyebrow-pill christmas-eyebrow"><span aria-hidden="true">✦</span> MỘT MÙA GIÁNG SINH, NHIỀU KHỞI ĐẦU MỚI</span> : <span className="eyebrow-pill">LỘ TRÌNH HỌC THỰC TẾ</span>}
             <h1>Chạm gần hơn đến thế giới bằng một ngôn ngữ mới.</h1>
             <p>{isChristmas ? "Mùa lễ hội này, dành tặng bản thân một khởi đầu mới. Khám phá những ngôn ngữ, kết nối những câu chuyện và học thêm điều hay mỗi ngày." : "Khóa học có cấu trúc rõ ràng, nội dung theo từng bài và lịch học linh hoạt dành cho mọi trình độ."}</p>
@@ -43,33 +44,33 @@ export default function HomeScreen() {
               <Link className="text-cta" to="/ngon-ngu">Xem các ngôn ngữ <span>→</span></Link>
             </div>
             <div className="hero-stats"><div><strong>25+</strong><span>Bài học chọn lọc</span></div><div><strong>{languages.length || "—"}</strong><span>Ngôn ngữ</span></div><div><strong>4.9/5</strong><span>Đánh giá học viên</span></div></div>
-          </div>
-          {isChristmas ? <div className="hero-visual christmas-visual">
+          </ScrollReveal>
+          {isChristmas ? <ScrollReveal className="hero-visual christmas-visual" delay={160}>
             <ChristmasScene />
             <div className="christmas-language-note"><span aria-hidden="true">✦</span><div><small>MỘT LỜI CHÚC, NHIỀU NGÔN NGỮ</small><strong>Merry Christmas!</strong><span>メリークリスマス · Giáng sinh an lành</span></div></div>
-          </div> : <div className="hero-visual" aria-label="Minh họa học ngoại ngữ"><div className="sun-disc" /><div className="hero-card hero-card-main"><span>日本語</span><strong>Học từng bài.<br />Tiến bộ mỗi ngày.</strong><small>Trung tâm ngoại ngữ</small></div><div className="hero-card hero-card-float"><b>あ</b><span>New lesson<br /><strong>ready to learn</strong></span></div><div className="hero-dots">••••••••••••</div></div>}
+          </ScrollReveal> : <ScrollReveal className="hero-visual" delay={160} aria-label="Minh họa học ngoại ngữ"><div className="sun-disc" /><div className="hero-card hero-card-main"><span>日本語</span><strong>Học từng bài.<br />Tiến bộ mỗi ngày.</strong><small>Trung tâm ngoại ngữ</small></div><div className="hero-card hero-card-float"><b>あ</b><span>New lesson<br /><strong>ready to learn</strong></span></div><div className="hero-dots">••••••••••••</div></ScrollReveal>}
         </div>
       </section>
 
       <section className="benefits-section" id="benefits">
-        <div className="public-container"><div className="section-heading centered"><div><span className="section-kicker">HỌC CÓ ĐỊNH HƯỚNG</span><h2>Một hành trình vừa sức, dễ theo dõi</h2></div></div><div className="benefit-grid"><article><span>01</span><h3>Nội dung theo từng bài</h3><p>Mở section và chỉ tải nội dung khi bạn cần xem.</p></article><article><span>02</span><h3>Lộ trình rõ ràng</h3><p>Biết mình sẽ học gì và đang tiến tới đâu.</p></article><article><span>03</span><h3>Linh hoạt mọi thiết bị</h3><p>Giao diện tối ưu cho máy tính, máy tính bảng và điện thoại.</p></article></div></div>
+        <div className="public-container"><ScrollReveal className="section-heading centered"><div><span className="section-kicker">HỌC CÓ ĐỊNH HƯỚNG</span><h2>Một hành trình vừa sức, dễ theo dõi</h2></div></ScrollReveal><div className="benefit-grid"><ScrollReveal as="article"><span>01</span><h3>Nội dung theo từng bài</h3><p>Mở section và chỉ tải nội dung khi bạn cần xem.</p></ScrollReveal><ScrollReveal as="article" delay={100}><span>02</span><h3>Lộ trình rõ ràng</h3><p>Biết mình sẽ học gì và đang tiến tới đâu.</p></ScrollReveal><ScrollReveal as="article" delay={200}><span>03</span><h3>Linh hoạt mọi thiết bị</h3><p>Giao diện tối ưu cho máy tính, máy tính bảng và điện thoại.</p></ScrollReveal></div></div>
       </section>
 
       {languages.length > 0 && (
         <section className="home-languages-section">
           <div className="public-container">
-            <div className="section-heading">
+            <ScrollReveal className="section-heading">
               <div><span className="section-kicker">NGÔN NGỮ ĐÀO TẠO</span><h2>Các ngôn ngữ trung tâm đang giảng dạy</h2></div>
               <p>Chọn ngôn ngữ bạn quan tâm để xem các khóa học và trình độ đang mở.</p>
-            </div>
+            </ScrollReveal>
             <div className="language-card-grid">
-              {languages.map((language) => (
-                <Link className="language-card" to={`/khoa-hoc?languageId=${language.id}`} key={language.id}>
+              {languages.map((language, index) => (
+                <ScrollReveal as={Link} className="language-card" to={`/khoa-hoc?languageId=${language.id}`} key={language.id} delay={(index % 3) * 100}>
                   <span>{language.languageCode}</span>
                   <h2>{language.languageName}</h2>
                   <p>{language.description || "Khám phá các chương trình đào tạo và lộ trình phù hợp."}</p>
                   <strong>Xem khóa học →</strong>
-                </Link>
+                </ScrollReveal>
               ))}
             </div>
           </div>
@@ -79,13 +80,13 @@ export default function HomeScreen() {
       {teachers.length > 0 && (
         <section className="teacher-showcase">
           <div className="public-container">
-            <div className="section-heading">
+            <ScrollReveal className="section-heading">
               <div><span className="section-kicker">ĐỒNG HÀNH CÙNG BẠN</span><h2>Đội ngũ giảng viên chuyên nghiệp</h2></div>
               <p>Các giảng viên đang hoạt động tại trung tâm, có chuyên môn rõ ràng và kinh nghiệm giảng dạy thực tế.</p>
-            </div>
+            </ScrollReveal>
             <div className="teacher-showcase-grid">
               {teachers.map((teacher, index) => (
-                <article key={teacher.id}>
+                <ScrollReveal as="article" key={teacher.id} delay={index * 100}>
                   <div className={`teacher-portrait teacher-portrait-${(index % 4) + 1}`} aria-hidden="true">
                     {teacher.fullName?.split(" ").filter(Boolean).slice(-2).map((part) => part.charAt(0)).join("") || "GV"}
                   </div>
@@ -93,7 +94,7 @@ export default function HomeScreen() {
                   <h3>{teacher.fullName}</h3>
                   <p>{teacher.specialization || "Giảng viên ngoại ngữ"}</p>
                   <span>{teacher.degree || "Chuyên môn đang cập nhật"}</span>
-                </article>
+                </ScrollReveal>
               ))}
             </div>
           </div>
