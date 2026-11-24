@@ -3,12 +3,14 @@ import "../../styles/ScrollReveal.css";
 
 export default function ScrollReveal({ as: Component = "div", className = "", delay = 0, children, ...props }) {
   const elementRef = useRef(null);
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(() =>
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+    !("IntersectionObserver" in window)
+  );
 
   useEffect(() => {
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (motion.matches || !("IntersectionObserver" in window)) {
-      setVisible(true);
       return undefined;
     }
 
