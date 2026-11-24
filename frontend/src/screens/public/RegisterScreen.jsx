@@ -1,4 +1,5 @@
 import ChristmasAuthScene from "../../components/public/ChristmasAuthScene";
+import GoogleSignInButton from "../../components/public/GoogleSignInButton";
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import api, { endpoints } from "../../configs/Apis";
@@ -134,6 +135,7 @@ export default function RegisterScreen() {
             <label className="register-full">Địa chỉ<input name="address" maxLength="255" value={form.address} onChange={update} /></label>
           </div>
           <button className="primary-cta student-login-submit" disabled={loading}>{loading ? "Đang gửi..." : accountType === "student" ? "Đăng ký học viên" : "Gửi đăng ký giáo viên"}</button>
+          {accountType === "student" && <GoogleSignInButton disabled={loading} onBusyChange={setLoading} />}
           <small>Đã có tài khoản? <Link to="/login">Đăng nhập</Link>.</small>
         </form>
       </section>

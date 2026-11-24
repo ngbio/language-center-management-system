@@ -21,6 +21,7 @@ export const endpoints = {
   "admin-learning-questions": (id) => `/admin/learning/quizzes/${id}/questions`,
   "admin-learning-question": (id) => `/admin/learning/questions/${id}`,
   login: "/auth/login",
+  "google-login": "/auth/google",
   "admin-login": "/admin/auth/login",
   "staff-login": "/staff/auth/login",
   register: "/auth/register",

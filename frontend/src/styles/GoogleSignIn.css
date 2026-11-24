@@ -1,0 +1,14 @@
+.google-sign-in{margin-top:20px}
+.google-auth-divider{display:flex;align-items:center;gap:14px;margin-bottom:18px;color:var(--muted);font-size:14px}
+.google-auth-divider:before,.google-auth-divider:after{content:"";height:1px;flex:1;background:currentColor;opacity:.2}
+.google-sign-in-button{width:100%;min-height:48px;display:flex;align-items:center;justify-content:center;gap:12px;padding:10px 16px;border:1px solid #dce4e9;border-radius:9px;background:#fff;color:#263b4c;font:600 14px "DM Sans",sans-serif;cursor:pointer}
+.google-sign-in-button svg{width:22px;height:22px;flex-shrink:0}
+.google-sign-in-button:hover{background:#f4f7fa;border-color:#9aaab8}
+.google-sign-in-button:disabled{opacity:.65;cursor:wait}
+.google-sign-in-button:focus-visible,.google-link-cancel:focus-visible{outline:2px solid var(--red);outline-offset:3px}
+.google-account-link{padding:16px;border:1px solid #dce4e9;border-radius:12px}
+.google-account-link p{margin:0 0 14px;color:var(--muted);font-size:14px;line-height:1.6}
+.google-link-cancel{display:block;margin:12px auto 0;padding:6px 12px;border:0;background:transparent;color:var(--muted);font-size:14px;cursor:pointer}
+.public-site.dark .google-sign-in-button{color:#e5edf3;border-color:#35414d;background:#18212b}
+.public-site.dark .google-sign-in-button:hover{background:#222e3a}
+.public-site.dark .google-account-link{border-color:#35414d}

@@ -12,14 +12,7 @@ import {
 } from "firebase/database";
 import { endpoints, authApis } from "../configs/Apis";
 import { apiData } from "../utils/api";
-
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-};
+import { firebaseConfig } from "../configs/firebase";
 
 const requiredConfig = ["apiKey", "authDomain", "databaseURL", "projectId", "appId"];
 let sessionPromise;
@@ -46,7 +39,7 @@ const describeFirebaseAuthError = (error) => {
 const getFirebase = () => {
   const missing = requiredConfig.filter((key) => !firebaseConfig[key]);
   if (missing.length) throw new Error(`Thiếu cấu hình Firebase: ${missing.join(", ")}`);
-  const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  const app = getApps().some((app) => app.name === "[DEFAULT]") ? getApp() : initializeApp(firebaseConfig);
   return { auth: getAuth(app), database: getDatabase(app) };
 };
 

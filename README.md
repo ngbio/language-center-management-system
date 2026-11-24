@@ -243,6 +243,40 @@ cd frontend
 npm.cmd run dev
 ```
 
+## Đăng nhập Google trên website
+
+Website hỗ trợ Google qua Firebase Authentication và vẫn sử dụng JWT của backend.
+Nút Google nằm ở trang đăng nhập và tab đăng ký học viên. Người mới được tạo tài khoản
+học viên; email trùng tài khoản cũ phải xác nhận mật khẩu hiện tại trước khi liên kết.
+Tài khoản bị khóa/chưa kích hoạt và tài khoản Admin/Consultant không được đăng nhập qua cổng này.
+
+1. Với database có sẵn, chạy `data/migrate_add_google_sign_in_mysql.sql` để thêm bảng
+   `google_account`. Database tạo mới từ `data/database_language_center_mysql.sql` đã có bảng này.
+2. Trong Firebase Console, bật **Authentication → Sign-in method → Google**, chọn email
+   hỗ trợ; thêm `localhost` và domain website vào **Settings → Authorized domains**.
+3. Frontend dùng lại `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`,
+   `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_APP_ID` của cùng Firebase project.
+   `VITE_FIREBASE_DATABASE_URL` tiếp tục phục vụ chat.
+4. Backend dùng `FIREBASE_ENABLED=true`, `FIREBASE_DATABASE_URL` và
+   **`FIREBASE_SERVICE_ACCOUNT_JSON_BASE64`** (đúng tên biến đang đọc trong cấu hình).
+   Không đưa service account vào biến `VITE_*` hoặc commit credential lên Git.
+5. Khởi động lại backend/Vite hoặc rebuild frontend sau khi đổi biến môi trường.
+
+API `POST /api/auth/google` nhận `{ "idToken": "<Firebase ID token>" }`.
+Backend xác minh token và trạng thái thu hồi, yêu cầu provider `google.com` và email đã
+xác minh. Nếu cần liên kết tài khoản cũ, API trả HTTP 409 với
+`data.requiresPassword=true`; gửi lại cùng token và trường `password` để xác nhận.
+Thành công trả `data.token`, `userId`, `email`, `role`, `roleCode` giống đăng nhập thường.
+Danh tính được liên kết bằng Firebase UID, không tự gộp tài khoản theo email.
+
+Phiên Google dùng Firebase app riêng, lưu trong bộ nhớ và đăng xuất sau khi lấy token;
+chat giữ nguyên custom UID `lcm-user-*`. Chưa bật nút Google trong Android Capacitor:
+bản native cần tích hợp SDK Google riêng. Người đăng ký bằng Google có thể dùng
+**Quên mật khẩu** để đặt mật khẩu cho tài khoản nội bộ nếu cần.
+
+Tham khảo: [Google sign-in trên Firebase](https://firebase.google.com/docs/auth/web/google-signin),
+[xác minh Firebase ID token](https://firebase.google.com/docs/auth/admin/verify-id-tokens).
+
 ## Gửi email khi deploy Railway hoặc Render
 
 Backend hỗ trợ `smtp` và `brevo`. Trên Railway hoặc Render nên chọn Brevo để email được
