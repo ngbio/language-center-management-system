@@ -59,6 +59,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Validate frontend deployment variables
+        id: frontend_config
         env:
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
           VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
@@ -80,6 +81,15 @@ jobs:
             test -n "${!name}" || { echo "Missing GitHub variable: $name"; exit 1; }
           done
 
+          # Pasted GitHub variable values may contain trailing CR/LF characters.
+          pages_project="${CLOUDFLARE_PAGES_PROJECT_NAME//$'\r'/}"
+          pages_project="${pages_project//$'\n'/}"
+          if [[ ! "$pages_project" =~ ^[a-z0-9][a-z0-9-]*$ ]]; then
+            echo "Invalid CLOUDFLARE_PAGES_PROJECT_NAME: use a lowercase project slug without spaces."
+            exit 1
+          fi
+          printf 'pages_project_name=%s\n' "$pages_project" >> "$GITHUB_OUTPUT"
+
       - name: Install dependencies
         working-directory: frontend
         run: npm ci
@@ -100,8 +110,5 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: >-
-            pages deploy frontend/dist
-            --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT_NAME }}
-            --branch=main
+          command: pages deploy frontend/dist --project-name=${{ steps.frontend_config.outputs.pages_project_name }} --branch=main
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
