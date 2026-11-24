@@ -20,6 +20,7 @@ export default function PublicLayout() {
   const accountMenuRef = useRef(null);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [headerScrolled, setHeaderScrolled] = useState(() => window.scrollY > 24);
   const [darkMode, setDarkMode] = useState(() => {
     const savedTheme = localStorage.getItem("publicTheme");
     if (savedTheme) return savedTheme === "dark";
@@ -52,6 +53,13 @@ export default function PublicLayout() {
     sessionAuthenticated && ["STUDENT", "TEACHER", "ADMIN", "CONSULTANT"].includes(session.role);
 
   useEffect(() => {
+    const updateHeader = () => setHeaderScrolled(window.scrollY > 24);
+    updateHeader();
+    window.addEventListener("scroll", updateHeader, { passive: true });
+    return () => window.removeEventListener("scroll", updateHeader);
+  }, []);
+
+  useEffect(() => {
     if (!accountMenuOpen) return undefined;
     const closeMenu = (event) => {
       if (!accountMenuRef.current?.contains(event.target)) setAccountMenuOpen(false);
@@ -74,7 +82,7 @@ export default function PublicLayout() {
       if (event.key === "Escape") setMobileMenuOpen(false);
     };
     const closeOnDesktop = () => {
-      if (window.innerWidth > 900) setMobileMenuOpen(false);
+      if (window.innerWidth > 1100) setMobileMenuOpen(false);
     };
 
     document.addEventListener("keydown", closeWithEscape);
@@ -88,23 +96,17 @@ export default function PublicLayout() {
   const accountLabel = session.email.split("@")[0] || "Tài khoản";
 
   return (
-    <div className={`public-site ${isChristmas ? "christmas-theme" : ""} ${darkMode ? "dark" : ""} ${isChristmas && snow ? "christmas-snow-on" : ""}`}>
+    <div className={`public-site ${pathname === "/" ? "public-home" : ""} ${isChristmas ? "christmas-theme" : ""} ${darkMode ? "dark" : ""} ${isChristmas && snow ? "christmas-snow-on" : ""}`}>
       {isChristmas && !learning && <div className="christmas-greeting"><div className="public-container"><span className="christmas-greeting-star" aria-hidden="true">✦</span><p><strong>Mùa của những điều kỳ diệu</strong><span>Giáng sinh an lành · Học thêm một ngôn ngữ, mở thêm một thế giới.</span></p><button type="button" aria-pressed={snow} onClick={() => setSnow((current) => { localStorage.setItem("christmasSnow", current ? "off" : "on"); return !current; })}>{snow ? "Tắt tuyết" : "Bật tuyết"}<span aria-hidden="true"> ❄</span></button></div></div>}
-      <header className="public-header">
+      <header className={`public-header ${headerScrolled ? "is-scrolled" : ""}`}>
         <div className="public-container public-nav">
-          <Link className="public-brand" to="/">
-            <span className="public-brand-mark">LC</span>
-            <span>
-              <strong>Lingua Center</strong>
-              <small>Học ngoại ngữ mỗi ngày</small>
-            </span>
-          </Link>
-          <nav className={`public-main-nav ${mobileMenuOpen ? "is-open" : ""}`} aria-label="Điều hướng chính">
+          <nav id="public-main-nav" className={`public-main-nav ${mobileMenuOpen ? "is-open" : ""}`} aria-label="Điều hướng chính">
             <NavLink to="/" end onClick={() => setMobileMenuOpen(false)}>Trang chủ</NavLink>
             <NavLink to="/khoa-hoc" onClick={() => setMobileMenuOpen(false)}>Khóa học</NavLink>
             <NavLink to="/ngon-ngu" onClick={() => setMobileMenuOpen(false)}>Ngôn ngữ</NavLink>
             <NavLink to="/lop-hoc" onClick={() => setMobileMenuOpen(false)}>Lớp đang mở</NavLink>
           </nav>
+          <Link className="public-center-name" to="/">Lingua Center</Link>
           <div className="public-nav-actions">
             <button
               className="theme-toggle"
@@ -116,7 +118,7 @@ export default function PublicLayout() {
               <span aria-hidden="true">{darkMode ? "☀" : "☾"}</span>
             </button>
             {!sessionAuthenticated && <Link className="public-register" to="/register">Đăng ký tài khoản</Link>}
-            {!sessionAuthenticated && <Link className="public-login" to="/login">Đăng nhập</Link>}
+            {!sessionAuthenticated && <Link className="public-login" to="/login" aria-label="Đăng nhập"><span>Đăng nhập</span><svg className="public-login-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21v-2a8 8 0 0 1 16 0v2" /></svg></Link>}
             {sessionAuthenticated && session.role === "STUDENT" && <StudentNotificationBell />}
             {publicAuthenticated && (
               <div className="public-account" ref={accountMenuRef}>
@@ -154,6 +156,7 @@ export default function PublicLayout() {
               type="button"
               aria-label={mobileMenuOpen ? "Đóng menu" : "Mở menu"}
               aria-expanded={mobileMenuOpen}
+              aria-controls="public-main-nav"
               onClick={() => {
                 setAccountMenuOpen(false);
                 setMobileMenuOpen((open) => !open);

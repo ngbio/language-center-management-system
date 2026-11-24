@@ -1,0 +1,11 @@
+.scroll-reveal{
+  opacity:0;
+  translate:0 24px;
+  transition:opacity .85s ease,translate .85s cubic-bezier(.2,.65,.3,1);
+  transition-delay:var(--reveal-delay,0ms);
+}
+.scroll-reveal.is-visible{opacity:1;translate:0 0}
+.scroll-reveal:focus-within{opacity:1;translate:0 0;transition-delay:0ms}
+@media(prefers-reduced-motion:reduce){
+  .scroll-reveal{opacity:1;translate:none;transition:none}
+}
