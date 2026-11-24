@@ -19,6 +19,19 @@ import org.springframework.web.multipart.support.MissingServletRequestPartExcept
 public class GlobalExceptionHandler {
   private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+  @ExceptionHandler(GoogleAccountLinkRequiredException.class)
+  public ResponseEntity<ApiResponse<java.util.Map<String, Boolean>>> handleGoogleLinkRequired(
+      GoogleAccountLinkRequiredException exception) {
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse<>(
+        409, exception.getMessage(), java.util.Map.of("requiresPassword", true)));
+  }
+
+  @ExceptionHandler(GoogleSignInUnavailableException.class)
+  public ResponseEntity<ApiResponse<Void>> handleGoogleUnavailable(
+      GoogleSignInUnavailableException exception) {
+    return error(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage());
+  }
+
   @ExceptionHandler(DuplicateResourceException.class)
   public ResponseEntity<ApiResponse<Void>> handleDuplicateResource(
       DuplicateResourceException exception) {
