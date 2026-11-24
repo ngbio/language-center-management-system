@@ -1,4 +1,5 @@
 import ChristmasAuthScene from "../../components/public/ChristmasAuthScene";
+import GoogleSignInButton from "../../components/public/GoogleSignInButton";
 import { useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import api, { endpoints } from "../../configs/Apis";
@@ -89,6 +90,7 @@ export default function StudentLoginScreen() {
           </label>
           <Link className="forgot-password-link" to="/forgot-password">Quên mật khẩu?</Link>
           <button className="primary-cta student-login-submit" disabled={loading}>{loading ? "Đang xác thực..." : "Đăng nhập"}</button>
+          <GoogleSignInButton disabled={loading} onBusyChange={setLoading} />
           <small>Chưa có tài khoản? <Link to="/register">Đăng ký tại đây</Link>.</small>
         </form>
       </section>
