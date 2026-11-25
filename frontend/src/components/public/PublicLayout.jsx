@@ -96,7 +96,7 @@ export default function PublicLayout() {
   const accountLabel = session.email.split("@")[0] || "Tài khoản";
 
   return (
-    <div className={`public-site ${pathname === "/" ? "public-home" : ""} ${isChristmas ? "christmas-theme" : ""} ${darkMode ? "dark" : ""} ${isChristmas && snow ? "christmas-snow-on" : ""}`}>
+    <div className={`public-site ${learning ? "public-learning" : ""} ${pathname === "/" ? "public-home" : ""} ${isChristmas ? "christmas-theme" : ""} ${darkMode ? "dark" : ""} ${isChristmas && snow ? "christmas-snow-on" : ""}`}>
       {isChristmas && !learning && <div className="christmas-greeting"><div className="public-container"><span className="christmas-greeting-star" aria-hidden="true">✦</span><p><strong>Mùa của những điều kỳ diệu</strong><span>Giáng sinh an lành · Học thêm một ngôn ngữ, mở thêm một thế giới.</span></p><button type="button" aria-pressed={snow} onClick={() => setSnow((current) => { localStorage.setItem("christmasSnow", current ? "off" : "on"); return !current; })}>{snow ? "Tắt tuyết" : "Bật tuyết"}<span aria-hidden="true"> ❄</span></button></div></div>}
       <header className={`public-header ${headerScrolled ? "is-scrolled" : ""}`}>
         <div className="public-container public-nav">

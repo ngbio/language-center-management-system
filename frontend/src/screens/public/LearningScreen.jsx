@@ -81,7 +81,14 @@ function LessonPractice({ content, student }) {
   return <section className="learning-main">
     <div className="learning-tabs" aria-label="Nội dung học tập">
       {[["lesson", "Ôn tập bài"], ["cards", "Flashcard"], ["quiz", "Quiz"]].map(([key, label]) =>
-        <button key={key} type="button" aria-pressed={tab === key} onClick={() => setTab(key)}>{label}</button>)}
+        <button key={key} type="button" aria-pressed={tab === key} onClick={() => setTab(key)}>
+          <svg className="learning-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            {key === "lesson" ? <><path d="M12 5v15M3 4c3-1 6-1 9 1 3-2 6-2 9-1v15c-3-1-6-1-9 1-3-2-6-2-9-1Z" /></>
+              : key === "cards" ? <><rect x="7" y="7" width="14" height="14" rx="3" /><path d="M17 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h2m5-6h4m-4 4h6" /></>
+                : <><rect x="4" y="3" width="16" height="18" rx="3" /><path d="m8 9 1 1 2-2m3 1h2m-8 6 1 1 2-2m3 1h2" /></>}
+          </svg>
+          {label}
+        </button>)}
     </div>
     {tab === "lesson" && <article className="learning-reading-card">
       <span className="section-kicker">Nội dung bài học</span><h1>{content.title}</h1>
