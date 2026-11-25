@@ -4,6 +4,8 @@ Nền tảng quản lý trung tâm ngoại ngữ tích hợp website giới thi�
 
 Hệ thống quản lý xuyên suốt vòng đời đào tạo: từ công bố khóa học, mở lớp, đăng ký, thanh toán, xếp lịch, tổ chức buổi học, điểm danh cho đến hoàn tiền và xuất hóa đơn.
 
+*Đây là ứng dụng học tiếng nhật các dữ liệu bài học trong đây đều là những gì mình học và lấy về từ trung tâm nếu có chỗ nào sai sót mong mọi người thông cảm.*
+
 ## Tải ứng dụng Android
 
 [Tải Lingua Center v1.0.0 cho Android](./frontend/public/downloads/lingua-center-1.0.0.apk?raw=1)
