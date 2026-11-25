@@ -57,6 +57,24 @@
 @media (max-width: 620px) {
   .course-detail-page { padding-top: 18px; }
   .course-detail-page .detail-hero { padding: 18px; }
+  .course-detail-page .enroll-card .primary-cta,
+  .course-detail-page .enroll-card .enroll-secondary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: none;
+    min-height: 44px;
+    line-height: 1.5;
+    text-align: center;
+  }
+  .course-detail-page .enroll-curriculum-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    margin-top: 10px;
+  }
   .course-detail-page .detail-hero-grid, .course-detail-page .detail-body { grid-template-columns: minmax(0, 1fr); }
   .course-detail-cover { min-height: 180px; }
   .course-detail-page .detail-body { padding-top: 28px; }

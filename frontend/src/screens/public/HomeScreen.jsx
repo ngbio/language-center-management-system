@@ -53,7 +53,22 @@ export default function HomeScreen() {
       </section>
 
       <section className="benefits-section" id="benefits">
-        <div className="public-container"><ScrollReveal className="section-heading centered"><div><span className="section-kicker">HỌC CÓ ĐỊNH HƯỚNG</span><h2>Một hành trình vừa sức, dễ theo dõi</h2></div></ScrollReveal><div className="benefit-grid"><ScrollReveal as="article"><span>01</span><h3>Nội dung theo từng bài</h3><p>Mở section và chỉ tải nội dung khi bạn cần xem.</p></ScrollReveal><ScrollReveal as="article" delay={100}><span>02</span><h3>Lộ trình rõ ràng</h3><p>Biết mình sẽ học gì và đang tiến tới đâu.</p></ScrollReveal><ScrollReveal as="article" delay={200}><span>03</span><h3>Linh hoạt mọi thiết bị</h3><p>Giao diện tối ưu cho máy tính, máy tính bảng và điện thoại.</p></ScrollReveal></div></div>
+        <div className="public-container">
+          <ScrollReveal className="section-heading centered"><div><span className="section-kicker">HỌC CÓ ĐỊNH HƯỚNG</span><h2>Một hành trình vừa sức, dễ theo dõi</h2></div></ScrollReveal>
+          <div className="benefit-grid">
+            {[
+              ["Nội dung theo từng bài", "Mở từng phần và học theo nhịp độ phù hợp với bạn."],
+              ["Lộ trình rõ ràng", "Biết mình sẽ học gì và đang tiến tới đâu."],
+              ["Linh hoạt mọi thiết bị", "Học thuận tiện trên máy tính, máy tính bảng và điện thoại."],
+            ].map(([title, description], index) => (
+              <ScrollReveal as="article" key={title} delay={index * 100}>
+                <span className="benefit-number" aria-hidden="true">0{index + 1}</span>
+                <svg className="benefit-check" viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="14" cy="17" r="11" stroke="currentColor" strokeWidth="2" /><path d="m8 16 6 6L28 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                <h3>{title}</h3><p>{description}</p>
+              </ScrollReveal>
+            ))}
+          </div>
+        </div>
       </section>
 
       {languages.length > 0 && (

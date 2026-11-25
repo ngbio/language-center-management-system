@@ -277,3 +277,74 @@
   .course-card{min-height:0}
 }
 
+/* Keep mobile hero actions aligned across regular and seasonal themes. */
+@media (max-width: 620px) {
+  .public-site .public-hero .hero-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  .public-site .public-hero .hero-actions > a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding: 12px 16px;
+    line-height: 1.5;
+    text-align: center;
+  }
+  .public-site .public-hero .hero-actions > .text-cta {
+    border: 1px solid color-mix(in srgb, var(--navy) 18%, transparent);
+    border-radius: 9px;
+  }
+  .public-footer {
+    padding: 32px 0 24px;
+  }
+  .footer-grid {
+    grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr);
+    align-items: start;
+    gap: 24px 16px;
+  }
+  .footer-grid > div:first-child {
+    grid-column: 1 / -1;
+  }
+  .footer-grid > div {
+    min-width: 0;
+  }
+  .footer-brand > span:last-child {
+    display: block;
+  }
+  .footer-grid p {
+    margin: 8px 0 0;
+  }
+  .footer-grid h3 {
+    margin: 0 0 8px;
+  }
+  .footer-grid a,
+  .footer-grid span {
+    overflow-wrap: anywhere;
+  }
+  .footer-grid > div:not(:first-child) > a,
+  .footer-grid > div:not(:first-child) > span {
+    display: flex;
+    align-items: center;
+    min-height: 32px;
+    line-height: 1.6;
+  }
+  .public-footer .footer-brand {
+    width: fit-content;
+  }
+  .public-footer .public-brand-mark {
+    flex-shrink: 0;
+  }
+  .christmas-theme .public-footer::before {
+    padding-top: 0;
+    margin-bottom: 24px;
+  }
+  .footer-bottom {
+    margin-top: 24px;
+    padding-top: 16px;
+  }
+}

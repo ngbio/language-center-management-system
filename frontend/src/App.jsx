@@ -43,6 +43,7 @@ import AccountProfileScreen from "./screens/AccountProfileScreen";
 import ConsultantChatScreen from "./screens/staff/ConsultantChatScreen";
 import CourseCurriculumAdminScreen from "./screens/admin/courses/CourseCurriculumAdminScreen";
 import "./App.css";
+import "./styles/PublicPolish.css";
 import LearningScreen from "./screens/public/LearningScreen";
 import LearningAdminScreen from "./screens/admin/courses/LearningAdminScreen";
 import NativeAppBridge from "./components/NativeAppBridge";
